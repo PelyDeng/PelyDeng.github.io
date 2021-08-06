@@ -141,7 +141,11 @@ live2d:
     show: true # 手机中是否展示
 
 
-
+# hexo-admin authentification
+admin:
+  username: dpl
+  password_hash: $2a$10$v0mkKOLywJAzjurCZ74jQO/UvHtEBmYt3VOnsenYStv54uWS9Ylt6
+  secret: ddd
 
 
 
