@@ -1,33 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Hello World</title>
-    <url>/2021/08/07/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><span id="more"></span>
+    <title>MyBatis 运行时序图</title>
+    <url>/2021/08/10/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/</url>
+    <content><![CDATA[<h3 id="架构分层"><a href="#架构分层" class="headerlink" title="架构分层"></a>架构分层</h3><p><img src="/images/pasted-4.png" alt="架构分层"></p>
+<span id="more"></span>
 
-
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">e hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+<h4 id="1-创建会话工厂类"><a href="#1-创建会话工厂类" class="headerlink" title="1. 创建会话工厂类"></a>1. 创建会话工厂类</h4><p><img src="/images/pasted-5.png" alt="创建会话过程"></p>
+<h4 id="2-创建会话"><a href="#2-创建会话" class="headerlink" title="2. 创建会话"></a>2. 创建会话</h4><p><img src="/images/pasted-6.png" alt="创建会话过程"></p>
+<h4 id="3-获取代理对象"><a href="#3-获取代理对象" class="headerlink" title="3. 获取代理对象"></a>3. 获取代理对象</h4><p><img src="/images/pasted-7.png" alt="获取代理对象过程"></p>
+<h4 id="4-调用代理对象方法-执行SQL"><a href="#4-调用代理对象方法-执行SQL" class="headerlink" title="4. 调用代理对象方法, 执行SQL"></a>4. 调用代理对象方法, 执行SQL</h4><p><img src="/images/pasted-8.png" alt="调用代理对象方法, 执行SQL过程"></p>
 ]]></content>
+      <categories>
+        <category>摘抄笔记</category>
+      </categories>
       <tags>
-        <tag>hello</tag>
-        <tag>hexo</tag>
-        <tag>markdown</tag>
+        <tag>MyBatis</tag>
       </tags>
   </entry>
   <entry>
-    <title>HHHHA</title>
+    <title>Hello World</title>
     <url>/2021/08/06/newpapername/</url>
     <content><![CDATA[<div class="poem-wrap">
   <div class="poem-border poem-left"></div>
@@ -45,7 +37,7 @@
       document.getElementById("info").value(info);  
   });
   </script>
-</div>]]></content>
+</p></div>]]></content>
   </entry>
   <entry>
     <title>MyBatis 整合到 Spring 原理</title>
@@ -60,7 +52,7 @@
 
 <h3 id="2-MapperScannerConfigurer-对象"><a href="#2-MapperScannerConfigurer-对象" class="headerlink" title="2. MapperScannerConfigurer 对象"></a>2. MapperScannerConfigurer 对象</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MapperScannerConfigurer</span></span></span><br><span class="line"><span class="class">    <span class="keyword">implements</span> <span class="title">BeanDefinitionRegistryPostProcessor</span>, <span class="title">InitializingBean</span>, <span class="title">ApplicationContextAware</span>, <span class="title">BeanNameAware</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h4 id="该对象实现了几个接口-BeanDefinitionRegistryPostProcessor-InitializingBean-ApplicationContextAware-BeanNameAware"><a href="#该对象实现了几个接口-BeanDefinitionRegistryPostProcessor-InitializingBean-ApplicationContextAware-BeanNameAware" class="headerlink" title="该对象实现了几个接口: BeanDefinitionRegistryPostProcessor, InitializingBean, ApplicationContextAware, BeanNameAware "></a>该对象实现了几个接口: BeanDefinitionRegistryPostProcessor, InitializingBean, ApplicationContextAware, BeanNameAware <br></h4><blockquote>
-<p><strong>1). BeanDefinitionRegistryPostProcessor</strong>:  <br><br><img src="/images/pasted-0.png" alt="upload successful"> <br></p>
+<p><strong>1). BeanDefinitionRegistryPostProcessor</strong>:  <br><br><img src="/images/pasted-0.png"> <br></p>
 </blockquote>
 <blockquote>
 <p>如下, 重写了 <strong>++postProcessBeanDefinitionRegistry++</strong>(…)  方法, 在该方法中进行扫描对应的 Mapper 文件</p>
@@ -72,7 +64,7 @@
 </blockquote>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">scan</span><span class="params">(String... basePackages)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> beanCountAtScanStart = <span class="keyword">this</span>.registry.getBeanDefinitionCount();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 继续进入该方法</span></span><br><span class="line">        <span class="keyword">this</span>.doScan(basePackages);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">this</span>.includeAnnotationConfig) &#123;</span><br><span class="line">            AnnotationConfigUtils.registerAnnotationConfigProcessors(<span class="keyword">this</span>.registry);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.registry.getBeanDefinitionCount() - beanCountAtScanStart;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/images/pasted-2.png" alt="upload successful"></p>
+<p><img src="/images/pasted-2.png"></p>
 <blockquote>
 <p>该方法有两个实现, 首先进入 <strong>ClassPathMapperScanner</strong> 实现</p>
 </blockquote>
@@ -99,7 +91,7 @@
 <p>允许注入MyBatis映射器接口的BeanFactory。 可以使用SqlSessionFactory或预配置的SqlSessionTemplate进行设置。<br><br>*<strong>要点一:</strong> 该类继承了 SqlSessionDaoSupport, SqlSessionDaoSupport 对象里面可以获取 SqlSessionTemplate 对象 <br><br><strong>SqlSessionTemplate</strong> 对象是 DefaultSqlSession 的替代品, <strong>实现同一事务的情况下还保证线程安全的, 每次请求的时候都会创建一个新的 DefualtSqlSession</strong> <br></p>
 </blockquote>
 <blockquote>
-<p>*<strong>要点二:</strong> 该类实现了 FactoryBean<T> 接口, 重写 getObject() 方法, <br><br>从 SqlSessionTemplate 对象中获取 Mapper 接口的代理对象 <br><br>后面的逻辑与之前未整合 Spring 的逻辑一致了….. <br></p>
+<p>*<strong>要点二:</strong> 该类实现了 FactoryBean<T> 接口, 重写 getObject() 方法, <br><br>从 SqlSessionTemplate 对象中获取 Mapper 接口的代理对象 <br><br>后面的逻辑与之前未整合 Spring 的逻辑一致了….. <br></T></p>
 </blockquote>
 <h3 id="4-SqlSessionTemplate-对象"><a href="#4-SqlSessionTemplate-对象" class="headerlink" title="4. SqlSessionTemplate 对象"></a>4. SqlSessionTemplate 对象</h3><h4 id="为什么说-SqlSessionTemplate-在实现同一事务的情况下还保证线程安全的"><a href="#为什么说-SqlSessionTemplate-在实现同一事务的情况下还保证线程安全的" class="headerlink" title="为什么说 SqlSessionTemplate 在实现同一事务的情况下还保证线程安全的?"></a>为什么说 SqlSessionTemplate 在实现同一事务的情况下还保证线程安全的?</h4><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SqlSessionTemplate</span> <span class="keyword">implements</span> <span class="title">SqlSession</span>, <span class="title">DisposableBean</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> SqlSessionFactory sqlSessionFactory;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> ExecutorType executorType;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> SqlSession sqlSessionProxy;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> PersistenceExceptionTranslator exceptionTranslator;</span><br><span class="line"></span><br><span class="line">  ......</span><br><span class="line">  </span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">SqlSessionTemplate</span><span class="params">(SqlSessionFactory sqlSessionFactory, ExecutorType executorType,</span></span></span><br><span class="line"><span class="params"><span class="function">      PersistenceExceptionTranslator exceptionTranslator)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    notNull(sqlSessionFactory, <span class="string">&quot;Property &#x27;sqlSessionFactory&#x27; is required&quot;</span>);</span><br><span class="line">    notNull(executorType, <span class="string">&quot;Property &#x27;executorType&#x27; is required&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">this</span>.sqlSessionFactory = sqlSessionFactory;</span><br><span class="line">    <span class="keyword">this</span>.executorType = executorType;</span><br><span class="line">    <span class="keyword">this</span>.exceptionTranslator = exceptionTranslator;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 1. 在初始化的时候通过这里创建 SqlSessionFactory 代理类, </span></span><br><span class="line">    <span class="comment">// 该代理类实现SqlSession接口，定义了方法拦截器，如果调用代理类实例中实现SqlSession接口定义的方法，</span></span><br><span class="line">    <span class="comment">// 该调用则被导向 SqlSessionInterceptor 的invoke方法</span></span><br><span class="line">    <span class="keyword">this</span>.sqlSessionProxy = (SqlSession) newProxyInstance(</span><br><span class="line">        SqlSessionFactory.class.getClassLoader(),</span><br><span class="line">        <span class="keyword">new</span> Class[] &#123; SqlSession.class &#125;, </span><br><span class="line">        <span class="keyword">new</span> SqlSessionInterceptor()</span><br><span class="line">    );</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  ......</span><br><span class="line">  </span><br><span class="line">  <span class="keyword">private</span> <span class="class"><span class="keyword">class</span> <span class="title">SqlSessionInterceptor</span> <span class="keyword">implements</span> <span class="title">InvocationHandler</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">      </span><br><span class="line">      <span class="comment">// 2. 为什么说 SqlSessionTemplate 在实现同一事务的情况下还保证线程安全的?</span></span><br><span class="line">      <span class="comment">// 此处则是关键, 进入该方法 getSqlSession(...)</span></span><br><span class="line">      SqlSession sqlSession = getSqlSession(SqlSessionTemplate.<span class="keyword">this</span>.sqlSessionFactory,</span><br><span class="line">          SqlSessionTemplate.<span class="keyword">this</span>.executorType, SqlSessionTemplate.<span class="keyword">this</span>.exceptionTranslator);</span><br><span class="line">          </span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 调用从Spring的事物上下文获取事物范围内的sqlSession对象</span></span><br><span class="line">        Object result = method.invoke(sqlSession, args);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">//然后判断一下当前的sqlSession是否被Spring托管 如果未被Spring托管则自动commit</span></span><br><span class="line">        <span class="keyword">if</span> (!isSqlSessionTransactional(sqlSession, SqlSessionTemplate.<span class="keyword">this</span>.sqlSessionFactory)) &#123;</span><br><span class="line">          <span class="comment">// force commit even on non-dirty sessions because some databases require</span></span><br><span class="line">          <span class="comment">// a commit/rollback before calling close()</span></span><br><span class="line">          sqlSession.commit(<span class="keyword">true</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">      &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">        Throwable unwrapped = unwrapThrowable(t);</span><br><span class="line">        <span class="keyword">if</span> (SqlSessionTemplate.<span class="keyword">this</span>.exceptionTranslator != <span class="keyword">null</span> &amp;&amp; unwrapped <span class="keyword">instanceof</span> PersistenceException) &#123;</span><br><span class="line">          <span class="comment">// release the connection to avoid a deadlock if the translator is no loaded. See issue #22</span></span><br><span class="line">          closeSqlSession(sqlSession, SqlSessionTemplate.<span class="keyword">this</span>.sqlSessionFactory);</span><br><span class="line">          sqlSession = <span class="keyword">null</span>;</span><br><span class="line">          Throwable translated = SqlSessionTemplate.<span class="keyword">this</span>.exceptionTranslator</span><br><span class="line">              .translateExceptionIfPossible((PersistenceException) unwrapped);</span><br><span class="line">          <span class="keyword">if</span> (translated != <span class="keyword">null</span>) &#123;</span><br><span class="line">            unwrapped = translated;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">throw</span> unwrapped;</span><br><span class="line">      &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (sqlSession != <span class="keyword">null</span>) &#123;</span><br><span class="line">          closeSqlSession(sqlSession, SqlSessionTemplate.<span class="keyword">this</span>.sqlSessionFactory);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -140,7 +132,10 @@
 <hr>
 ]]></content>
       <categories>
-        <category>MyBatis</category>
+        <category>摘抄笔记</category>
       </categories>
+      <tags>
+        <tag>MyBatis</tag>
+      </tags>
   </entry>
 </search>
