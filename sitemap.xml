@@ -46,7 +46,7 @@
 
   <url>
     <loc>http://pdyun.cc/</loc>
-    <lastmod>2021-08-07</lastmod>
+    <lastmod>2021-08-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
@@ -54,21 +54,21 @@
   
   <url>
     <loc>http://pdyun.cc/tags/hello/</loc>
-    <lastmod>2021-08-07</lastmod>
+    <lastmod>2021-08-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://pdyun.cc/tags/hexo/</loc>
-    <lastmod>2021-08-07</lastmod>
+    <lastmod>2021-08-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>http://pdyun.cc/tags/markdown/</loc>
-    <lastmod>2021-08-07</lastmod>
+    <lastmod>2021-08-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
@@ -77,7 +77,7 @@
   
   <url>
     <loc>http://pdyun.cc/categories/MyBatis/</loc>
-    <lastmod>2021-08-07</lastmod>
+    <lastmod>2021-08-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
