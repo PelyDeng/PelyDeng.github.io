@@ -19,6 +19,13 @@
       </tags>
   </entry>
   <entry>
+    <title>Test-new</title>
+    <url>/2021/08/10/Test-new/</url>
+    <content><![CDATA[<p><img src="/images/pasted-9.png" alt="upload successful"></p>
+<p><img src="/images/:title/img-0.png" alt="upload successful"></p>
+]]></content>
+  </entry>
+  <entry>
     <title>Hello World</title>
     <url>/2021/08/06/newpapername/</url>
     <content><![CDATA[<div class="poem-wrap">
