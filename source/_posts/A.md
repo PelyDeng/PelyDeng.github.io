@@ -1,8 +1,10 @@
 title: MyBatis 整合到 Spring 原理
 author: Peilin Deng
-tags: []
-categories:
+tags:
   - MyBatis
+categories:
+  - 摘抄笔记
+  - ''
 date: 2021-08-07 15:41:00
 ---
 ### 1. xml 配置
@@ -32,7 +34,7 @@ public class MapperScannerConfigurer
 #### 该对象实现了几个接口: BeanDefinitionRegistryPostProcessor, InitializingBean, ApplicationContextAware, BeanNameAware <br>
 
 > **1). BeanDefinitionRegistryPostProcessor**:  <br>
-> ![upload successful](/images/pasted-0.png) <br>
+> ![](/images/pasted-0.png) <br>
 
 > 如下, 重写了 **++postProcessBeanDefinitionRegistry++**(...)  方法, 在该方法中进行扫描对应的 Mapper 文件
 
@@ -81,7 +83,7 @@ public int scan(String... basePackages) {
     }
 ```
 
-![upload successful](/images/pasted-2.png)
+![](/images/pasted-2.png)
 
 > 该方法有两个实现, 首先进入 **ClassPathMapperScanner** 实现
 
