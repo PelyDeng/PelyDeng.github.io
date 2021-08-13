@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<!-- 樱花特效 -->
+  
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+  <link rel="mask-icon" href="/images/favicon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="记录一次家庭内网使用DDNS让外网访问, 同时动态更新域名123此篇文章献给&amp;#x27;懒人&amp;#x27;同学~  相信很多同学在自己家里学习啥的搞些小网站小程序, 比如部署一些在线看视频丶个人网盘丶个人博客等的网站, 但是在公司时想访问记录或查询一些资料, 但是又因为访问不了家庭网络而烦躁...    在此分享能使用任意外网访问家庭内网, 同时动态更新域名的方法.当然在此之前我使用过花生壳、公云等">
+<meta property="og:type" content="article">
+<meta property="og:title" content="外网访问家庭网络小记">
+<meta property="og:url" content="http://pdyun.cc/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/index.html">
+<meta property="og:site_name" content="牧场小站">
+<meta property="og:description" content="记录一次家庭内网使用DDNS让外网访问, 同时动态更新域名123此篇文章献给&amp;#x27;懒人&amp;#x27;同学~  相信很多同学在自己家里学习啥的搞些小网站小程序, 比如部署一些在线看视频丶个人网盘丶个人博客等的网站, 但是在公司时想访问记录或查询一些资料, 但是又因为访问不了家庭网络而烦躁...    在此分享能使用任意外网访问家庭内网, 同时动态更新域名的方法.当然在此之前我使用过花生壳、公云等">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://pdyun.cc/images/img-1.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-2.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-3.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-4.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-5.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-6.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-7.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-8.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-9.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-10.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-12.png">
+<meta property="article:published_time" content="2021-08-13T16:16:00.000Z">
+<meta property="article:modified_time" content="2021-08-13T16:44:04.286Z">
+<meta property="article:author" content="Peilin Deng">
+<meta property="article:tag" content="访问家庭内网">
+<meta property="article:tag" content="动态DDNS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://pdyun.cc/images/img-1.png">
+
+<link rel="canonical" href="http://pdyun.cc/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  
+  
+
+
+  <title>外网访问家庭网络小记 | 牧场小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">牧场小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          外网访问家庭网络小记
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-14 00:16:00 / 修改时间：00:44:04" itemprop="dateCreated datePublished" datetime="2021-08-14T00:16:00+08:00">2021-08-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/" class="post-meta-item leancloud_visitors" data-flag-title="外网访问家庭网络小记" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="记录一次家庭内网使用DDNS让外网访问-同时动态更新域名"><a href="#记录一次家庭内网使用DDNS让外网访问-同时动态更新域名" class="headerlink" title="记录一次家庭内网使用DDNS让外网访问, 同时动态更新域名"></a>记录一次家庭内网使用DDNS让外网访问, 同时动态更新域名</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">此篇文章献给&#x27;懒人&#x27;同学~  </span><br><span class="line">相信很多同学在自己家里学习啥的搞些小网站小程序, 比如部署一些在线看视频丶个人网盘丶个人博客等的网站, </span><br><span class="line">但是在公司时想访问记录或查询一些资料, 但是又因为访问不了家庭网络而烦躁...  </span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>在此分享能使用任意外网<strong>访问家庭内网</strong>, 同时<strong>动态更新域名</strong>的方法.<br><em><strong>当然在此之前我使用过花生壳、公云等一些软件, 他也可以让你从外网访问家庭内网, 但是别的不说, 他限速而且收费呀… 自己搭建可以全速使用家里的带宽</strong></em><br>步骤如下: </p>
+</blockquote>
+<h2 id="一-外网访问"><a href="#一-外网访问" class="headerlink" title="一. 外网访问"></a>一. 外网访问</h2><span id="more"></span>
+<h3 id="1-申请公网IP"><a href="#1-申请公网IP" class="headerlink" title="1. 申请公网IP"></a>1. 申请公网IP</h3><blockquote>
+<p>想访问家庭网络必定需要找家里开网络的运营商, 让他们给开公网IP, 我家里使用的是电信宽带, 电话直接打 10000 号人工服务让他们帮忙开通, 理由嘛很简单( 找个借口说家里安装监控就给你开了 ) , 电信现在默认都是给的私网IP. </p>
+</blockquote>
+<h3 id="2-光猫改为桥接模式"><a href="#2-光猫改为桥接模式" class="headerlink" title="2. 光猫改为桥接模式"></a>2. 光猫改为桥接模式</h3><blockquote>
+<p>申请完公网IP先别急着挂, 还需要让他们把宽带网络改成桥接模式, 后面我们路由器使用拨号上网</p>
+</blockquote>
+<h3 id="3-查询宽带账号和密码"><a href="#3-查询宽带账号和密码" class="headerlink" title="3. 查询宽带账号和密码"></a>3. 查询宽带账号和密码</h3><blockquote>
+<p>由于路由器现在是使用拨号上网, 所以还需要找他运营商拿到宽带的账户和密码, 这些都是必要条件</p>
+</blockquote>
+<h3 id="4-设备网线连接"><a href="#4-设备网线连接" class="headerlink" title="4. 设备网线连接"></a>4. 设备网线连接</h3><blockquote>
+<p>我们使用网线连接 <strong>光猫的网口</strong> 和 <strong>路由器WAN口</strong>, 主机的网线则联通路由器的LAN口, ( WAN口是连接外部网络, LAN口是连接内部网络, 家里的电脑网线都可以用LAN接口连接, 并且<strong>此时我们电脑是没有网络的</strong> )</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">graph LR</span><br><span class="line">光猫网口  --&gt; 路由器WAN口</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">graph LR</span><br><span class="line">路由器LAN口 --&gt; 电脑网口</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-设置路由器"><a href="#5-设置路由器" class="headerlink" title="5. 设置路由器"></a>5. 设置路由器</h3><blockquote>
+<p>此时已经具备的条件:<br><strong>公网ip, 宽带改为桥接模式, 宽带账号和密码, 设备网线正确连接</strong>  </p>
+</blockquote>
+<blockquote>
+<ul>
+<li>开始设置路由器:  </li>
+</ul>
+<p><strong>我的路由器设备使用的小米路由器, 暂以小米路由器为例</strong>, 路由器网关是 192.168.31.1 , 自己的路由器网关自己搜一下, 然后输入路由器用户名密码</p>
+</blockquote>
+<blockquote>
+<ul>
+<li>上网设置<br><img src="/images/img-1.png" alt="上网设置PPPoE拨号"><br>如图, 上网方式选择<strong>PPPOE手动拨号</strong>, 然后输入宽带的账号和密码即可  <br>拨号成功应该就可以上网了~~~</li>
+</ul>
+</blockquote>
+<h3 id="6-检查IP地址"><a href="#6-检查IP地址" class="headerlink" title="6. 检查IP地址"></a>6. 检查IP地址</h3><blockquote>
+<p>百度查询自己本机的IP是否与路由器拨号成功获得的IP地址相同.<br><strong>++如果不同, 那一般都是私网ip 没有申请公网ip的.++</strong><br><img src="/images/img-2.png" alt="检查ip是否一致"></p>
+</blockquote>
+<h3 id="7-路由转发"><a href="#7-路由转发" class="headerlink" title="7. 路由转发"></a>7. 路由转发</h3><blockquote>
+<p>一般路由器都拥有路由转发功能, 可以自己配置转发规则.  <br><img src="/images/img-3.png" alt="配置路由转发规则"></p>
+</blockquote>
+<blockquote>
+<ul>
+<li>端口转发: 映射端口, 访问外网 ip:端口, 会直接映射到内网的ip:端口<br>如: **访问外网地址 22.135.173.55:8848, 会被转发到内网 192.168.31.26:8000 **<br><img src="/images/img-4.png" alt="端口映射规则"></li>
+</ul>
+</blockquote>
+<h3 id="8-测试"><a href="#8-测试" class="headerlink" title="8. 测试"></a>8. 测试</h3><blockquote>
+<ul>
+<li>我本地电脑随便开启一个服务<br><img src="/images/img-5.png"><br>部署成功, 内网ip:port  <strong>192.168.31.26:8401</strong><br><img src="/images/img-6.png" alt="启动成功啦, 内网IP访问"></li>
+<li>接着使用外网ip访问, <strong>注意自己映射的端口哦</strong><br><img src="/images/img-7.png" alt="外网IP访问"><br>访问成功~~</li>
+</ul>
+</blockquote>
+<h2 id="二-设置动态更新域名"><a href="#二-设置动态更新域名" class="headerlink" title="二. 设置动态更新域名"></a>二. 设置动态更新域名</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">由于电信给的公网IP是动态IP, 每次关闭重启光猫都会更换公网IP地址, 所以这也是个很头疼的事情... </span><br><span class="line">个人方案解决了该情况</span><br></pre></td></tr></table></figure>
+<h3 id="1-准备域名-本方案只支持腾讯云域名-对接腾讯云API"><a href="#1-准备域名-本方案只支持腾讯云域名-对接腾讯云API" class="headerlink" title="1. 准备域名 ( 本方案只支持腾讯云域名, 对接腾讯云API )"></a>1. 准备域名 ( 本方案只支持腾讯云域名, 对接腾讯云API )</h3><blockquote>
+<p>我使用的方法, 使用Python写了一个脚本, 动态去更新域名, 需要准备一个腾讯云的域名。<br>提供购买链接 <a target="_blank" rel="noopener" href="https://buy.cloud.tencent.com/domain?from=console">https://buy.cloud.tencent.com/domain?from=console</a></p>
+</blockquote>
+<h3 id="2-开通腾讯云-API-密钥"><a href="#2-开通腾讯云-API-密钥" class="headerlink" title="2. 开通腾讯云 API 密钥"></a>2. 开通腾讯云 API 密钥</h3><blockquote>
+<p>API 密钥代表你的账号身份和所拥有的权限，使用腾讯云 API 可以操作您名下的所有腾讯云资源。<br>给上链接 <a target="_blank" rel="noopener" href="https://console.cloud.tencent.com/cam/capi">https://console.cloud.tencent.com/cam/capi</a></p>
+<ul>
+<li>开通完后新建密钥( 单机即可, 自动创建 ):<br><img src="/images/img-8.png" alt="新建腾讯云 API 密钥"></li>
+</ul>
+</blockquote>
+<h3 id="3-安装Python3"><a href="#3-安装Python3" class="headerlink" title="3. 安装Python3"></a>3. 安装Python3</h3><blockquote>
+<p>由于使用的 Python 写的脚本, 需要环境拥有Python, 版本 3 及以上.<br>安装方法参考 <a target="_blank" rel="noopener" href="https://www.cnblogs.com/weven/p/7252917.html">https://www.cnblogs.com/weven/p/7252917.html</a><br>安装完成后查看Python版本:<br><img src="/images/img-9.png" alt="查看Python版本"></p>
+</blockquote>
+<h3 id="4-献上脚本"><a href="#4-献上脚本" class="headerlink" title="4. 献上脚本"></a>4. 献上脚本</h3><blockquote>
+<p><img src="/images/img-10.png" alt="upload successful"></p>
+<ul>
+<li>复制以下代码 保存为  <strong>xxx.py</strong> 格式就行</li>
+</ul>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br></pre></td><td class="code"><pre><span class="line">VERSION = <span class="number">1</span></span><br><span class="line"><span class="keyword">from</span> hashlib <span class="keyword">import</span> sha1</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">import</span> hmac</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">DDnsHelper</span>():</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, mid=<span class="number">0</span>, params=&#123;&#125;</span>):</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">excute</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="keyword">import</span> requests</span><br><span class="line">        SecretId = <span class="string">&#x27;*需要填写*&#x27;</span></span><br><span class="line">        SecretKey = <span class="string">&#x27;*需要填写*&#x27;</span></span><br><span class="line">        runningPause = <span class="number">20</span></span><br><span class="line">        domainName = <span class="string">&#x27;pelyhome.cc&#x27;</span> <span class="comment"># *需要填写你自己的域名*</span></span><br><span class="line">        ddnsDomains = [</span><br><span class="line">            &#123;</span><br><span class="line">            	  <span class="comment"># *需要填写你自己的域名*</span></span><br><span class="line">                <span class="string">&#x27;name&#x27;</span>: <span class="string">&#x27;@.pelyhome.cc&#x27;</span>, </span><br><span class="line">                <span class="string">&#x27;value&#x27;</span>: <span class="string">&#x27;&#x27;</span>, <span class="comment"># </span></span><br><span class="line">                <span class="string">&#x27;always&#x27;</span>: <span class="literal">False</span>,</span><br><span class="line">                <span class="comment"># DNS生存时间 </span></span><br><span class="line">                <span class="string">&#x27;ttl&#x27;</span>: <span class="number">600</span>, </span><br><span class="line">                <span class="comment"># 主机记录, 即域名前缀</span></span><br><span class="line">                <span class="string">&#x27;subDomain&#x27;</span>: <span class="string">&#x27;@&#x27;</span>, </span><br><span class="line">                <span class="string">&#x27;recordId&#x27;</span>: <span class="string">&#x27;&#x27;</span>,</span><br><span class="line">                <span class="comment"># 记录类型</span></span><br><span class="line">                <span class="string">&#x27;recordType&#x27;</span>: <span class="string">&#x27;A&#x27;</span>, </span><br><span class="line">                <span class="comment"># 线路类型, 指定细分解析线路</span></span><br><span class="line">                <span class="string">&#x27;recordLine&#x27;</span>: <span class="string">&#x27;默认&#x27;</span>, </span><br><span class="line">                <span class="string">&#x27;description&#x27;</span>: <span class="string">&#x27;本地提供api服务的地址&#x27;</span>,</span><br><span class="line">                <span class="comment"># 查看本地域名的接口, 这是自己写的接口, 仅仅返回一个纯粹的本地外网IP地址</span></span><br><span class="line">                <span class="string">&#x27;localDomain&#x27;</span>: <span class="string">&#x27;https://www.hosix.cn/ip&#x27;</span>,</span><br><span class="line">                <span class="string">&#x27;localValue&#x27;</span>: <span class="string">&#x27;&#x27;</span></span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        ]</span><br><span class="line"></span><br><span class="line">        <span class="class"><span class="keyword">class</span> <span class="title">tenXunDDNS_Helper</span>():</span></span><br><span class="line">            <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self</span>):</span></span><br><span class="line">                self.running = <span class="literal">True</span></span><br><span class="line">                self.action = <span class="string">&quot;&quot;</span></span><br><span class="line">                self.secretId = SecretId</span><br><span class="line">                self.nonce = <span class="number">38651</span></span><br><span class="line">                self.region = <span class="string">&#x27;ap-guangzhou&#x27;</span></span><br><span class="line">                self.secretKey = SecretKey</span><br><span class="line">                self.version = <span class="string">&#x27;2017-03-12&#x27;</span></span><br><span class="line">                self.domain = domainName</span><br><span class="line">                self.url = <span class="string">&#x27;cns.api.qcloud.com/v2/index.php&#x27;</span></span><br><span class="line">                self.httpType = <span class="string">&#x27;https://&#x27;</span></span><br><span class="line">                self.endpoint = self.httpType + self.url</span><br><span class="line">                self.ddnsDomain = ddnsDomains</span><br><span class="line">                self.runningPause = runningPause</span><br><span class="line">                self.remoteRecords = []</span><br><span class="line"></span><br><span class="line">            <span class="function"><span class="keyword">def</span> <span class="title">getServerIp</span>(<span class="params">self</span>):</span></span><br><span class="line">                timeStamp = <span class="built_in">int</span>(time.time())</span><br><span class="line">                params = &#123;&#125;</span><br><span class="line">                params[<span class="string">&#x27;Action&#x27;</span>] = <span class="string">&#x27;RecordList&#x27;</span></span><br><span class="line">                params[<span class="string">&#x27;domain&#x27;</span>] = self.domain</span><br><span class="line">                params[<span class="string">&#x27;Nonce&#x27;</span>] = self.nonce</span><br><span class="line">                params[<span class="string">&#x27;SecretId&#x27;</span>] = self.secretId</span><br><span class="line">                params[<span class="string">&#x27;Timestamp&#x27;</span>] = timeStamp</span><br><span class="line">                s = self.get_string_to_sign(<span class="string">&quot;GET&quot;</span>, self.url, params)</span><br><span class="line">                Signature = self.sign_str(self.secretKey, s, sha1)</span><br><span class="line">                params[<span class="string">&#x27;Signature&#x27;</span>] = Signature</span><br><span class="line">                response = requests.get(self.endpoint, params=params)</span><br><span class="line">                result = json.loads(response.text)</span><br><span class="line">                <span class="keyword">if</span> <span class="built_in">int</span>(result[<span class="string">&#x27;code&#x27;</span>]) != <span class="number">0</span>:</span><br><span class="line">                    <span class="keyword">raise</span> Exception(<span class="string">&#x27;获取域名失败&#x27;</span> + <span class="string">&#x27;:&#x27;</span> + <span class="built_in">str</span>(result[<span class="string">&#x27;code&#x27;</span>]) + <span class="string">&#x27;:&#x27;</span> + result[<span class="string">&#x27;message&#x27;</span>])</span><br><span class="line">                data = result[<span class="string">&#x27;data&#x27;</span>]</span><br><span class="line"></span><br><span class="line">                self.remoteRecords = data[<span class="string">&#x27;records&#x27;</span>]</span><br><span class="line">                <span class="comment"># print(self.remoteRecords)</span></span><br><span class="line"></span><br><span class="line">            <span class="function"><span class="keyword">def</span> <span class="title">postServerIp</span>(<span class="params">self, domain</span>):</span></span><br><span class="line">                timeStamp = <span class="built_in">int</span>(time.time())</span><br><span class="line">                params = &#123;&#125;</span><br><span class="line">                params[<span class="string">&#x27;Action&#x27;</span>] = <span class="string">&#x27;RecordCreate&#x27;</span></span><br><span class="line">                params[<span class="string">&#x27;domain&#x27;</span>] = self.domain</span><br><span class="line">                params[<span class="string">&#x27;Nonce&#x27;</span>] = self.nonce</span><br><span class="line">                params[<span class="string">&#x27;SecretId&#x27;</span>] = self.secretId</span><br><span class="line">                params[<span class="string">&#x27;Timestamp&#x27;</span>] = timeStamp</span><br><span class="line">                params[<span class="string">&#x27;subDomain&#x27;</span>] = domain[<span class="string">&#x27;subDomain&#x27;</span>]</span><br><span class="line">                params[<span class="string">&#x27;recordType&#x27;</span>] = domain[<span class="string">&#x27;recordType&#x27;</span>]</span><br><span class="line">                params[<span class="string">&#x27;recordLine&#x27;</span>] = domain[<span class="string">&#x27;recordLine&#x27;</span>]</span><br><span class="line">                params[<span class="string">&#x27;value&#x27;</span>] = domain[<span class="string">&#x27;value&#x27;</span>]</span><br><span class="line">                params[<span class="string">&#x27;ttl&#x27;</span>] = domain[<span class="string">&#x27;ttl&#x27;</span>]</span><br><span class="line">                s = self.get_string_to_sign(<span class="string">&quot;GET&quot;</span>, self.url, params)</span><br><span class="line">                Signature = self.sign_str(self.secretKey, s, sha1)</span><br><span class="line">                params[<span class="string">&#x27;Signature&#x27;</span>] = Signature</span><br><span class="line">                response = requests.get(self.endpoint, params=params)</span><br><span class="line">                result = json.loads(response.text)</span><br><span class="line">                <span class="keyword">if</span> <span class="built_in">int</span>(result[<span class="string">&#x27;code&#x27;</span>]) != <span class="number">0</span>:</span><br><span class="line">                    <span class="keyword">raise</span> Exception(<span class="string">&#x27;添加域名失败&#x27;</span> + <span class="string">&#x27;:&#x27;</span> + <span class="built_in">str</span>(result[<span class="string">&#x27;code&#x27;</span>]) + <span class="string">&#x27;:&#x27;</span> + result[<span class="string">&#x27;message&#x27;</span>])</span><br><span class="line">                data = result[<span class="string">&#x27;data&#x27;</span>]</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">&#x27;添加域名成功ip:%s,本地ip:%s,域名:%s&#x27;</span> % (domain[<span class="string">&#x27;value&#x27;</span>], domain[<span class="string">&#x27;localValue&#x27;</span>], domain[<span class="string">&#x27;name&#x27;</span>]))</span><br><span class="line"></span><br><span class="line">            <span class="function"><span class="keyword">def</span> <span class="title">updateServerIp</span>(<span class="params">self, domain</span>):</span></span><br><span class="line">                timeStamp = <span class="built_in">int</span>(time.time())</span><br><span class="line">                params = &#123;&#125;</span><br><span class="line">                params[<span class="string">&#x27;Action&#x27;</span>] = <span class="string">&#x27;RecordModify&#x27;</span></span><br><span class="line">                params[<span class="string">&#x27;domain&#x27;</span>] = self.domain</span><br><span class="line">                params[<span class="string">&#x27;Nonce&#x27;</span>] = self.nonce</span><br><span class="line">                params[<span class="string">&#x27;SecretId&#x27;</span>] = self.secretId</span><br><span class="line">                params[<span class="string">&#x27;Timestamp&#x27;</span>] = timeStamp</span><br><span class="line">                params[<span class="string">&#x27;subDomain&#x27;</span>] = domain[<span class="string">&#x27;subDomain&#x27;</span>]</span><br><span class="line">                params[<span class="string">&#x27;recordId&#x27;</span>] = domain[<span class="string">&#x27;recordId&#x27;</span>]</span><br><span class="line">                params[<span class="string">&#x27;recordType&#x27;</span>] = domain[<span class="string">&#x27;recordType&#x27;</span>]</span><br><span class="line">                params[<span class="string">&#x27;recordLine&#x27;</span>] = domain[<span class="string">&#x27;recordLine&#x27;</span>]</span><br><span class="line">                params[<span class="string">&#x27;value&#x27;</span>] = domain[<span class="string">&#x27;localValue&#x27;</span>]</span><br><span class="line">                params[<span class="string">&#x27;ttl&#x27;</span>] = domain[<span class="string">&#x27;ttl&#x27;</span>]</span><br><span class="line">                s = self.get_string_to_sign(<span class="string">&quot;GET&quot;</span>, self.url, params)</span><br><span class="line">                Signature = self.sign_str(self.secretKey, s, sha1)</span><br><span class="line">                params[<span class="string">&#x27;Signature&#x27;</span>] = Signature</span><br><span class="line">                response = requests.get(self.endpoint, params=params)</span><br><span class="line">                result = json.loads(response.text)</span><br><span class="line">                <span class="keyword">if</span> <span class="built_in">int</span>(result[<span class="string">&#x27;code&#x27;</span>]) != <span class="number">0</span>:</span><br><span class="line">                    <span class="keyword">raise</span> Exception(<span class="string">&#x27;更新域名失败&#x27;</span> + <span class="string">&#x27;:&#x27;</span> + <span class="built_in">str</span>(result[<span class="string">&#x27;code&#x27;</span>]) + <span class="string">&#x27;:&#x27;</span> + result[<span class="string">&#x27;message&#x27;</span>])</span><br><span class="line">                data = result[<span class="string">&#x27;data&#x27;</span>]</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">&#x27;更新域名成功源ip:%s,本地ip:%s,域名:%s&#x27;</span> % (domain[<span class="string">&#x27;value&#x27;</span>], domain[<span class="string">&#x27;localValue&#x27;</span>], domain[<span class="string">&#x27;name&#x27;</span>]))</span><br><span class="line"></span><br><span class="line">            <span class="function"><span class="keyword">def</span> <span class="title">deleteServerIp</span>(<span class="params">self</span>):</span></span><br><span class="line">                <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">            <span class="function"><span class="keyword">def</span> <span class="title">getLocalDomain</span>(<span class="params">self, domain</span>):</span></span><br><span class="line">                res = requests.get(domain[<span class="string">&#x27;localDomain&#x27;</span>])</span><br><span class="line">                ip = res.content.decode(<span class="string">&quot;utf-8&quot;</span>).strip()</span><br><span class="line">                <span class="keyword">return</span> ip</span><br><span class="line"></span><br><span class="line">            <span class="function"><span class="keyword">def</span> <span class="title">clearDnsRecord</span>(<span class="params">self</span>):</span></span><br><span class="line">                <span class="keyword">for</span> domain <span class="keyword">in</span> self.ddnsDomain:</span><br><span class="line">                    <span class="keyword">if</span> <span class="keyword">not</span> domain[<span class="string">&#x27;always&#x27;</span>]:</span><br><span class="line">                        domain[<span class="string">&#x27;value&#x27;</span>] = <span class="string">&#x27;&#x27;</span></span><br><span class="line">                        domain[<span class="string">&#x27;localValue&#x27;</span>] = <span class="string">&#x27;&#x27;</span></span><br><span class="line"></span><br><span class="line">            <span class="function"><span class="keyword">def</span> <span class="title">run</span>(<span class="params">self</span>):</span></span><br><span class="line">                self.getServerIp()</span><br><span class="line">                <span class="keyword">for</span> domain <span class="keyword">in</span> self.ddnsDomain:</span><br><span class="line">                    <span class="keyword">if</span> (<span class="keyword">not</span> domain[<span class="string">&#x27;always&#x27;</span>]):</span><br><span class="line">                        <span class="comment"># 获取本地ip</span></span><br><span class="line">                        <span class="keyword">try</span>:</span><br><span class="line">                            domain[<span class="string">&#x27;localValue&#x27;</span>] = self.getLocalDomain(domain)</span><br><span class="line">                        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">                            <span class="built_in">print</span>(<span class="string">&quot;获取本地ip失败 不更新:%s,本地ip:%s,域名:%s&quot;</span> % (</span><br><span class="line">                            domain[<span class="string">&#x27;value&#x27;</span>], domain[<span class="string">&#x27;localValue&#x27;</span>], domain[<span class="string">&#x27;name&#x27;</span>]))</span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        <span class="keyword">continue</span></span><br><span class="line">                    flag = <span class="literal">False</span></span><br><span class="line">                    <span class="keyword">for</span> remoteDomain <span class="keyword">in</span> self.remoteRecords:</span><br><span class="line">                        <span class="keyword">if</span> (domain[<span class="string">&#x27;subDomain&#x27;</span>] == remoteDomain[<span class="string">&#x27;name&#x27;</span>]):</span><br><span class="line">                            domain[<span class="string">&#x27;recordId&#x27;</span>] = remoteDomain[<span class="string">&#x27;id&#x27;</span>]</span><br><span class="line">                            domain[<span class="string">&#x27;value&#x27;</span>] = remoteDomain[<span class="string">&#x27;value&#x27;</span>]</span><br><span class="line">                            flag = <span class="literal">True</span></span><br><span class="line">                            <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> flag:</span><br><span class="line">                        <span class="keyword">if</span> (domain[<span class="string">&#x27;value&#x27;</span>] == domain[<span class="string">&#x27;localValue&#x27;</span>]):</span><br><span class="line">                            <span class="keyword">pass</span></span><br><span class="line">                            <span class="comment"># print(&quot;无需更新ip:%s,本地ip:%s,域名:%s&quot; % (domain[&#x27;value&#x27;],domain[&#x27;localValue&#x27;],domain[&#x27;name&#x27;]))</span></span><br><span class="line">                        <span class="keyword">else</span>:</span><br><span class="line">                            self.updateServerIp(domain)</span><br><span class="line">                        <span class="keyword">continue</span></span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        domain[<span class="string">&#x27;value&#x27;</span>] = domain[<span class="string">&#x27;localValue&#x27;</span>]</span><br><span class="line">                        self.postServerIp(domain)</span><br><span class="line">                self.clearDnsRecord()</span><br><span class="line"></span><br><span class="line">            <span class="function"><span class="keyword">def</span> <span class="title">start</span>(<span class="params">self</span>):</span></span><br><span class="line">                start_time = <span class="built_in">int</span>(time.time())</span><br><span class="line">                <span class="keyword">while</span> self.running:</span><br><span class="line">                    next_time = <span class="built_in">int</span>(time.time()) + self.runningPause</span><br><span class="line">                    <span class="keyword">if</span> (next_time - start_time) &gt; self.runningPause:</span><br><span class="line">                        <span class="keyword">try</span>:</span><br><span class="line">                            self.run()</span><br><span class="line">                        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">                            <span class="built_in">print</span>(e.__str__())</span><br><span class="line">                        start_time = start_time + self.runningPause</span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        time.sleep(self.runningPause / <span class="number">10</span>)</span><br><span class="line"></span><br><span class="line">            <span class="function"><span class="keyword">def</span> <span class="title">get_string_to_sign</span>(<span class="params">self, method, endpoint, params</span>):</span></span><br><span class="line">                s = method + endpoint + <span class="string">&quot;?&quot;</span></span><br><span class="line">                query_str = <span class="string">&quot;&amp;&quot;</span>.join(<span class="string">&quot;%s=%s&quot;</span> % (k, params[k]) <span class="keyword">for</span> k <span class="keyword">in</span> <span class="built_in">sorted</span>(params))</span><br><span class="line">                <span class="comment"># print(s + query_str)</span></span><br><span class="line">                <span class="keyword">return</span> s + query_str</span><br><span class="line"></span><br><span class="line">            <span class="function"><span class="keyword">def</span> <span class="title">sign_str</span>(<span class="params">self, key, s, method</span>):</span></span><br><span class="line">                hmac_str = hmac.new(key.encode(<span class="string">&quot;utf8&quot;</span>), s.encode(<span class="string">&quot;utf8&quot;</span>), method).digest()</span><br><span class="line">                <span class="keyword">return</span> base64.b64encode(hmac_str)</span><br><span class="line"></span><br><span class="line">        t1 = tenXunDDNS_Helper()</span><br><span class="line">        t1.start()</span><br><span class="line">d = DDnsHelper()</span><br><span class="line">d.excute()</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<ul>
+<li>最后双击运行~ OK  </li>
+</ul>
+</blockquote>
+<h3 id="5-运行原理和注意事项"><a href="#5-运行原理和注意事项" class="headerlink" title="5. 运行原理和注意事项"></a>5. 运行原理和注意事项</h3><blockquote>
+<ul>
+<li>原理:<br>该脚本是通过查询公网IP接口:<a target="_blank" rel="noopener" href="https://www.hosix.cn/ip">https://www.hosix.cn/ip</a> 来判断公网ip是否发生了改变, 如果发生了改变, 就会调用腾讯云API去动态更新域名. 非常简单…..</li>
+<li>注意事项:   </li>
+</ul>
+<p>1.该脚本需要持续运行, 如果是Linux系统, 直接挂后台运行即可, 该脚本资源消耗不高<br>2.如果提示没requests 运行下, 打开cmd窗口<br>输入: <strong>pip install requests</strong><br><img src="/images/img-12.png" alt="pip install requests"><br>3.如运行闪退, 请检查域名等是否正确填写</p>
+</blockquote>
+<p>如有问题请评论或留言: <a href="mailto:&#53;&#x34;&#52;&#48;&#x31;&#48;&#49;&#x36;&#53;&#64;&#113;&#113;&#x2e;&#99;&#x6f;&#x6d;">&#53;&#x34;&#52;&#48;&#x31;&#48;&#49;&#x36;&#53;&#64;&#113;&#113;&#x2e;&#99;&#x6f;&#x6d;</a></p>
+
+    </div>
+
+    
+    
+    
+<div>
+  
+    <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+  
+</div>
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Peilin Deng
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://pdyun.cc/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/" title="外网访问家庭网络小记">http://pdyun.cc/2021/08/14/外网访问家庭网络小记/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag"><i class="fa fa-tag"></i> 访问家庭内网</a>
+              <a href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag"><i class="fa fa-tag"></i> 动态DDNS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/10/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/" rel="prev" title="MyBatis 运行时序图">
+      <i class="fa fa-chevron-left"></i> MyBatis 运行时序图
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AE%B0%E5%BD%95%E4%B8%80%E6%AC%A1%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91%E4%BD%BF%E7%94%A8DDNS%E8%AE%A9%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE-%E5%90%8C%E6%97%B6%E5%8A%A8%E6%80%81%E6%9B%B4%E6%96%B0%E5%9F%9F%E5%90%8D"><span class="nav-text">记录一次家庭内网使用DDNS让外网访问, 同时动态更新域名</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80-%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE"><span class="nav-text">一. 外网访问</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%94%B3%E8%AF%B7%E5%85%AC%E7%BD%91IP"><span class="nav-text">1. 申请公网IP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%85%89%E7%8C%AB%E6%94%B9%E4%B8%BA%E6%A1%A5%E6%8E%A5%E6%A8%A1%E5%BC%8F"><span class="nav-text">2. 光猫改为桥接模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%9F%A5%E8%AF%A2%E5%AE%BD%E5%B8%A6%E8%B4%A6%E5%8F%B7%E5%92%8C%E5%AF%86%E7%A0%81"><span class="nav-text">3. 查询宽带账号和密码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E8%AE%BE%E5%A4%87%E7%BD%91%E7%BA%BF%E8%BF%9E%E6%8E%A5"><span class="nav-text">4. 设备网线连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E8%AE%BE%E7%BD%AE%E8%B7%AF%E7%94%B1%E5%99%A8"><span class="nav-text">5. 设置路由器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E6%A3%80%E6%9F%A5IP%E5%9C%B0%E5%9D%80"><span class="nav-text">6. 检查IP地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-%E8%B7%AF%E7%94%B1%E8%BD%AC%E5%8F%91"><span class="nav-text">7. 路由转发</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-%E6%B5%8B%E8%AF%95"><span class="nav-text">8. 测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C-%E8%AE%BE%E7%BD%AE%E5%8A%A8%E6%80%81%E6%9B%B4%E6%96%B0%E5%9F%9F%E5%90%8D"><span class="nav-text">二. 设置动态更新域名</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%87%86%E5%A4%87%E5%9F%9F%E5%90%8D-%E6%9C%AC%E6%96%B9%E6%A1%88%E5%8F%AA%E6%94%AF%E6%8C%81%E8%85%BE%E8%AE%AF%E4%BA%91%E5%9F%9F%E5%90%8D-%E5%AF%B9%E6%8E%A5%E8%85%BE%E8%AE%AF%E4%BA%91API"><span class="nav-text">1. 准备域名 ( 本方案只支持腾讯云域名, 对接腾讯云API )</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%BC%80%E9%80%9A%E8%85%BE%E8%AE%AF%E4%BA%91-API-%E5%AF%86%E9%92%A5"><span class="nav-text">2. 开通腾讯云 API 密钥</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%AE%89%E8%A3%85Python3"><span class="nav-text">3. 安装Python3</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E7%8C%AE%E4%B8%8A%E8%84%9A%E6%9C%AC"><span class="nav-text">4. 献上脚本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E8%BF%90%E8%A1%8C%E5%8E%9F%E7%90%86%E5%92%8C%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="nav-text">5. 运行原理和注意事项</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Peilin Deng"
+      src="/images/VX.png">
+  <p class="site-author-name" itemprop="name">Peilin Deng</p>
+  <div class="site-description" itemprop="description">IT 小站， 记录美好码园生活</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://www.cnblogs.com/dpl9963" title="博客园 → https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dpl9963" rel="noopener" target="_blank"><i class=" fa-fw"></i>博客园</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/PelyDeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;PelyDeng" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:544010165@qq.com" title="E-Mail → mailto:544010165@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+<script type="text/javascript" charset="utf-8" src="/js/tagcloud.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/tagcanvas.js"></script>
+<div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div id="myCanvasContainer" class="widget tagcloud">
+        <canvas width="250" height="250" id="resCanvas" style="width=100%">
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li></ul>
+        </canvas>
+    </div>
+</div>
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peilin Deng</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : true,
+      notify     : true,
+      appId      : 'HnJ9Yibfx60VyyJ8xucUkOS5-gzGzoHsz',
+      appKey     : 'tMGT7R2fSxRbTrOkaf3DfEg2',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+<script src="/live2d_models/packages/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2d_models/packages/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2d_models/packages/assets/assets/koharu.model.json"},"display":{"position":"left","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body>
+</html>
