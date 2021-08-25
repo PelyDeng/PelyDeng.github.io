@@ -196,7 +196,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/20/Spring-%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -210,7 +210,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/20/Spring-%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" class="post-title-link" itemprop="url">Spring 启动流程简述</a>
+            <a href="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/" class="post-title-link" itemprop="url">MySql 执行计划</a>
         </h2>
 
         <div class="post-meta">
@@ -221,20 +221,11 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-08-20 13:47:00 / 修改时间：15:10:45" itemprop="dateCreated datePublished" datetime="2021-08-20T13:47:00+08:00">2021-08-20</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
-                </span>
+              <time title="创建时间：2021-08-25 22:00:18 / 修改时间：22:02:04" itemprop="dateCreated datePublished" datetime="2021-08-25T22:00:18+08:00">2021-08-25</time>
             </span>
 
           
-            <span id="/2021/08/20/Spring-%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" class="post-meta-item leancloud_visitors" data-flag-title="Spring 启动流程简述" title="阅读次数">
+            <span id="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 执行计划" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -249,8 +240,515 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/20/Spring-%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/20/Spring-%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" itemprop="commentCount"></span>
+    <a title="valine" href="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="执行计划类型"><a href="#执行计划类型" class="headerlink" title="执行计划类型"></a>执行计划类型</h1><h2 id="const"><a href="#const" class="headerlink" title="const"></a>const</h2><p>直接通过聚簇索引或者二级索引+聚簇索引回源，查询到想要的数据。这种根据索引可以直接快速查询到数据的过程，在执行计划里称之为<strong>const</strong>。<br><font color="red">二级索引必须是unique，才是const。否则就是ref</font></p>
+<h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><p>一般走索引都是ref，如果是组合索引，则要求查询条件必须是从索引最左侧开始连续多列都是等值比较。    </p>
+<h2 id="range"><a href="#range" class="headerlink" title="range"></a>range</h2><p>对索引列使用范围查询。</p>
+<h2 id="index"><a href="#index" class="headerlink" title="index"></a>index</h2><p>只需要遍历二级索引就可以拿到想要的数据，而不需要回源到聚簇索引的访问方式。<br>索引：idx(S21,S22,S23,S24)；<br>SQL：SELECT S21,S22,S23 FROM TABLE WHERE S22 = ‘X’ AND S23 = ‘Z’;<br>第一反应：这个SQL无法直接从联合索引树的根节点进行二分查找。<br>基于上面的索引以及SQL，可以直接遍历联合索引树的叶子节点，找到所需要的数据，不需要再回源到聚簇索引进行二次查询，这种方式就是使用的index访问。<br>虽然遍历了叶子节点，但是叶子节点内容少。也比回表查询快。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/08/25/MySql-%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5/" class="post-title-link" itemprop="url">MySql 关于索引的一些特殊情况</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-25 21:59:00 / 修改时间：21:59:36" itemprop="dateCreated datePublished" datetime="2021-08-25T21:59:00+08:00">2021-08-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/25/MySql-%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 关于索引的一些特殊情况" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/25/MySql-%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="范围查询数据量过大导致索引失效"><a href="#范围查询数据量过大导致索引失效" class="headerlink" title="范围查询数据量过大导致索引失效"></a>范围查询数据量过大导致索引失效</h1><p>存在索引idx_fk_customer_id(customer_id)，表中数据16000条。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> rental <span class="keyword">WHERE</span> customer_id<span class="operator">&lt;</span><span class="number">102</span>; # 使用索引</span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> rental <span class="keyword">WHERE</span> customer_id<span class="operator">&lt;</span><span class="number">103</span>; # 全表扫描</span><br></pre></td></tr></table></figure>
+<p>当范围查询时，如果符合条件的数据过多时，因为建立索引的字段虽然在索引树上有序，但是这一部分数据还要回源到聚簇索引中再次查询，并且得到的数据在磁盘上并不是连续的，这样会产生大量的随机IO，而随机IO是非常慢的，与其这样还不如全表扫描。全表扫描最起码是顺序IO。</p>
+<h1 id="Semi-join半连接"><a href="#Semi-join半连接" class="headerlink" title="Semi join半连接"></a>Semi join半连接</h1><ul>
+<li>explain列中filtered为什么有时候不准</li>
+<li>Extra列中Using index condition都是索引下推吗？</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/" class="post-title-link" itemprop="url">MySql 索引机制</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-25 21:55:00 / 修改时间：21:55:41" itemprop="dateCreated datePublished" datetime="2021-08-25T21:55:00+08:00">2021-08-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 索引机制" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="主键索引的设计"><a href="#主键索引的设计" class="headerlink" title="主键索引的设计"></a>主键索引的设计</h1><p>每个数据页中都有一个页目录，可以方便在当前数据页中进行数据的查询。但是如果有多个数据页的情况下，对于一个主键的查询，得知数据在哪个数据页显得尤为重要。<br>因此针对主键设计了一个主键目录，就是把每个数据页的页号以及数据页中最小的主键放在一起，组成一个索引的目录，如下图：<br><img src="/images/img-54.png"><br>基于主键目录，先通过主键目录可以对比得到查询的数据可能在哪个数据页，然后到对应的数据页中基于二分法查找。</p>
+<h1 id="索引页"><a href="#索引页" class="headerlink" title="索引页"></a>索引页</h1>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E5%BC%95%E5%85%A5%E7%9A%84%E5%89%8D%E6%8F%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E5%BC%95%E5%85%A5%E7%9A%84%E5%89%8D%E6%8F%90/" class="post-title-link" itemprop="url">MySql 索引引入的前提</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-25 21:53:00 / 修改时间：21:54:55" itemprop="dateCreated datePublished" datetime="2021-08-25T21:53:00+08:00">2021-08-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E5%BC%95%E5%85%A5%E7%9A%84%E5%89%8D%E6%8F%90/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 索引引入的前提" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E5%BC%95%E5%85%A5%E7%9A%84%E5%89%8D%E6%8F%90/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E5%BC%95%E5%85%A5%E7%9A%84%E5%89%8D%E6%8F%90/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="磁盘数据页的存储结构"><a href="#磁盘数据页的存储结构" class="headerlink" title="磁盘数据页的存储结构"></a>磁盘数据页的存储结构</h1><h2 id="特性"><a href="#特性" class="headerlink" title="特性"></a>特性</h2><ul>
+<li>数据页是按顺序一页一页的存放的，两两相邻的数据页之间会采用双向链表的格式相互引用。</li>
+<li>数据页内部多个数据行通过主键顺序形成单向链表</li>
+<li>每个数据页都有一个页目录，根据数据行的主键存放了一个目录，同时数据行是被分散存储到不同的槽位里去的。所以每个数据页的目录里，就是这个页里没个主键跟所在槽位的映射关系。</li>
+</ul>
+<h2 id="主键查询"><a href="#主键查询" class="headerlink" title="主键查询"></a>主键查询</h2><p>通过传入的主键到页目录中根据主键进行二分查找，通过二分查找在目录中定位到数据的槽位，到对应的槽位遍历每一行数据进行对比</p>
+<h2 id="非主键查询"><a href="#非主键查询" class="headerlink" title="非主键查询"></a>非主键查询</h2><p>进入数据页里，根据单向链表依次遍历查找数据，性能很差</p>
+<h1 id="全表扫描"><a href="#全表扫描" class="headerlink" title="全表扫描"></a>全表扫描</h1><p>在没有任何索引数据结构的时候，无论如何查询数据，都是一个全表扫描的过程。根据双向链表依次把磁盘上的数据页加载到缓存页里去，然后在缓存页内部来查找那条数据。</p>
+<h1 id="页分裂"><a href="#页分裂" class="headerlink" title="页分裂"></a>页分裂</h1><p><img src="/images/img-61.png"><br>数据页中包含了一个起始行，行类型是2；包含了一个行类型为3的结束行（具体可以看03.数据在磁盘上的存储，里面有提到行格式）。其他行都是普通行，类型为0；<br>当不停的插入数据时，最开始在第一个数据页。当第一个数据页满了，就创建了第二个数据页。但是有时候主键不一定是自增长的，所以会出现第二页中的数据的主键大于第一页中的数据的主键；<br><strong>为了避免这种情况，在新增一个数据页的时候，会把前一个数据页中主键值较大的，挪动到新的数据页中来。然后把新插入的主键较小的数据挪到上一个数据页中，保证新数据页中的主键值一定比上一个数据页里的主键值大（索引的一个核心基础），这就是页分裂</strong></p>
+
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E9%94%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/08/25/MySql-%E9%94%81/" class="post-title-link" itemprop="url">MySql 锁机制</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-25 21:32:00 / 修改时间：21:42:26" itemprop="dateCreated datePublished" datetime="2021-08-25T21:32:00+08:00">2021-08-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/25/MySql-%E9%94%81/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 锁机制" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/25/MySql-%E9%94%81/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E9%94%81/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><p>当多个事务同时更新一条数据的时候，如何防止脏写的问题</p>
+<h1 id="锁机制的引入"><a href="#锁机制的引入" class="headerlink" title="锁机制的引入"></a>锁机制的引入</h1><p>依靠锁机制让多个事务更新同一行数据的时候串行化，避免同时更新。</p>
+<h1 id="锁机制下的更新步骤"><a href="#锁机制下的更新步骤" class="headerlink" title="锁机制下的更新步骤"></a>锁机制下的更新步骤</h1><ol>
+<li>事务A要更新一条数据，先判断当前数据是否有锁。没锁则当前事务创建一个锁，其中包含了自己的trx_id和等待状态，然后把锁和数据关联起来。</li>
+<li>此时数据和锁都是在内存中。</li>
+<li>事务B也要更新这条数据，检查数据是否有锁时发现存在着事务A创建的锁。则创建了属于自己的一个锁，其中等待状态为true。表示正在等待</li>
+<li>事务A更新完后，释放锁，然后寻找到事务B对这条数据加锁了。此时就会把事务B的锁中的等待状态修改为false，然后唤醒事务B。</li>
+</ol>
+<h1 id="行锁"><a href="#行锁" class="headerlink" title="行锁"></a>行锁</h1><h2 id="独占锁"><a href="#独占锁" class="headerlink" title="独占锁"></a>独占锁</h2>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/08/25/MySql-%E9%94%81/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/" class="post-title-link" itemprop="url">MySql MVCC机制</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-25 21:21:00 / 修改时间：21:31:39" itemprop="dateCreated datePublished" datetime="2021-08-25T21:21:00+08:00">2021-08-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/" class="post-meta-item leancloud_visitors" data-flag-title="MySql MVCC机制" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -266,14 +764,127 @@
 
       
           <blockquote>
-<p>beanDefinitionMap  -&gt; 用来存储 BeanDefinition(Bean 的配置信息)<br>factoryBeanObjectCache  -&gt;  用来存储原生 Bean 对象的Map, 指反射创建出的实际对象<br>factoryBeanInstanceCache  -&gt;  用来存储 BeanWrapper 的Map, 指原生 Bean 的包装类  </p>
+<p>MVCC：Multi-Version Concurrent Control，多版本并发控制。</p>
 </blockquote>
-<h3 id="Spring-启动流程简述"><a href="#Spring-启动流程简述" class="headerlink" title="Spring 启动流程简述"></a>Spring 启动流程简述</h3><h4 id="一-配置阶段"><a href="#一-配置阶段" class="headerlink" title="一. 配置阶段"></a>一. 配置阶段</h4><ul>
-<li>web.xml<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">DispatcherServlet 路径</span><br><span class="line">设定 init-param ( contextConfigLocation = classPath:application.xml )</span><br><span class="line">设定 url-pattern ( /* )</span><br><span class="line">配置 Annotation 等</span><br></pre></td></tr></table></figure></li>
+<h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><ol>
+<li>当多个线程执行事务的时候，对同一个缓存页里的一行数据进行更新。这个冲突如何处理</li>
+<li>当一个事务更新一条数据时，另一个事务在查询这条数据。</li>
+</ol>
+<h1 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h1><h2 id="脏写-amp-脏读"><a href="#脏写-amp-脏读" class="headerlink" title="脏写&amp;脏读"></a>脏写&amp;脏读</h2><p>因为一个事务去更新或者查询了另一个没有提交的事务更新过去的数据。因为另一个事务还没提交，所以随时可能回滚。导致自己更新的数据或者查询的数据没了。</p>
+<h2 id="不可重复读"><a href="#不可重复读" class="headerlink" title="不可重复读"></a>不可重复读</h2><p>在一个事务开始之后，多次读取同一条数据的结果因为其他事务修改的提交，显示为多次读取到不同的值。</p>
+<h2 id="幻读"><a href="#幻读" class="headerlink" title="幻读"></a>幻读</h2>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/" class="post-title-link" itemprop="url">MySql Undolog（回滚日志）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-25 21:18:00 / 修改时间：21:20:09" itemprop="dateCreated datePublished" datetime="2021-08-25T21:18:00+08:00">2021-08-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/" class="post-meta-item leancloud_visitors" data-flag-title="MySql Undolog（回滚日志）" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><p>为了在事务提交前，随时能够回滚缓存页中已经修改的数据，就需要用undolog来记录之前的改动情况。新增操作就对应着一个删除操作来回滚，删除操作也有对应的一个新增操作。更新操作也有对应的更新操作。</p>
+<h1 id="回滚类型"><a href="#回滚类型" class="headerlink" title="回滚类型"></a>回滚类型</h1><p>undolog根据操作类型分为3种类型。</p>
+<h2 id="新增"><a href="#新增" class="headerlink" title="新增"></a>新增</h2><p>类型：TRX_UNDO_INSERT_REC<br>内容：</p>
+<ul>
+<li>日志开始位置</li>
+<li>主键的各列长度和值（可能是联合主键）</li>
+<li>表id</li>
+<li>undolog日志编号</li>
+<li>undolog日志类型</li>
+<li>日志结束位置<br>操作：<br>在回滚时，通过获取主键的值以及表id可以直接定位到对应的缓存页，从里面删除之前插入的数据 </li>
 </ul>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/08/20/Spring-%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/#more" rel="contents">
+              <a class="btn" href="/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -300,7 +911,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/19/Spring-%E5%9F%BA%E7%A1%80%E8%AE%A4%E7%9F%A5%E4%B8%8E%E6%8A%80%E6%9C%AF%E6%9E%B6%E6%9E%84/">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -314,7 +925,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/19/Spring-%E5%9F%BA%E7%A1%80%E8%AE%A4%E7%9F%A5%E4%B8%8E%E6%8A%80%E6%9C%AF%E6%9E%B6%E6%9E%84/" class="post-title-link" itemprop="url">Spring 基础认知与技术架构</a>
+            <a href="/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/" class="post-title-link" itemprop="url">MySql Redolog（重做日志）</a>
         </h2>
 
         <div class="post-meta">
@@ -325,7 +936,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-08-19 23:10:00 / 修改时间：23:25:13" itemprop="dateCreated datePublished" datetime="2021-08-19T23:10:00+08:00">2021-08-19</time>
+              <time title="创建时间：2021-08-25 21:11:00 / 修改时间：21:14:30" itemprop="dateCreated datePublished" datetime="2021-08-25T21:11:00+08:00">2021-08-25</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -338,7 +949,7 @@
             </span>
 
           
-            <span id="/2021/08/19/Spring-%E5%9F%BA%E7%A1%80%E8%AE%A4%E7%9F%A5%E4%B8%8E%E6%8A%80%E6%9C%AF%E6%9E%B6%E6%9E%84/" class="post-meta-item leancloud_visitors" data-flag-title="Spring 基础认知与技术架构" title="阅读次数">
+            <span id="/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/" class="post-meta-item leancloud_visitors" data-flag-title="MySql Redolog（重做日志）" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -353,8 +964,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/19/Spring-%E5%9F%BA%E7%A1%80%E8%AE%A4%E7%9F%A5%E4%B8%8E%E6%8A%80%E6%9C%AF%E6%9E%B6%E6%9E%84/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/19/Spring-%E5%9F%BA%E7%A1%80%E8%AE%A4%E7%9F%A5%E4%B8%8E%E6%8A%80%E6%9C%AF%E6%9E%B6%E6%9E%84/" itemprop="commentCount"></span>
+    <a title="valine" href="/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -369,23 +980,15 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="Spring"><a href="#Spring" class="headerlink" title="Spring"></a>Spring</h2><blockquote>
-<p>Spring 是一个轻量级Java开发框架，最早有Rod Johnson创建，目的是为了解决企业级应用开发的业务逻辑层和其他各层的耦合问题。它是一个分层的JavaSE/JavaEE full-stack（一站式）轻量级开源框架，为开发Java应用程序提供全面的基础架构支持。Spring负责基础架构，因此Java开发者可以专注于应用程序的开发。 </p>
-</blockquote>
-<blockquote>
-<p>Spring最根本的使命是解决企业级应用开发的复杂性，即简化Java开发。</p>
-</blockquote>
-<h3 id="1-Spring-简化开发的四个基本策略"><a href="#1-Spring-简化开发的四个基本策略" class="headerlink" title="1. Spring 简化开发的四个基本策略"></a>1. Spring 简化开发的四个基本策略</h3><blockquote>
-<ol>
-<li>基于POJO 的轻量级和最小侵入性编程.</li>
-<li>通过依赖注入和面向接口松耦合.</li>
-<li>基于切面和惯性进行声明式编程.</li>
-<li>通过切面和模板减少样版式代码.</li>
+          <h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><p>在执行增删改操作的时候，是基于Buffer Pool中的缓存页中的数据的。更新了缓存页中的数据后，会写入一条数据到Redo Log中。在提交事务的时候，会立马把Redo Log刷入磁盘（推荐方式），然后在RedoLog中写入binlog信息和一个commit标记，事务至此提交完毕。</p>
+<h1 id="FAQ"><a href="#FAQ" class="headerlink" title="FAQ"></a>FAQ</h1><h2 id="RedoLog保障了什么"><a href="#RedoLog保障了什么" class="headerlink" title="RedoLog保障了什么"></a>RedoLog保障了什么</h2><p>当更新了缓存中的数据页后，缓存页还没有刷到磁盘上。MYSQL宕机，那么MYSQL重启后，会直接读取RedoLog中的内容，重做到Buffer Pool中，然后在刷到磁盘。因为RedoLog是顺序读写，所以效率很高。并且为了保证数据的不丢失，RedoLog也要设置成不经过OS Cache。</p>
+<h2 id="为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？"><a href="#为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？" class="headerlink" title="为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？"></a>为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？</h2><ol>
+<li>一个缓存页是16KB，刷盘比较耗时。而且你可能只修改了几个字节的数据。</li>
+<li>缓存页刷入磁盘是随机读写。效率很低。而RedoLog是顺序读写，效率高</li>
 </ol>
-</blockquote>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/08/19/Spring-%E5%9F%BA%E7%A1%80%E8%AE%A4%E7%9F%A5%E4%B8%8E%E6%8A%80%E6%9C%AF%E6%9E%B6%E6%9E%84/#more" rel="contents">
+              <a class="btn" href="/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -412,7 +1015,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -426,7 +1029,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/" class="post-title-link" itemprop="url">外网访问家庭网络小记</a>
+            <a href="/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/" class="post-title-link" itemprop="url">MySql 数据在磁盘上的存储</a>
         </h2>
 
         <div class="post-meta">
@@ -437,7 +1040,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-08-14 00:16:00 / 修改时间：00:44:04" itemprop="dateCreated datePublished" datetime="2021-08-14T00:16:00+08:00">2021-08-14</time>
+              <time title="创建时间：2021-08-25 21:09:00 / 修改时间：21:16:03" itemprop="dateCreated datePublished" datetime="2021-08-25T21:09:00+08:00">2021-08-25</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -450,7 +1053,7 @@
             </span>
 
           
-            <span id="/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/" class="post-meta-item leancloud_visitors" data-flag-title="外网访问家庭网络小记" title="阅读次数">
+            <span id="/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 数据在磁盘上的存储" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -465,8 +1068,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/" itemprop="commentCount"></span>
+    <a title="valine" href="/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -481,14 +1084,14 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="记录一次家庭内网使用DDNS让外网访问-同时动态更新域名"><a href="#记录一次家庭内网使用DDNS让外网访问-同时动态更新域名" class="headerlink" title="记录一次家庭内网使用DDNS让外网访问, 同时动态更新域名"></a>记录一次家庭内网使用DDNS让外网访问, 同时动态更新域名</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">此篇文章献给&#x27;懒人&#x27;同学~  </span><br><span class="line">相信很多同学在自己家里学习啥的搞些小网站小程序, 比如部署一些在线看视频丶个人网盘丶个人博客等的网站, </span><br><span class="line">但是在公司时想访问记录或查询一些资料, 但是又因为访问不了家庭网络而烦躁...  </span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>在此分享能使用任意外网<strong>访问家庭内网</strong>, 同时<strong>动态更新域名</strong>的方法.<br><em><strong>当然在此之前我使用过花生壳、公云等一些软件, 他也可以让你从外网访问家庭内网, 但是别的不说, 他限速而且收费呀… 自己搭建可以全速使用家里的带宽</strong></em><br>步骤如下: </p>
-</blockquote>
-<h2 id="一-外网访问"><a href="#一-外网访问" class="headerlink" title="一. 外网访问"></a>一. 外网访问</h2>
+          <h1 id="物理数据存储格式"><a href="#物理数据存储格式" class="headerlink" title="物理数据存储格式"></a>物理数据存储格式</h1><h2 id="行格式"><a href="#行格式" class="headerlink" title="行格式"></a>行格式</h2><ul>
+<li>COMPACT格式<br>  大致格式：变长字段的长度列表，null值列表（长度为8n），数据头[隐藏字段]，col1的值，col2的值。。。    </li>
+<li>xxx格式</li>
+</ul>
+<h2 id="变长字段的存储"><a href="#变长字段的存储" class="headerlink" title="变长字段的存储"></a>变长字段的存储</h2><p>因为变长字段的内容不固定，所以无法判断数据要从何处截断，因此在数据的头部保存了变长字段的长度列表。多个变长字段按照字段顺序<font color="red"><strong>逆序</strong></font>放入变长字段的长度列表中。不考虑为null的列。    </p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/#more" rel="contents">
+              <a class="btn" href="/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -515,7 +1118,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/10/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -529,7 +1132,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/10/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/" class="post-title-link" itemprop="url">MyBatis 运行时序图</a>
+            <a href="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/" class="post-title-link" itemprop="url">MySql Buffer Pool 与数据页</a>
         </h2>
 
         <div class="post-meta">
@@ -540,7 +1143,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-08-10 19:22:00 / 修改时间：20:13:29" itemprop="dateCreated datePublished" datetime="2021-08-10T19:22:00+08:00">2021-08-10</time>
+              <time title="创建时间：2021-08-25 21:03:00 / 修改时间：21:17:03" itemprop="dateCreated datePublished" datetime="2021-08-25T21:03:00+08:00">2021-08-25</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -553,7 +1156,7 @@
             </span>
 
           
-            <span id="/2021/08/10/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/" class="post-meta-item leancloud_visitors" data-flag-title="MyBatis 运行时序图" title="阅读次数">
+            <span id="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/" class="post-meta-item leancloud_visitors" data-flag-title="MySql Buffer Pool 与数据页" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -568,8 +1171,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/10/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/10/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/" itemprop="commentCount"></span>
+    <a title="valine" href="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -584,10 +1187,12 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h3 id="架构分层"><a href="#架构分层" class="headerlink" title="架构分层"></a>架构分层</h3><p><img src="/images/pasted-4.png" alt="架构分层"></p>
+          <h1 id="Buffer-Pool"><a href="#Buffer-Pool" class="headerlink" title="Buffer Pool"></a>Buffer Pool</h1><p>在对数据库执行增删改查操作的时候，因为对磁盘的随机读写操作速度非常慢。所以通过Buffer Pool缓存磁盘的真实数据。</p>
+<h1 id="数据页"><a href="#数据页" class="headerlink" title="数据页"></a>数据页</h1><p>MYSQL中抽象出来的数据单位，MYSQL把很多行数据放在一个数据页里。实际上我们更新一行数据的时候，是通过数据库找到这行数据所在的数据页，然后加载到Buffer Pool中。<br>默认情况下，一个数据页是16KB</p>
+<h1 id="缓存页"><a href="#缓存页" class="headerlink" title="缓存页"></a>缓存页</h1><p>因为在Buffer Pool中存放的也是一个一个的数据页，也叫作缓存页。在默认情况下，是和磁盘上的数据页一一对应的，所以也是16KB。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/08/10/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/#more" rel="contents">
+              <a class="btn" href="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -610,219 +1215,11 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/07/A/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/VX.png">
-      <meta itemprop="name" content="Peilin Deng">
-      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="牧场小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/08/07/A/" class="post-title-link" itemprop="url">MyBatis 整合到 Spring 原理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-08-07 15:41:00" itemprop="dateCreated datePublished" datetime="2021-08-07T15:41:00+08:00">2021-08-07</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-08-10 20:10:57" itemprop="dateModified" datetime="2021-08-10T20:10:57+08:00">2021-08-10</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
-                </span>
-            </span>
-
-          
-            <span id="/2021/08/07/A/" class="post-meta-item leancloud_visitors" data-flag-title="MyBatis 整合到 Spring 原理" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/08/07/A/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/07/A/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="1-xml-配置"><a href="#1-xml-配置" class="headerlink" title="1. xml 配置"></a>1. xml 配置</h3><blockquote>
-<p>通过在Spring的 applicationContext.xml文件中做以下配置, 指定MyBatis 的mapper.xml 文件扫描路径, MapperScannerConfigurer 是 Mybatis 用于整合 Spring 的核心对象.</p>
-</blockquote>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/08/07/A/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-<div>
-  
-</div>
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/06/newpapername/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/VX.png">
-      <meta itemprop="name" content="Peilin Deng">
-      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="牧场小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/08/06/newpapername/" class="post-title-link" itemprop="url">Hello World</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-08-06 13:06:24" itemprop="dateCreated datePublished" datetime="2021-08-06T13:06:24+08:00">2021-08-06</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-08-10 19:21:31" itemprop="dateModified" datetime="2021-08-10T19:21:31+08:00">2021-08-10</time>
-              </span>
-
-          
-            <span id="/2021/08/06/newpapername/" class="post-meta-item leancloud_visitors" data-flag-title="Hello World" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/08/06/newpapername/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/06/newpapername/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <div class="poem-wrap">
-  <div class="poem-border poem-left"></div>
-  <div class="poem-border poem-right"></div>
-    <h1>念两句诗</h1>
-    <p id="poem">挑选中...</p>
-    <p id="info">
-
-  <script src="https://sdk.jinrishici.com/v2/browser/jinrishici.js" charset="utf-8"></script>
-  <script type="text/javascript">
-    jinrishici.load(function(result) {
-      poem.innerHTML = result.data.content
-      info.innerHTML = '【' + result.data.origin.dynasty + '】' + result.data.origin.author + '《' + result.data.origin.title + '》'
-      document.getElementById("poem").value(poem);
-      document.getElementById("info").value(info);  
-  });
-  </script>
-</div>
-      
-    </div>
-
-    
-    
-    
-<div>
-  
-</div>
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
+  <nav class="pagination">
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+  </nav>
 
 
 
@@ -889,7 +1286,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">19</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -902,7 +1299,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-count">5</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -927,10 +1324,11 @@
     <h3 class="widget-title">标签云</h3>
     <div id="myCanvasContainer" class="widget tagcloud">
         <canvas width="250" height="250" id="resCanvas" style="width=100%">
-            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li></ul>
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li></ul>
         </canvas>
     </div>
 </div>
+
 
 
       </div>

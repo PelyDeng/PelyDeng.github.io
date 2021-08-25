@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<!-- 樱花特效 -->
+  
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+  <link rel="mask-icon" href="/images/favicon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前情提要在执行增删改操作的时候，是基于Buffer Pool中的缓存页中的数据的。更新了缓存页中的数据后，会写入一条数据到Redo Log中。在提交事务的时候，会立马把Redo Log刷入磁盘（推荐方式），然后在RedoLog中写入binlog信息和一个commit标记，事务至此提交完毕。 FAQRedoLog保障了什么当更新了缓存中的数据页后，缓存页还没有刷到磁盘上。MYSQL宕机，那么MYSQ">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySql Redolog（重做日志）">
+<meta property="og:url" content="http://pdyun.cc/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/index.html">
+<meta property="og:site_name" content="牧场小站">
+<meta property="og:description" content="前情提要在执行增删改操作的时候，是基于Buffer Pool中的缓存页中的数据的。更新了缓存页中的数据后，会写入一条数据到Redo Log中。在提交事务的时候，会立马把Redo Log刷入磁盘（推荐方式），然后在RedoLog中写入binlog信息和一个commit标记，事务至此提交完毕。 FAQRedoLog保障了什么当更新了缓存中的数据页后，缓存页还没有刷到磁盘上。MYSQL宕机，那么MYSQ">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://pdyun.cc/images/img-40.png">
+<meta property="article:published_time" content="2021-08-25T13:11:00.000Z">
+<meta property="article:modified_time" content="2021-08-25T13:14:30.300Z">
+<meta property="article:author" content="Peilin Deng">
+<meta property="article:tag" content="MySql">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://pdyun.cc/images/img-40.png">
+
+<link rel="canonical" href="http://pdyun.cc/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  
+  
+
+
+  <title>MySql Redolog（重做日志） | 牧场小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">牧场小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySql Redolog（重做日志）
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-25 21:11:00 / 修改时间：21:14:30" itemprop="dateCreated datePublished" datetime="2021-08-25T21:11:00+08:00">2021-08-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/" class="post-meta-item leancloud_visitors" data-flag-title="MySql Redolog（重做日志）" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><p>在执行增删改操作的时候，是基于Buffer Pool中的缓存页中的数据的。更新了缓存页中的数据后，会写入一条数据到Redo Log中。在提交事务的时候，会立马把Redo Log刷入磁盘（推荐方式），然后在RedoLog中写入binlog信息和一个commit标记，事务至此提交完毕。</p>
+<h1 id="FAQ"><a href="#FAQ" class="headerlink" title="FAQ"></a>FAQ</h1><h2 id="RedoLog保障了什么"><a href="#RedoLog保障了什么" class="headerlink" title="RedoLog保障了什么"></a>RedoLog保障了什么</h2><p>当更新了缓存中的数据页后，缓存页还没有刷到磁盘上。MYSQL宕机，那么MYSQL重启后，会直接读取RedoLog中的内容，重做到Buffer Pool中，然后在刷到磁盘。因为RedoLog是顺序读写，所以效率很高。并且为了保证数据的不丢失，RedoLog也要设置成不经过OS Cache。</p>
+<h2 id="为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？"><a href="#为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？" class="headerlink" title="为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？"></a>为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？</h2><ol>
+<li>一个缓存页是16KB，刷盘比较耗时。而且你可能只修改了几个字节的数据。</li>
+<li>缓存页刷入磁盘是随机读写。效率很低。而RedoLog是顺序读写，效率高</li>
+</ol>
+<span id="more"></span>
+
+<h1 id="详细介绍"><a href="#详细介绍" class="headerlink" title="详细介绍"></a>详细介绍</h1><h2 id="RedoLog的类型"><a href="#RedoLog的类型" class="headerlink" title="RedoLog的类型"></a>RedoLog的类型</h2><p>根据数据页修改的字节数划分了不同的类型    </p>
+<ul>
+<li>MLOG_1BYTE：修改了1个字节</li>
+<li>MLOG_2BYTE：修改了2个字节</li>
+<li>MLOG_4BYTE：修改了4个字节</li>
+<li>MLOG_WRITE_STRING：修改了一大串的值</li>
+</ul>
+<h2 id="RedoLog的大致内容"><a href="#RedoLog的大致内容" class="headerlink" title="RedoLog的大致内容"></a>RedoLog的大致内容</h2><p>MLOG_NBYTE，表空间ID，数据页号，数据页中的偏移量，具体修改的值<br>MLOG_WRITE_STRING，表空间ID，数据页号，数据页中的偏移量，修改的长度，具体修改的值</p>
+<h2 id="RedoLog-Block"><a href="#RedoLog-Block" class="headerlink" title="RedoLog Block"></a>RedoLog Block</h2><p>RedoLog中，包含着多个RedoLog Block。每个RedoLog大小是512KB；<br>在写入Redolog之前先写入内存中的RedoLog Block，然后再把RedoLog Block写入磁盘文件。具体的结构见图。    <br><img src="/images/img-40.png"></p>
+<h2 id="RedoLog-buffer"><a href="#RedoLog-buffer" class="headerlink" title="RedoLog buffer"></a>RedoLog buffer</h2><p>好比Buffer Pool，基于内存中的一块连续空间。里面分配了多个空的RedoLog block。用来存放redolog。    </p>
+<ul>
+<li>在一个事务中，多个操作对应多个redo Log，对应着一组redolog，现在别的地方暂存，执行完了再把一组的redolog写入到内存中的redolog buffer中的block中</li>
+<li>如果一个事务对应的redoLog太多，就会放到两个甚至多个redolog block中。</li>
+<li>如果一个redolog group比较小，也可能会把多个redolog group合并在一个redolog block中。</li>
+</ul>
+<h2 id="刷盘时机"><a href="#刷盘时机" class="headerlink" title="刷盘时机"></a>刷盘时机</h2><ol>
+<li>写入redolog buffer的日志占用了总容量（innodb_log_buffer_size）的50%。</li>
+<li>事务提交的时候</li>
+<li>后台线程定时刷新</li>
+<li>MYSQL关闭的时候</li>
+</ol>
+<h2 id="RedoLog的一些默认处理"><a href="#RedoLog的一些默认处理" class="headerlink" title="RedoLog的一些默认处理"></a>RedoLog的一些默认处理</h2><p>磁盘上默认redolog数量：2个(innodb_log_files_in_group)<br>磁盘上默认redolog大小：48MB(innodb_log_file_size)<br>磁盘上的默认名：ib_logfile0，ib_logfile1<br>一般情况是向一个redolog中写，写满了就换下一个。所以redolog最多保存96MB的redolog，如果第二个写满了，就覆盖第一个日志文件里面原来的redolog</p>
+
+    </div>
+
+    
+    
+    
+<div>
+  
+    <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+  
+</div>
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Peilin Deng
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://pdyun.cc/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/" title="MySql Redolog（重做日志）">http://pdyun.cc/2021/08/25/MySql-Redolog（重做日志）/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/MySql/" rel="tag"><i class="fa fa-tag"></i> MySql</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/" rel="prev" title="MySql 数据在磁盘上的存储">
+      <i class="fa fa-chevron-left"></i> MySql 数据在磁盘上的存储
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/" rel="next" title="MySql Undolog（回滚日志）">
+      MySql Undolog（回滚日志） <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E6%83%85%E6%8F%90%E8%A6%81"><span class="nav-text">前情提要</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#FAQ"><span class="nav-text">FAQ</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#RedoLog%E4%BF%9D%E9%9A%9C%E4%BA%86%E4%BB%80%E4%B9%88"><span class="nav-text">RedoLog保障了什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%86%99%E5%85%A5RedoLog%EF%BC%8C%E7%9B%B4%E6%8E%A5%E5%88%B7%E5%88%B0%E7%A3%81%E7%9B%98%E7%9A%84%E7%BC%BA%E7%82%B9%E5%9C%A8%E5%93%AA%E9%87%8C%EF%BC%9F"><span class="nav-text">为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AF%A6%E7%BB%86%E4%BB%8B%E7%BB%8D"><span class="nav-text">详细介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#RedoLog%E7%9A%84%E7%B1%BB%E5%9E%8B"><span class="nav-text">RedoLog的类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RedoLog%E7%9A%84%E5%A4%A7%E8%87%B4%E5%86%85%E5%AE%B9"><span class="nav-text">RedoLog的大致内容</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RedoLog-Block"><span class="nav-text">RedoLog Block</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RedoLog-buffer"><span class="nav-text">RedoLog buffer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%B7%E7%9B%98%E6%97%B6%E6%9C%BA"><span class="nav-text">刷盘时机</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RedoLog%E7%9A%84%E4%B8%80%E4%BA%9B%E9%BB%98%E8%AE%A4%E5%A4%84%E7%90%86"><span class="nav-text">RedoLog的一些默认处理</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Peilin Deng"
+      src="/images/VX.png">
+  <p class="site-author-name" itemprop="name">Peilin Deng</p>
+  <div class="site-description" itemprop="description">IT 小站， 记录美好码园生活</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://www.cnblogs.com/dpl9963" title="博客园 → https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dpl9963" rel="noopener" target="_blank"><i class=" fa-fw"></i>博客园</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/PelyDeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;PelyDeng" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:544010165@qq.com" title="E-Mail → mailto:544010165@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+<script type="text/javascript" charset="utf-8" src="/js/tagcloud.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/tagcanvas.js"></script>
+<div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div id="myCanvasContainer" class="widget tagcloud">
+        <canvas width="250" height="250" id="resCanvas" style="width=100%">
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li></ul>
+        </canvas>
+    </div>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peilin Deng</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : true,
+      notify     : true,
+      appId      : 'HnJ9Yibfx60VyyJ8xucUkOS5-gzGzoHsz',
+      appKey     : 'tMGT7R2fSxRbTrOkaf3DfEg2',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+<script src="/live2d_models/packages/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2d_models/packages/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2d_models/packages/assets/assets/koharu.model.json"},"display":{"position":"left","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body>
+</html>

@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<!-- 樱花特效 -->
+  
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+  <link rel="mask-icon" href="/images/favicon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="主键索引的设计每个数据页中都有一个页目录，可以方便在当前数据页中进行数据的查询。但是如果有多个数据页的情况下，对于一个主键的查询，得知数据在哪个数据页显得尤为重要。因此针对主键设计了一个主键目录，就是把每个数据页的页号以及数据页中最小的主键放在一起，组成一个索引的目录，如下图：基于主键目录，先通过主键目录可以对比得到查询的数据可能在哪个数据页，然后到对应的数据页中基于二分法查找。 索引页">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySql 索引机制">
+<meta property="og:url" content="http://pdyun.cc/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/index.html">
+<meta property="og:site_name" content="牧场小站">
+<meta property="og:description" content="主键索引的设计每个数据页中都有一个页目录，可以方便在当前数据页中进行数据的查询。但是如果有多个数据页的情况下，对于一个主键的查询，得知数据在哪个数据页显得尤为重要。因此针对主键设计了一个主键目录，就是把每个数据页的页号以及数据页中最小的主键放在一起，组成一个索引的目录，如下图：基于主键目录，先通过主键目录可以对比得到查询的数据可能在哪个数据页，然后到对应的数据页中基于二分法查找。 索引页">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://pdyun.cc/images/img-54.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-56.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-58.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-59.png">
+<meta property="article:published_time" content="2021-08-25T13:55:00.000Z">
+<meta property="article:modified_time" content="2021-08-25T13:55:41.870Z">
+<meta property="article:author" content="Peilin Deng">
+<meta property="article:tag" content="MySql">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://pdyun.cc/images/img-54.png">
+
+<link rel="canonical" href="http://pdyun.cc/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  
+  
+
+
+  <title>MySql 索引机制 | 牧场小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">牧场小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySql 索引机制
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-25 21:55:00 / 修改时间：21:55:41" itemprop="dateCreated datePublished" datetime="2021-08-25T21:55:00+08:00">2021-08-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 索引机制" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="主键索引的设计"><a href="#主键索引的设计" class="headerlink" title="主键索引的设计"></a>主键索引的设计</h1><p>每个数据页中都有一个页目录，可以方便在当前数据页中进行数据的查询。但是如果有多个数据页的情况下，对于一个主键的查询，得知数据在哪个数据页显得尤为重要。<br>因此针对主键设计了一个主键目录，就是把每个数据页的页号以及数据页中最小的主键放在一起，组成一个索引的目录，如下图：<br><img src="/images/img-54.png"><br>基于主键目录，先通过主键目录可以对比得到查询的数据可能在哪个数据页，然后到对应的数据页中基于二分法查找。</p>
+<h1 id="索引页"><a href="#索引页" class="headerlink" title="索引页"></a>索引页</h1><span id="more"></span>
+
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>当数据量超级大的时候，数据页的数量也非常的多。主键目录就得存放大量的数据页和最小主键值。性能没有得到突破。<br>此时，通过<strong>索引页</strong>来存放索引数据。<br><img src="/images/img-56.png"><br>需要注意的是，索引页中，出现了类型为1的行数据。表示的是B+树非叶子节点。<br><strong>虽然索引页多了，但是又应该到哪个索引页中去查主键数据，此时又可以把索引页进行一次“索引”，在更高层的索引层级中，保存了每个索引页里的最小主键值和索引页号。</strong><br><img src="/images/img-58.png"><br><strong>（如果跟高层的索引层级中数据也嫌多，那就继续套娃，这就形成了一个树结构）</strong><br><img src="/images/img-59.png"></p>
+<h2 id="基于索引页的查找"><a href="#基于索引页的查找" class="headerlink" title="基于索引页的查找"></a>基于索引页的查找</h2><p>如果要查询一个数据的主键为19，就应该先从顶层的索引页60里去找，通过二分法的方式得到下层要去索引页17中查找。然后一直找到了数据可能在数据页2中，然后去数据页2中，通过页目录，找到对应的槽位，读取数据。</p>
+<h1 id="索引分类"><a href="#索引分类" class="headerlink" title="索引分类"></a>索引分类</h1><h2 id="聚簇索引"><a href="#聚簇索引" class="headerlink" title="聚簇索引"></a>聚簇索引</h2><p>如果在一个B+树索引数据结构中，叶子节点就是数据页本身，那么可以称这个B+数为聚簇索引。（innodb默认创建的一套基于主键的索引结构，表中的数据直接放在聚簇索引里，作为叶子节点的数据页）</p>
+<h2 id="二级索引"><a href="#二级索引" class="headerlink" title="二级索引"></a>二级索引</h2><p>如果要对非主键的字段创建索引，那么会重新生成一颗B+树，叶子节点也是数据页，<strong>但是数据页中只会存放主键字段和对应的索引字段</strong>。<br>排序规则也是按照创建索引字段的顺序来严格排序的，也会有页分裂来保证顺序。</p>
+<h3 id="回表"><a href="#回表" class="headerlink" title="回表"></a>回表</h3><p>在二级索引上进行查询时，比如对name字段建立的二级索引，当select name from xxx where id = xxx时，通过叶子节点中的数据页内容就能直接返回。<br>但是如果select * from xxx where name = xxx时，叶子节点的数据不足以返回，还得通过主键去聚簇索引中定位到主键对应的完整数据行，此时才能把select * 要查询的字段值全部拿出来。</p>
+<h2 id="联合索引"><a href="#联合索引" class="headerlink" title="联合索引"></a>联合索引</h2><p>多个字段建立二级索引，也是一颗独立的B+树，叶子节点的数据页中包含了id，colA，colB。然后按照colA排序，如果colA相同就按照colB排序。</p>
+<h1 id="插入数据时如何维护不同索引的B-树"><a href="#插入数据时如何维护不同索引的B-树" class="headerlink" title="插入数据时如何维护不同索引的B+树"></a>插入数据时如何维护不同索引的B+树</h1><ol>
+<li>创建表时，就一个数据页。目前为空</li>
+<li>开始插入数据，这个初始的数据页就是根页。数据页内部有一个基于主键的页目录，此时通过页目录查询就行。</li>
+<li>数据越来越多数据页满了，创建一个新的数据页，然后把根页中的数据拷贝过去，同时再搞一个新的数据页，根据主键值的大小进行挪动，让两个数据页根据主键值排序，使得第二个数据页的主键值都大于第一个数据页的主键值。此时根页就变成了索引页。根页中存放了两个数据页的页号和他们里面的最小的主键值。</li>
+<li>随着不停的增加数据，数据页不断的页分裂。索引页中的数据页索引条目越来越多，索引页开始分裂成两个索引页，然后根页继续往上走一个层级，引用两个索引页。</li>
+<li>然后开始套娃。</li>
+</ol>
+<blockquote>
+<p>与聚簇索引不同的是，二级索引的B+树的索引页中，除了存放页号和最小的索引字段值外，还会额外存放最小索引字段对应的主键值。</p>
+</blockquote>
+<h1 id="使用索引的几个原则"><a href="#使用索引的几个原则" class="headerlink" title="使用索引的几个原则"></a>使用索引的几个原则</h1><blockquote>
+<p>索引idx_abc(a,b,c)</p>
+</blockquote>
+<h2 id="等值匹配原则"><a href="#等值匹配原则" class="headerlink" title="等值匹配原则"></a>等值匹配原则</h2><p>where条件中字段采用等于连接，并且完全包含了索引中的所有字段。<br>比如where a=1 and b=2 and c=3</p>
+<h2 id="最左侧列匹配"><a href="#最左侧列匹配" class="headerlink" title="最左侧列匹配"></a>最左侧列匹配</h2><p>采用索引中左侧的部分字段来查询，不能跳跃。<br>比如where a=1 and b=2 可以使用索引。但是where a=1 and c=3 不行。</p>
+<h2 id="最左前缀匹配原则"><a href="#最左前缀匹配原则" class="headerlink" title="最左前缀匹配原则"></a>最左前缀匹配原则</h2><p>如果使用like查询，则最左侧不能出现通配符。<br>比如where a like ‘1%’。</p>
+<h2 id="范围查找规则"><a href="#范围查找规则" class="headerlink" title="范围查找规则"></a>范围查找规则</h2><p>where语句里如果有范围查询，那只有对联合索引里最左侧的列进行范围查询才能用到索引！后续的字段无法使用到索引。<br>比如where a &gt; 1 and a&lt;5 and b&lt;1只会使用a列的索引</p>
+<h2 id="等值匹配-范围匹配"><a href="#等值匹配-范围匹配" class="headerlink" title="等值匹配+范围匹配"></a>等值匹配+范围匹配</h2><p>按照前面的列等值匹配，后面的列范围匹配，需要注意的是，如果多列范围匹配只会生效最靠左的那一列。<br>比如where a=1 and b &gt;1 and b&lt;4 and c&lt;5只会使用a,b列的索引</p>
+<h1 id="利用索引优化查询"><a href="#利用索引优化查询" class="headerlink" title="利用索引优化查询"></a>利用索引优化查询</h1><h2 id="SQL排序如何利用索引"><a href="#SQL排序如何利用索引" class="headerlink" title="SQL排序如何利用索引"></a>SQL排序如何利用索引</h2><p>对语句<code>SELECT * FROM TABLE ORDER BY TOTAL_SCORE DESC, NAME DESC LIMIT 20,10</code><br>语句主要是把表根据总分降序，名字降序排序后从第20页取出10条数据，可以建立（TOTAL_SCORE,NAME）的一个索引，这样的话，直接从索引树中最大的数据开始进行偏移，然后读取10条数据就行。因为索引树本身自带排序。<br><strong>这样的索引建立有一个前提，就是ORDER BY后面要么都是升序，要么都是降序，不能出现部分升序，部分降序。</strong></p>
+<h2 id="SQL分组如何利用索引"><a href="#SQL分组如何利用索引" class="headerlink" title="SQL分组如何利用索引"></a>SQL分组如何利用索引</h2><p>通常而言，对于group by后的字段，最好也是按照联合索引里的最左侧的字段开始，按顺序排列开来，这样的话，其实就可以完美的运用上索引来直接提取一组一组的数据，然后针对每一组的数据执行聚合函数就可以了。</p>
+<h2 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h2><p>如果我们建立了一个索引idx_name_age，那么我们在执行select * from student where name = ‘张三’ and age &gt;5 时，会先扫描一次idx_name_age索引，拿到主键后再去聚簇索引中查询一次，这叫做回表。但是如果查询的字段恰好是索引中的一部分，比如select name，这样的话，直接通过索引树就能够直接返回，这叫做覆盖索引。</p>
+<h1 id="如何尽可能的减少回表"><a href="#如何尽可能的减少回表" class="headerlink" title="如何尽可能的减少回表"></a>如何尽可能的减少回表</h1><p>在利用联合索引查询的实际情况下，往往可能因为回表到聚簇索引的次数太多，直接进行全表扫描。因此要尽可能的减少回表次数。    </p>
+<ul>
+<li>尽可能在SQL中指定要查询的字段名，尽量走覆盖索引</li>
+<li>即便是要回表，尽可能使用limit，where等语句限定回表到聚簇索引的次数。</li>
+</ul>
+<h1 id="设计索引的考虑因素"><a href="#设计索引的考虑因素" class="headerlink" title="设计索引的考虑因素"></a>设计索引的考虑因素</h1><ol>
+<li>实际查询中在where，group by,order by后面高频出现的字段</li>
+<li>基数比较大的字段（基数：不同的数据对于同一个列的不同值，比如性别这一列的基数最大只能是2，而出生年月日因人而异就会很多）</li>
+<li>字段类型比较小的字段</li>
+<li>如果非得在varchar(255)这样的字段上建立索引，也可以考虑只建立前20个字符的一个索引。</li>
+<li>对索引列使用函数会导致无法使用到索引</li>
+<li>不要建立太多的索引，因为新增数据可能会导致多个索引树的页分裂，很费时间</li>
+</ol>
+<h1 id="一款交友软件，陌生人搜索相关的索引建立过程"><a href="#一款交友软件，陌生人搜索相关的索引建立过程" class="headerlink" title="一款交友软件，陌生人搜索相关的索引建立过程"></a>一款交友软件，陌生人搜索相关的索引建立过程</h1><h2 id="字段的确定"><a href="#字段的确定" class="headerlink" title="字段的确定"></a>字段的确定</h2><ul>
+<li>省份provice</li>
+<li>城市city</li>
+<li>性别sex</li>
+<li>年龄age</li>
+</ul>
+<h2 id="如果where和order-by中的字段不同，建立谁的索引？"><a href="#如果where和order-by中的字段不同，建立谁的索引？" class="headerlink" title="如果where和order by中的字段不同，建立谁的索引？"></a>如果where和order by中的字段不同，建立谁的索引？</h2><p>对于SQL：SELECT * FROM USER WHERE provice = ‘四川’ order by age = 24<br>WHERE条件和ORDER BY使用了不同的字段；建立PROVINCE的索引，ORDER BY利用不到索引；建立age的索引，WHERE条件利用不到索引；如果建立联合索引Idx(province,age)也解决不了问题，只能二选一建立索引。<br>以where条件中的字段建立索引，因为基于where筛选可以最快速度筛选出所需要的少量数据。如果数据量不是特别大的情况下，order by的成本也不会太大</p>
+<h2 id="如何跳过基数很小的字段在索引中的位置"><a href="#如何跳过基数很小的字段在索引中的位置" class="headerlink" title="如何跳过基数很小的字段在索引中的位置"></a>如何跳过基数很小的字段在索引中的位置</h2><p>对于建立了索引idx(provice,city,sex,age)的SQL：<br>SELECT * FROM USER WHERE provice = xx and city = xx and age = 15    </p>
+<p>上面的SQL，说明了对于sex的条件没有勾选；<br>因为sex的基数最大是2。上面的SQL在已有的索引下，是无法通过age在索引中进行筛选的。但是可以通过添加上sex in (‘male’,’female’) 这个等值条件，使得索引生效。</p>
+<h2 id="根据七天内是否在线作为过滤条件"><a href="#根据七天内是否在线作为过滤条件" class="headerlink" title="根据七天内是否在线作为过滤条件"></a>根据七天内是否在线作为过滤条件</h2><p>原始字段：latest_login_time<br>如果添加了这个字段，势必会利用latest_login_time的一个大于或者小于操作来筛选数据，但是在idx(provice,city,sex,age)的情况下，修改索引为(provice,city,sex,latest_login_time,age)也会导致age使用不到索引。<br>新增字段：does_login_in_latest_7_days（基数为2，原理同sex，利用等值查询）</p>
+<h2 id="通过对基数很小的字段进行索引的创建"><a href="#通过对基数很小的字段进行索引的创建" class="headerlink" title="通过对基数很小的字段进行索引的创建"></a>通过对基数很小的字段进行索引的创建</h2><p>对于SQL：SELECT * FROM USER WHERE SEX = ‘female’ ORDER BY VIP_SCORE DESC LIMIT 0,10<br>如果只是建立索引idx(sex)，上面的SQL经过索引后依然有海量的数据，再进行磁盘文件排序，性能很低。<br>再这样的情况下，可以针对于基数很低的字段再加上一个排序字段单独设计一个辅助索引，idx(sex,score)。此时依然可以使用到索引来排序。因为sex=’female’的数据在磁盘上是排在一起的。找到这一部分数据后，他们肯定都是按照score排序的，此时根据score字段值的顺序去读取limit语句指定的数据就行。</p>
+<h2 id="区间查询的字段一定要放在索引的最右边"><a href="#区间查询的字段一定要放在索引的最右边" class="headerlink" title="区间查询的字段一定要放在索引的最右边"></a>区间查询的字段一定要放在索引的最右边</h2>
+    </div>
+
+    
+    
+    
+<div>
+  
+    <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+  
+</div>
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Peilin Deng
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://pdyun.cc/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/" title="MySql 索引机制">http://pdyun.cc/2021/08/25/MySql-索引机制/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/MySql/" rel="tag"><i class="fa fa-tag"></i> MySql</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E5%BC%95%E5%85%A5%E7%9A%84%E5%89%8D%E6%8F%90/" rel="prev" title="MySql 索引引入的前提">
+      <i class="fa fa-chevron-left"></i> MySql 索引引入的前提
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/08/25/MySql-%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5/" rel="next" title="MySql 关于索引的一些特殊情况">
+      MySql 关于索引的一些特殊情况 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%BB%E9%94%AE%E7%B4%A2%E5%BC%95%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="nav-text">主键索引的设计</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E9%A1%B5"><span class="nav-text">索引页</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5"><span class="nav-text">概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E7%B4%A2%E5%BC%95%E9%A1%B5%E7%9A%84%E6%9F%A5%E6%89%BE"><span class="nav-text">基于索引页的查找</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E5%88%86%E7%B1%BB"><span class="nav-text">索引分类</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%81%9A%E7%B0%87%E7%B4%A2%E5%BC%95"><span class="nav-text">聚簇索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E7%BA%A7%E7%B4%A2%E5%BC%95"><span class="nav-text">二级索引</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%9E%E8%A1%A8"><span class="nav-text">回表</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%81%94%E5%90%88%E7%B4%A2%E5%BC%95"><span class="nav-text">联合索引</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%8F%92%E5%85%A5%E6%95%B0%E6%8D%AE%E6%97%B6%E5%A6%82%E4%BD%95%E7%BB%B4%E6%8A%A4%E4%B8%8D%E5%90%8C%E7%B4%A2%E5%BC%95%E7%9A%84B-%E6%A0%91"><span class="nav-text">插入数据时如何维护不同索引的B+树</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E7%B4%A2%E5%BC%95%E7%9A%84%E5%87%A0%E4%B8%AA%E5%8E%9F%E5%88%99"><span class="nav-text">使用索引的几个原则</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AD%89%E5%80%BC%E5%8C%B9%E9%85%8D%E5%8E%9F%E5%88%99"><span class="nav-text">等值匹配原则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%80%E5%B7%A6%E4%BE%A7%E5%88%97%E5%8C%B9%E9%85%8D"><span class="nav-text">最左侧列匹配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%80%E5%B7%A6%E5%89%8D%E7%BC%80%E5%8C%B9%E9%85%8D%E5%8E%9F%E5%88%99"><span class="nav-text">最左前缀匹配原则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%8C%83%E5%9B%B4%E6%9F%A5%E6%89%BE%E8%A7%84%E5%88%99"><span class="nav-text">范围查找规则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AD%89%E5%80%BC%E5%8C%B9%E9%85%8D-%E8%8C%83%E5%9B%B4%E5%8C%B9%E9%85%8D"><span class="nav-text">等值匹配+范围匹配</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%A9%E7%94%A8%E7%B4%A2%E5%BC%95%E4%BC%98%E5%8C%96%E6%9F%A5%E8%AF%A2"><span class="nav-text">利用索引优化查询</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL%E6%8E%92%E5%BA%8F%E5%A6%82%E4%BD%95%E5%88%A9%E7%94%A8%E7%B4%A2%E5%BC%95"><span class="nav-text">SQL排序如何利用索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL%E5%88%86%E7%BB%84%E5%A6%82%E4%BD%95%E5%88%A9%E7%94%A8%E7%B4%A2%E5%BC%95"><span class="nav-text">SQL分组如何利用索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A6%86%E7%9B%96%E7%B4%A2%E5%BC%95"><span class="nav-text">覆盖索引</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%B0%BD%E5%8F%AF%E8%83%BD%E7%9A%84%E5%87%8F%E5%B0%91%E5%9B%9E%E8%A1%A8"><span class="nav-text">如何尽可能的减少回表</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AE%BE%E8%AE%A1%E7%B4%A2%E5%BC%95%E7%9A%84%E8%80%83%E8%99%91%E5%9B%A0%E7%B4%A0"><span class="nav-text">设计索引的考虑因素</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E6%AC%BE%E4%BA%A4%E5%8F%8B%E8%BD%AF%E4%BB%B6%EF%BC%8C%E9%99%8C%E7%94%9F%E4%BA%BA%E6%90%9C%E7%B4%A2%E7%9B%B8%E5%85%B3%E7%9A%84%E7%B4%A2%E5%BC%95%E5%BB%BA%E7%AB%8B%E8%BF%87%E7%A8%8B"><span class="nav-text">一款交友软件，陌生人搜索相关的索引建立过程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AD%97%E6%AE%B5%E7%9A%84%E7%A1%AE%E5%AE%9A"><span class="nav-text">字段的确定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E6%9E%9Cwhere%E5%92%8Corder-by%E4%B8%AD%E7%9A%84%E5%AD%97%E6%AE%B5%E4%B8%8D%E5%90%8C%EF%BC%8C%E5%BB%BA%E7%AB%8B%E8%B0%81%E7%9A%84%E7%B4%A2%E5%BC%95%EF%BC%9F"><span class="nav-text">如果where和order by中的字段不同，建立谁的索引？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E8%B7%B3%E8%BF%87%E5%9F%BA%E6%95%B0%E5%BE%88%E5%B0%8F%E7%9A%84%E5%AD%97%E6%AE%B5%E5%9C%A8%E7%B4%A2%E5%BC%95%E4%B8%AD%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="nav-text">如何跳过基数很小的字段在索引中的位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B9%E6%8D%AE%E4%B8%83%E5%A4%A9%E5%86%85%E6%98%AF%E5%90%A6%E5%9C%A8%E7%BA%BF%E4%BD%9C%E4%B8%BA%E8%BF%87%E6%BB%A4%E6%9D%A1%E4%BB%B6"><span class="nav-text">根据七天内是否在线作为过滤条件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E5%AF%B9%E5%9F%BA%E6%95%B0%E5%BE%88%E5%B0%8F%E7%9A%84%E5%AD%97%E6%AE%B5%E8%BF%9B%E8%A1%8C%E7%B4%A2%E5%BC%95%E7%9A%84%E5%88%9B%E5%BB%BA"><span class="nav-text">通过对基数很小的字段进行索引的创建</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8C%BA%E9%97%B4%E6%9F%A5%E8%AF%A2%E7%9A%84%E5%AD%97%E6%AE%B5%E4%B8%80%E5%AE%9A%E8%A6%81%E6%94%BE%E5%9C%A8%E7%B4%A2%E5%BC%95%E7%9A%84%E6%9C%80%E5%8F%B3%E8%BE%B9"><span class="nav-text">区间查询的字段一定要放在索引的最右边</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Peilin Deng"
+      src="/images/VX.png">
+  <p class="site-author-name" itemprop="name">Peilin Deng</p>
+  <div class="site-description" itemprop="description">IT 小站， 记录美好码园生活</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://www.cnblogs.com/dpl9963" title="博客园 → https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dpl9963" rel="noopener" target="_blank"><i class=" fa-fw"></i>博客园</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/PelyDeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;PelyDeng" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:544010165@qq.com" title="E-Mail → mailto:544010165@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+<script type="text/javascript" charset="utf-8" src="/js/tagcloud.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/tagcanvas.js"></script>
+<div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div id="myCanvasContainer" class="widget tagcloud">
+        <canvas width="250" height="250" id="resCanvas" style="width=100%">
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li></ul>
+        </canvas>
+    </div>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peilin Deng</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : true,
+      notify     : true,
+      appId      : 'HnJ9Yibfx60VyyJ8xucUkOS5-gzGzoHsz',
+      appKey     : 'tMGT7R2fSxRbTrOkaf3DfEg2',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+<script src="/live2d_models/packages/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2d_models/packages/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2d_models/packages/assets/assets/koharu.model.json"},"display":{"position":"left","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body>
+</html>

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<!-- 樱花特效 -->
+  
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+  <link rel="mask-icon" href="/images/favicon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="名词说明MYSQL驱动在底层跟数据库建立网络连接 系统连接池建立数据库连接是一个非常耗时的操作，而实际业务中往往会有很多请求去访问数据库，所以要使用一个数据库连接池来维护多个数据库连接。线程使用完连接后不用销毁，直接放回连接池以便后续使用。 MYSQL连接池维护了与系统之间的多个数据库连接。除此之外，系统每次与MYSQL建立连接的时候，还会进行账户信息验证，库表权限验证。 SQL接口MYSQL内部">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySql 基础">
+<meta property="og:url" content="http://pdyun.cc/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/index.html">
+<meta property="og:site_name" content="牧场小站">
+<meta property="og:description" content="名词说明MYSQL驱动在底层跟数据库建立网络连接 系统连接池建立数据库连接是一个非常耗时的操作，而实际业务中往往会有很多请求去访问数据库，所以要使用一个数据库连接池来维护多个数据库连接。线程使用完连接后不用销毁，直接放回连接池以便后续使用。 MYSQL连接池维护了与系统之间的多个数据库连接。除此之外，系统每次与MYSQL建立连接的时候，还会进行账户信息验证，库表权限验证。 SQL接口MYSQL内部">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://pdyun.cc/images/img-35.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-36.png">
+<meta property="article:published_time" content="2021-08-25T12:58:00.000Z">
+<meta property="article:modified_time" content="2021-08-25T13:17:44.357Z">
+<meta property="article:author" content="Peilin Deng">
+<meta property="article:tag" content="MySql">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://pdyun.cc/images/img-35.png">
+
+<link rel="canonical" href="http://pdyun.cc/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  
+  
+
+
+  <title>MySql 基础 | 牧场小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">牧场小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySql 基础
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-25 20:58:00 / 修改时间：21:17:44" itemprop="dateCreated datePublished" datetime="2021-08-25T20:58:00+08:00">2021-08-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 基础" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="名词说明"><a href="#名词说明" class="headerlink" title="名词说明"></a>名词说明</h1><h2 id="MYSQL驱动"><a href="#MYSQL驱动" class="headerlink" title="MYSQL驱动"></a>MYSQL驱动</h2><p>在底层跟数据库建立网络连接</p>
+<h2 id="系统连接池"><a href="#系统连接池" class="headerlink" title="系统连接池"></a>系统连接池</h2><p>建立数据库连接是一个非常耗时的操作，而实际业务中往往会有很多请求去访问数据库，所以要使用一个数据库连接池来维护多个数据库连接。线程使用完连接后不用销毁，直接放回连接池以便后续使用。</p>
+<h2 id="MYSQL连接池"><a href="#MYSQL连接池" class="headerlink" title="MYSQL连接池"></a>MYSQL连接池</h2><p>维护了与系统之间的多个数据库连接。除此之外，系统每次与MYSQL建立连接的时候，还会进行账户信息验证，库表权限验证。</p>
+<h2 id="SQL接口"><a href="#SQL接口" class="headerlink" title="SQL接口"></a>SQL接口</h2><p>MYSQL内部提供的一个组件，负责执行线程传递过来的SQL语句</p>
+<span id="more"></span>
+<h2 id="查询解析器"><a href="#查询解析器" class="headerlink" title="查询解析器"></a>查询解析器</h2><p>负责对SQL语句进行解析，知道做什么操作，对哪张表操作，操作哪些数据，怎么操作等</p>
+<h2 id="查询优化器"><a href="#查询优化器" class="headerlink" title="查询优化器"></a>查询优化器</h2><p>得到一个效率最高的执行计划</p>
+<h2 id="执行器"><a href="#执行器" class="headerlink" title="执行器"></a>执行器</h2><p>根据查询优化器选择的一套执行计划，不停的调用存储引擎的各种接口去完成SQL语句的执行计划。    </p>
+<blockquote>
+<p>比如执行器可能先会调用存储引擎的一个接口去获取user表的第一行数据，判断id是否为我们期望的一个值，如果不是就继续调用接口获取下一行数据继续判断</p>
+</blockquote>
+<h2 id="存储引擎接口"><a href="#存储引擎接口" class="headerlink" title="存储引擎接口"></a>存储引擎接口</h2><p>执行SQL语句，按照一定的步骤去查询内存缓存数据，更新磁盘数据，查询磁盘数据等。</p>
+<h2 id="流程图"><a href="#流程图" class="headerlink" title="流程图"></a>流程图</h2><p><img src="/images/img-35.png" alt="流程图"></p>
+<h1 id="InnoDB内存结构"><a href="#InnoDB内存结构" class="headerlink" title="InnoDB内存结构"></a>InnoDB内存结构</h1><h2 id="缓冲池"><a href="#缓冲池" class="headerlink" title="缓冲池"></a>缓冲池</h2><p>缓冲池（Buffer Pool），方便查询的时候，直接可以从内存缓冲池中获取，减少对磁盘的查询    </p>
+<h2 id="undo日志"><a href="#undo日志" class="headerlink" title="undo日志"></a>undo日志</h2><p>用于回滚数据</p>
+<h2 id="更新缓存数据流程"><a href="#更新缓存数据流程" class="headerlink" title="更新缓存数据流程"></a>更新缓存数据流程</h2><ol>
+<li>记录加载到缓冲池</li>
+<li>加锁</li>
+<li>旧值写入undo日志文件</li>
+<li>更新缓冲池中的记录，此时这个数据就是脏数据了（和磁盘数据不一致）</li>
+</ol>
+<h2 id="redo日志"><a href="#redo日志" class="headerlink" title="redo日志"></a>redo日志</h2><p>记录内存中的数据修改，避免内存修改后没有同步到磁盘上。InnoDB存储引擎特有的一个东西。在mysql重启时会加载redo日志中的修改到内存里去，然后等适当时机通过IO线程把修改后的数据同步到磁盘上。</p>
+<h2 id="RedoLog-Buffer"><a href="#RedoLog-Buffer" class="headerlink" title="RedoLog Buffer"></a>RedoLog Buffer</h2><p>内存中的一个缓冲区。暂时存放redo日志。</p>
+<h2 id="binlog"><a href="#binlog" class="headerlink" title="binlog"></a>binlog</h2><p>归档日志，<font color="red"><strong>偏向物理性质的重做日志</strong></font>，类似于，对XX表中某一行数据进行了修改，修改后的值是XXX；在提交事务的时候，还会把binlog的文件名，位置以及commit标记写入对应的redo日志中。</p>
+<h2 id="事务提交流程"><a href="#事务提交流程" class="headerlink" title="事务提交流程"></a>事务提交流程</h2><p><img src="/images/img-36.png" alt="事务提交流程"><br>1.根据策略(innodb_flush_log_at_trx_commit)，把redo日志从redo log buffer刷到磁盘文件。    </p>
+<blockquote>
+<p>0：不管事务，每一秒都会把日志写入，并且刷到磁盘。事务提交时不会主动触发写磁盘的操作。<br><strong>1：只要事务提交成功，redo log就必然在磁盘里（建议）</strong><br>2：提交事务的时候，把redo日志写入磁盘对应的os cache缓存，而不是直接进入磁盘文件，可能要过一段时间再写入磁盘    </p>
+</blockquote>
+<ol start="2">
+<li><p>根据策略(sync_binlog)，把binlog日志写入磁盘</p>
+<blockquote>
+<p>0：写入os cache，一段时间后写入磁盘（默认）<br>1：强制在提交事务的时候，直接写入到磁盘文件</p>
+</blockquote>
+</li>
+<li><p>把写入磁盘的binlog日志的文件名，位置以及一个commit标记写入到redo日志</p>
+</li>
+<li><p>至此，事务才算提交完成。只要redo日志中不存在commit标记则认为提交失败。</p>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+<div>
+  
+    <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+  
+</div>
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Peilin Deng
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://pdyun.cc/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/" title="MySql 基础">http://pdyun.cc/2021/08/25/MySql-基础/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/MySql/" rel="tag"><i class="fa fa-tag"></i> MySql</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/" rel="prev" title="MySql8.0新特性">
+      <i class="fa fa-chevron-left"></i> MySql8.0新特性
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/" rel="next" title="MySql Buffer Pool 与数据页">
+      MySql Buffer Pool 与数据页 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%90%8D%E8%AF%8D%E8%AF%B4%E6%98%8E"><span class="nav-text">名词说明</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#MYSQL%E9%A9%B1%E5%8A%A8"><span class="nav-text">MYSQL驱动</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B3%BB%E7%BB%9F%E8%BF%9E%E6%8E%A5%E6%B1%A0"><span class="nav-text">系统连接池</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MYSQL%E8%BF%9E%E6%8E%A5%E6%B1%A0"><span class="nav-text">MYSQL连接池</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL%E6%8E%A5%E5%8F%A3"><span class="nav-text">SQL接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9F%A5%E8%AF%A2%E8%A7%A3%E6%9E%90%E5%99%A8"><span class="nav-text">查询解析器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E5%99%A8"><span class="nav-text">查询优化器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%A7%E8%A1%8C%E5%99%A8"><span class="nav-text">执行器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E6%8E%A5%E5%8F%A3"><span class="nav-text">存储引擎接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="nav-text">流程图</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#InnoDB%E5%86%85%E5%AD%98%E7%BB%93%E6%9E%84"><span class="nav-text">InnoDB内存结构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%93%E5%86%B2%E6%B1%A0"><span class="nav-text">缓冲池</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#undo%E6%97%A5%E5%BF%97"><span class="nav-text">undo日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9B%B4%E6%96%B0%E7%BC%93%E5%AD%98%E6%95%B0%E6%8D%AE%E6%B5%81%E7%A8%8B"><span class="nav-text">更新缓存数据流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#redo%E6%97%A5%E5%BF%97"><span class="nav-text">redo日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RedoLog-Buffer"><span class="nav-text">RedoLog Buffer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#binlog"><span class="nav-text">binlog</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8B%E5%8A%A1%E6%8F%90%E4%BA%A4%E6%B5%81%E7%A8%8B"><span class="nav-text">事务提交流程</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Peilin Deng"
+      src="/images/VX.png">
+  <p class="site-author-name" itemprop="name">Peilin Deng</p>
+  <div class="site-description" itemprop="description">IT 小站， 记录美好码园生活</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://www.cnblogs.com/dpl9963" title="博客园 → https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dpl9963" rel="noopener" target="_blank"><i class=" fa-fw"></i>博客园</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/PelyDeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;PelyDeng" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:544010165@qq.com" title="E-Mail → mailto:544010165@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+<script type="text/javascript" charset="utf-8" src="/js/tagcloud.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/tagcanvas.js"></script>
+<div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div id="myCanvasContainer" class="widget tagcloud">
+        <canvas width="250" height="250" id="resCanvas" style="width=100%">
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li></ul>
+        </canvas>
+    </div>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peilin Deng</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : true,
+      notify     : true,
+      appId      : 'HnJ9Yibfx60VyyJ8xucUkOS5-gzGzoHsz',
+      appKey     : 'tMGT7R2fSxRbTrOkaf3DfEg2',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+<script src="/live2d_models/packages/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2d_models/packages/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2d_models/packages/assets/assets/koharu.model.json"},"display":{"position":"left","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body>
+</html>

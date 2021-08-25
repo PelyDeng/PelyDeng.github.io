@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<!-- 樱花特效 -->
+  
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+  <link rel="mask-icon" href="/images/favicon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="MVCC：Multi-Version Concurrent Control，多版本并发控制。  前情提要 当多个线程执行事务的时候，对同一个缓存页里的一行数据进行更新。这个冲突如何处理 当一个事务更新一条数据时，另一个事务在查询这条数据。  常见问题脏写&amp;脏读因为一个事务去更新或者查询了另一个没有提交的事务更新过去的数据。因为另一个事务还没提交，所以随时可能回滚。导致自己更新的数据或者查">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySql MVCC机制">
+<meta property="og:url" content="http://pdyun.cc/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/index.html">
+<meta property="og:site_name" content="牧场小站">
+<meta property="og:description" content="MVCC：Multi-Version Concurrent Control，多版本并发控制。  前情提要 当多个线程执行事务的时候，对同一个缓存页里的一行数据进行更新。这个冲突如何处理 当一个事务更新一条数据时，另一个事务在查询这条数据。  常见问题脏写&amp;脏读因为一个事务去更新或者查询了另一个没有提交的事务更新过去的数据。因为另一个事务还没提交，所以随时可能回滚。导致自己更新的数据或者查">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://pdyun.cc/images/img-42.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-43.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-44.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-46.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-47.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-48.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-49.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-50.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-51.png">
+<meta property="article:published_time" content="2021-08-25T13:21:00.000Z">
+<meta property="article:modified_time" content="2021-08-25T13:31:39.331Z">
+<meta property="article:author" content="Peilin Deng">
+<meta property="article:tag" content="MySql">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://pdyun.cc/images/img-42.png">
+
+<link rel="canonical" href="http://pdyun.cc/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  
+  
+
+
+  <title>MySql MVCC机制 | 牧场小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">牧场小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySql MVCC机制
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-25 21:21:00 / 修改时间：21:31:39" itemprop="dateCreated datePublished" datetime="2021-08-25T21:21:00+08:00">2021-08-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/" class="post-meta-item leancloud_visitors" data-flag-title="MySql MVCC机制" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>MVCC：Multi-Version Concurrent Control，多版本并发控制。</p>
+</blockquote>
+<h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><ol>
+<li>当多个线程执行事务的时候，对同一个缓存页里的一行数据进行更新。这个冲突如何处理</li>
+<li>当一个事务更新一条数据时，另一个事务在查询这条数据。</li>
+</ol>
+<h1 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h1><h2 id="脏写-amp-脏读"><a href="#脏写-amp-脏读" class="headerlink" title="脏写&amp;脏读"></a>脏写&amp;脏读</h2><p>因为一个事务去更新或者查询了另一个没有提交的事务更新过去的数据。因为另一个事务还没提交，所以随时可能回滚。导致自己更新的数据或者查询的数据没了。</p>
+<h2 id="不可重复读"><a href="#不可重复读" class="headerlink" title="不可重复读"></a>不可重复读</h2><p>在一个事务开始之后，多次读取同一条数据的结果因为其他事务修改的提交，显示为多次读取到不同的值。</p>
+<h2 id="幻读"><a href="#幻读" class="headerlink" title="幻读"></a>幻读</h2><span id="more"></span>
+<p>在一个是事务开始后，多次读取一组数据的结果因为其他事务的新增或者删除的提交，显示为新增了数据或者减少了数据。</p>
+<h1 id="四种隔离级别"><a href="#四种隔离级别" class="headerlink" title="四种隔离级别"></a>四种隔离级别</h1><h2 id="读未提交"><a href="#读未提交" class="headerlink" title="读未提交"></a>读未提交</h2><p>read uncommitted<br>能够解决脏写，因为一个事务对同一条数据进行操作时（更新，删除），其他对该条数据的操作的事务将会卡住。当第一个事务提交后第二个事务才会执行。否则第二个事务等待一段时间后报错。一般没人用这个。  <br><img src="/images/img-42.png"><br><img src="/images/img-43.png"></p>
+<h2 id="读已提交"><a href="#读已提交" class="headerlink" title="读已提交"></a>读已提交</h2><p>read committed<br>能够解决脏读和脏写，只会读取到其他事物已经提交的数据。ORACLE的默认隔离级别</p>
+<h2 id="可重复读"><a href="#可重复读" class="headerlink" title="可重复读"></a>可重复读</h2><p>repeatable read<br>能够解决脏读，脏写和不可重复读。但是会出现幻读。事务一旦开始，多次查询一个值，会一直读取到同一个值。<em>MYSQL的默认隔离级别，MYSQL中RR级别不存在幻读。</em></p>
+<h2 id="串行化"><a href="#串行化" class="headerlink" title="串行化"></a>串行化</h2><p>serializable<br>基本解决以上所有问题，因为事务是串行进行，不存在并发的情况。</p>
+<h2 id="隔离级别的修改"><a href="#隔离级别的修改" class="headerlink" title="隔离级别的修改"></a>隔离级别的修改</h2><p>set [global | session] transaction_isolation level xxx<br>xxx：REPEATABLE READ，READ COMMITTED，READ UNCOMMITTED，SERIALIZABLE</p>
+<h1 id="基于undo多版本链表实现的ReadView机制"><a href="#基于undo多版本链表实现的ReadView机制" class="headerlink" title="基于undo多版本链表实现的ReadView机制"></a>基于undo多版本链表实现的ReadView机制</h1><p><font color="red">在MYSQL中，事务的ID是自增的，这是一个重点！！！</font><br>在执行一个事务的时候，会生成一个ReadView，其中包括了以下4个（不仅仅是4个）关键内容：</p>
+<ul>
+<li>m_ids：在生成readview时，当前系统中==活跃的读写事务==的事务id列表【当前事务（新建事务）与正在内存中commit的事务不在活跃事务列表中】</li>
+<li>min_trx_id：表示在生成readview时当前系统中活跃的读写事务中最小的事务id，也就是m_ids中的最小值</li>
+<li>max_trx_id：生成readview时系统中==应该分配给下一个事务的id值==</li>
+<li>creator_trx_id：生成readview的事务的事务id<br>通过这些信息，在Readview生成后，当前事务更新的数据可以被自身读到，或者是在Readview生成前提交的事务修改的值，也是可以读到的。但是在生成ReadView的时候就已经活跃的事务，或者是ReadView生成后再开启的事务，修改的数据也是读不到的。</li>
+</ul>
+<h2 id="举个栗子（RR）"><a href="#举个栗子（RR）" class="headerlink" title="举个栗子（RR）"></a>举个栗子（RR）</h2><ol start="0">
+<li><p>数据库中存在一条数据，事务id是32，是初始值。  <br><img src="/images/img-44.png"></p>
+</li>
+<li><p>事务A（trx=36）和事务B（trx=39）同时开启，事务A查询，事务B更新。<br><img src="/images/img-46.png"></p>
+</li>
+<li><p>事务A根据min_trx=36&gt;trx_id=32，知道这个数据在事务开启前就已经提交过了。所以可以查询到该条数据。<br>事务B同理也能查询到，然后事务B把值改成了值B。<br><img src="/images/img-47.png"></p>
+</li>
+<li><p>事务A再次查询的时候，此时数据中的trx_id=39处于[min_trx_id,max_trx_id]，说明更新数据的事务是和自己差不多同时开启的，并且trx_id=39∈[36,39]。所以就不能查询这条数据了</p>
+</li>
+<li><p>虽然事务A不能查询trx_id=39这条数据，但是可以顺着roll_ptr找下去，能找到最近的一条trx_id=32&lt;36的数据。说明这一个undo log版本是在事务A开启之前就提交过的。所以查询得到的是原始值。<br><img src="/images/img-48.png"></p>
+</li>
+<li><p>如果此时事务A更新该数据为值A，trx_id修改为36，同时保存之前事务B修改的值的快照，如下图<br><img src="/images/img-49.png"></p>
+</li>
+<li><p>当事务A来查询数据时，发现trx_id=45刚好和自己Read_View中的creator_trx_id一致，说明数据是自己修改的，自己可以直接读取到。</p>
+</li>
+<li><p>当事务C来进行一次更新操作后。事务A再去读取，发现trx_id=41&gt;max_trx_id，说明在自己开启事务后有一个事务去更新了这笔数据，自己也不能去查询。然后顺着roll_ptr刚好找到一个trx_id=36的undo日志，说明是自己修改过的，直接拿到了值A<br><img src="/images/img-50.png"></p>
+</li>
+</ol>
+<h2 id="READ-COMMITTED是如何基于READ-VIEW实现的"><a href="#READ-COMMITTED是如何基于READ-VIEW实现的" class="headerlink" title="READ COMMITTED是如何基于READ VIEW实现的"></a>READ COMMITTED是如何基于READ VIEW实现的</h2><p>核心点在于：每次发起的查询，都生成一个新的Read View<br>上面的例子中，第2步事务B提交后，事务A查询时，创建新的Read View，此时活跃的事务就只有事务A（trx_id=36）了，查询到的数据trx_id=39，在min_trx_id和max_trx_id这个区间内，并且不在m_ids列表中，说明已经提交了，所以可以读取到这个值。    <br><img src="/images/img-51.png"></p>
+<h2 id="REPEATABLE-READ是如何基于READ-VIEW实现的"><a href="#REPEATABLE-READ是如何基于READ-VIEW实现的" class="headerlink" title="REPEATABLE READ是如何基于READ VIEW实现的"></a>REPEATABLE READ是如何基于READ VIEW实现的</h2><p>核心点在于：每次发起的查询，使用的Read View仍然是第一次SELECT生成的。所以即便其他的事务提交了，m_ids中的内容也不会发生变化。    </p>
+<h2 id="RR如何基于READ-VIEW解决幻读"><a href="#RR如何基于READ-VIEW解决幻读" class="headerlink" title="RR如何基于READ VIEW解决幻读"></a>RR如何基于READ VIEW解决幻读</h2><p>在事务A开启后，进行了一次范围查询；之后事务C插入了符合范围查询的数据，但是这些数据的DB_TRX_ID是事务C的ID，因为Read View只会创建一次，事务C大于事务A的ReadView中的max_trx_id，所以事务A的再次查询是获取不到新增的数据的。</p>
+<p>A57</p>
+
+    </div>
+
+    
+    
+    
+<div>
+  
+    <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+  
+</div>
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Peilin Deng
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://pdyun.cc/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/" title="MySql MVCC机制">http://pdyun.cc/2021/08/25/MySql-MVCC机制/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/MySql/" rel="tag"><i class="fa fa-tag"></i> MySql</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/" rel="prev" title="MySql Undolog（回滚日志）">
+      <i class="fa fa-chevron-left"></i> MySql Undolog（回滚日志）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/08/25/MySql-%E9%94%81/" rel="next" title="MySql 锁机制">
+      MySql 锁机制 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E6%83%85%E6%8F%90%E8%A6%81"><span class="nav-text">前情提要</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98"><span class="nav-text">常见问题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%84%8F%E5%86%99-amp-%E8%84%8F%E8%AF%BB"><span class="nav-text">脏写&amp;脏读</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB"><span class="nav-text">不可重复读</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%BB%E8%AF%BB"><span class="nav-text">幻读</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%9B%E7%A7%8D%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="nav-text">四种隔离级别</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BB%E6%9C%AA%E6%8F%90%E4%BA%A4"><span class="nav-text">读未提交</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BB%E5%B7%B2%E6%8F%90%E4%BA%A4"><span class="nav-text">读已提交</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB"><span class="nav-text">可重复读</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%B2%E8%A1%8C%E5%8C%96"><span class="nav-text">串行化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E4%BF%AE%E6%94%B9"><span class="nav-text">隔离级别的修改</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8Eundo%E5%A4%9A%E7%89%88%E6%9C%AC%E9%93%BE%E8%A1%A8%E5%AE%9E%E7%8E%B0%E7%9A%84ReadView%E6%9C%BA%E5%88%B6"><span class="nav-text">基于undo多版本链表实现的ReadView机制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BE%E4%B8%AA%E6%A0%97%E5%AD%90%EF%BC%88RR%EF%BC%89"><span class="nav-text">举个栗子（RR）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#READ-COMMITTED%E6%98%AF%E5%A6%82%E4%BD%95%E5%9F%BA%E4%BA%8EREAD-VIEW%E5%AE%9E%E7%8E%B0%E7%9A%84"><span class="nav-text">READ COMMITTED是如何基于READ VIEW实现的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#REPEATABLE-READ%E6%98%AF%E5%A6%82%E4%BD%95%E5%9F%BA%E4%BA%8EREAD-VIEW%E5%AE%9E%E7%8E%B0%E7%9A%84"><span class="nav-text">REPEATABLE READ是如何基于READ VIEW实现的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RR%E5%A6%82%E4%BD%95%E5%9F%BA%E4%BA%8EREAD-VIEW%E8%A7%A3%E5%86%B3%E5%B9%BB%E8%AF%BB"><span class="nav-text">RR如何基于READ VIEW解决幻读</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Peilin Deng"
+      src="/images/VX.png">
+  <p class="site-author-name" itemprop="name">Peilin Deng</p>
+  <div class="site-description" itemprop="description">IT 小站， 记录美好码园生活</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://www.cnblogs.com/dpl9963" title="博客园 → https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dpl9963" rel="noopener" target="_blank"><i class=" fa-fw"></i>博客园</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/PelyDeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;PelyDeng" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:544010165@qq.com" title="E-Mail → mailto:544010165@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+<script type="text/javascript" charset="utf-8" src="/js/tagcloud.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/tagcanvas.js"></script>
+<div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div id="myCanvasContainer" class="widget tagcloud">
+        <canvas width="250" height="250" id="resCanvas" style="width=100%">
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li></ul>
+        </canvas>
+    </div>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peilin Deng</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : true,
+      notify     : true,
+      appId      : 'HnJ9Yibfx60VyyJ8xucUkOS5-gzGzoHsz',
+      appKey     : 'tMGT7R2fSxRbTrOkaf3DfEg2',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+<script src="/live2d_models/packages/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2d_models/packages/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2d_models/packages/assets/assets/koharu.model.json"},"display":{"position":"left","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body>
+</html>

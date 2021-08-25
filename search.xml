@@ -19,6 +19,647 @@
       </tags>
   </entry>
   <entry>
+    <title>MySql8.0新特性</title>
+    <url>/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/</url>
+    <content><![CDATA[<h1 id="MySql-8-0新特性"><a href="#MySql-8-0新特性" class="headerlink" title="MySql 8.0新特性"></a><strong>MySql 8.0新特性</strong></h1><p>MySQL从5.7一跃直接到8.0，这其中的缘由，咱就不关心那么多了，有兴趣的朋友自行百度，本次的版本更新，在功能上主要有以下6点：</p>
+<p>　　<strong>账户与安全</strong></p>
+<p>　　<strong>优化器索引</strong></p>
+<p>　　<strong>通用表表达式</strong></p>
+<p>　　<strong>窗口函数</strong></p>
+<p>　　<strong>InnoDB 增强</strong></p>
+<p>　　<strong>JSON 增强</strong></p>
+<span id="more"></span>
+
+<h3 id="一、账户与安全"><a href="#一、账户与安全" class="headerlink" title="一、账户与安全"></a><strong>一、账户与安全</strong></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1.用户的创建与授权</span><br><span class="line"></span><br><span class="line">　　在MySQL5.7的版本：</span><br><span class="line"></span><br><span class="line">　　&gt; grant all privileges on *.* to &#x27;用户名&#x27;@&#x27;主机&#x27; identified by &#x27;密码&#x27;；</span><br><span class="line"></span><br><span class="line">　　在MySQL8.0需要分开执行：</span><br><span class="line"></span><br><span class="line">　　&gt;create user &#x27;用户名&#x27;@&#x27;主机&#x27; identified by &#x27;密码&#x27;；</span><br><span class="line"></span><br><span class="line">　　&gt;grant all privileges on *.* to &#x27;用户名&#x27;@&#x27;主机&#x27;；</span><br><span class="line"></span><br><span class="line">　　用以前的一条命令在8.0里面创建用户，会出现sql语法错误</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2.认证插件更新</span><br><span class="line"></span><br><span class="line">　　MySQL5.7默认身份插件是mysql_native_password</span><br><span class="line"></span><br><span class="line">　　MySQL8.0默认的身份插件是caching_sha2_password</span><br><span class="line">　　查看身份认证插件命令：show variables like &#x27;default_authentication_plugin%&#x27;;</span><br><span class="line">　　身份认证插件可以通过以下2中方式改变：</span><br><span class="line">　　</span><br><span class="line">　　1）系统变量default_authentication_plugin去改变，在my.ini文件的[mysqld]下面设置default_authentication_plugin=mysql_native_password即可</span><br><span class="line"></span><br><span class="line">　　2）如果希望只是某一个用户通过mysql_native_password的方式认证，可以修改数据库mysql下面的user表的字段，执行以下命令：</span><br><span class="line"></span><br><span class="line">　　&gt;alter user &#x27;用户名&#x27;@&#x27;主机&#x27; identified width mysql_native_password by &#x27;密码&#x27;;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">3.密码管理</span><br><span class="line"></span><br><span class="line">　　MySQL8.0的密码管理策略有3个变量</span><br><span class="line"></span><br><span class="line">　　password_history 修改密码不允许与最近几次使用或的密码重复，默认是0，即不限制</span><br><span class="line">　　</span><br><span class="line">　　password_reuse_interval 修改密码不允许与最近多少天的使用过的密码重复，默认是0,即不限制</span><br><span class="line">　　password_require_current 修改密码是否需要提供当前的登录密码，默认是OFF,即不需要；如果需要，则设置成ON</span><br><span class="line"></span><br><span class="line">　　查询当前MySQL密码管理策略相关变量，使用以下命令：</span><br><span class="line">　　</span><br><span class="line">　　&gt;show variables like &#x27;password%&#x27;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">　　1)设置全局的密码管理策略，在my.ini配置文件中，设置以上3个变量的值这种设置方式，需要重启mysql服务器；某些生产环境不允许重启，MySQL8.0提供了关键字persist,持久化，执行以下命令：</span><br><span class="line"></span><br><span class="line">　　&gt;set persist password_history=6;</span><br><span class="line"></span><br><span class="line">　　这条命令会在数据目录下生成新的配置文件（/var/lib/mysql/mysqld-auto.cnf），下次服务器重启的时候除了读取全局配置文件，还会读取这个配置文件,这条配置就会被读入从而达到持久化的目的</span><br><span class="line">　　2)针对某一个用户单独设置密码管理策略</span><br><span class="line"></span><br><span class="line">　　&gt;alter user &#x27;用户名&#x27;@&#x27;主机&#x27; password history 5;</span><br><span class="line"></span><br><span class="line">　　这样，这个用户的password_history 就被设置成了5,查看一下：</span><br><span class="line"></span><br><span class="line">　　&gt;show user,host,Password_reuse_history from user;</span><br><span class="line">　　</span><br><span class="line">　　查看某一张的字段的所有字段，使用以下命令:</span><br><span class="line"></span><br><span class="line">　　&gt;desc 表名;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">4.角色管理</span><br><span class="line">　　</span><br><span class="line">　　角色：一组权限的集合</span><br><span class="line">　　</span><br><span class="line">　　一组权限赋予某个角色，再把某个角色赋予某个用户，那用户就拥有角色对应的权限</span><br><span class="line">　　</span><br><span class="line">　　1)创建一个角色</span><br><span class="line">　　&gt;create role &#x27;角色1&#x27;;</span><br><span class="line">　　</span><br><span class="line">　　2)为这个角色赋予相应权限</span><br><span class="line">　　&gt;grant insert,update on *.* to &#x27;角色1&#x27;;</span><br><span class="line">　　</span><br><span class="line">　　3)创建一个用户</span><br><span class="line">　　&gt;create user &#x27;用户1&#x27; identified by &#x27;用户1的密码&#x27;;</span><br><span class="line">　　</span><br><span class="line">　　4)为这个用户赋予角色的权限</span><br><span class="line">　　&gt;grant &#x27;角色1&#x27; on *.* to &#x27;用户1&#x27;；</span><br><span class="line"></span><br><span class="line">　　执行完上面4步，用户1就拥有了插入与更新的权限</span><br><span class="line">　　</span><br><span class="line">　　5)再创建1个用户</span><br><span class="line">　　&gt;create user &#x27;用户2&#x27; identified by &#x27;用户2的密码&#x27;;</span><br><span class="line">　　</span><br><span class="line">　　6)为这个用户赋予同样的角色</span><br><span class="line">　　&gt;grant &#x27;角色1&#x27; on *.* to &#x27;用户2&#x27;;</span><br><span class="line">　　</span><br><span class="line">　　执行完上面2步，用户2也用了角色1的权限，即插入与更新</span><br><span class="line"></span><br><span class="line">　　查看用户权限，执行以下命令：</span><br><span class="line">　　&gt;show grants for &#x27;用户名&#x27;;</span><br><span class="line"></span><br><span class="line">　　7)启用角色,设置了角色，如果不启用，用户登录的时候，依旧没有该角色的权限</span><br><span class="line">　　&gt;set default role &#x27;角色名&#x27; to &#x27;用户名&#x27;;</span><br><span class="line"></span><br><span class="line">　　8)如果一个用户有多个角色，使用以下命令</span><br><span class="line">　　&gt;set default role all to &#x27;用户名&#x27;;</span><br><span class="line"></span><br><span class="line">　　MySQL中与用户角色相关的表：mysql.default_roles、mysql.role_edges,有兴趣的朋友可以进去查看下。</span><br><span class="line"></span><br><span class="line">　　9)撤销权限</span><br><span class="line">　　&gt;revoke insert,update on *.* from &#x27;角色名&#x27;;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="二、优化器索引"><a href="#二、优化器索引" class="headerlink" title="二、优化器索引"></a><strong>二、优化器索引</strong></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1.隐藏索引（invisible index）</span><br><span class="line"></span><br><span class="line">　　隐藏索引不会被优化器使用，但仍需要维护</span><br><span class="line"></span><br><span class="line">　　应用场景：</span><br><span class="line"></span><br><span class="line">　　1）软删除</span><br><span class="line"></span><br><span class="line">　　　　删除索引，在线上，如果删除错了索引，只能通过创建索引的方式将其添加回来，对于一些大的数据库而言，是比较耗性能的；为了避免删错，可以先将其设置为不可见，优化器这时候就不会使用它，但是后台仍然在维护，确定后，再删除。</span><br><span class="line"></span><br><span class="line">　　2）灰度发布</span><br><span class="line"></span><br><span class="line">　　　　与软删除差不多，如果想要测试一些索引的功能或者随后可能会使用到这个索引，可以先将其设置为隐藏索引，对于现有的查询不会产生影响，测试后，确定需要该索引，可以将其设置成可见索引。</span><br><span class="line"></span><br><span class="line">　　创建隐藏索引，执行如下命令（如果是不隐藏，则不需要后面的invisible关键字）：</span><br><span class="line"></span><br><span class="line">　　&gt;create index 索引名称 on 表名(字段名) invisible;</span><br><span class="line"></span><br><span class="line">　　查询某一张表的索引，执行如下命令：</span><br><span class="line"></span><br><span class="line">　　&gt;show index from 表名；</span><br><span class="line"></span><br><span class="line">　　使用explain语句查看查询优化器对索引的使用情况</span><br><span class="line"></span><br><span class="line">　　&gt;explain select * from 表名 where 条件;</span><br><span class="line"></span><br><span class="line">　　查询优化器有很多开关，有一个是use_invisible_indexes(是否使用隐藏索引),默认是off(不适用)，将其设置成on,即可使用隐藏索引。查看当前查询优化器的所有开关变脸，执行如下命令：</span><br><span class="line"></span><br><span class="line">　　&gt;select @@optimizer_switch;</span><br><span class="line"></span><br><span class="line">　　设置已经存在的索引为可见或者隐藏，执行如下命令：</span><br><span class="line"></span><br><span class="line">　　&gt;alter table 表名 alter index 索引名 visible;</span><br><span class="line"></span><br><span class="line">　　&gt;alter table 表名 alter index 索引名 invisible;</span><br></pre></td></tr></table></figure>
+
+<p><strong>主键不可以设置为隐藏索引。</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2.降序索引（descending index）</span><br><span class="line"></span><br><span class="line">　　MySQL8.0开始真正支持降序索引，只有InnoDB引擎支持降序所以，且必须是BTREE降序索引，MySQL8.0不在对group by操作进行隐式排序。</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">3.函数索引</span><br><span class="line"></span><br><span class="line">　　索引中使用函数表达式</span><br><span class="line">　　</span><br><span class="line">　　支持JSON数据节点的索引</span><br><span class="line"></span><br><span class="line">　　函数索引是基于虚拟列的功能实现的</span><br><span class="line"></span><br><span class="line">假设用户表（tb_user）的的用户登录账号(username)不需要区分大小写，则可以创建一个函数索引</span><br><span class="line"></span><br><span class="line">&gt;create index username_upper_index on tb_user((upper(username)));</span><br><span class="line">这样在查询的时候 SELECT * FROM tb_user WHERE upper(username) = &#x27;ABD123DSJ&#x27;; 就会使用索引。</span><br><span class="line"></span><br><span class="line">上面的函数索引，也可以通过MySQL5.7已有的虚拟计算列来模拟，为用户表（tb_user）创建新的一列（new_column）,这一列是计算列，不需要赋值，它的值就是username的大写。</span><br><span class="line"></span><br><span class="line">&gt;alter tbale tb_user add column new_column varchar(10) generated always as (upper(username));</span><br><span class="line"></span><br><span class="line">然后给new_column创建一个索引，可以达到模拟MySQL8.0中的函数索引的效果。</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="三、通用表表达式"><a href="#三、通用表表达式" class="headerlink" title="三、通用表表达式"></a><strong>三、通用表表达式</strong></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1.非递归 CTE</span><br><span class="line"></span><br><span class="line">　　派生表：select * from (select 1) as dt;</span><br><span class="line"></span><br><span class="line">　　通用表表达式：with cte as (select 1) select * from cte;</span><br><span class="line">　　</span><br><span class="line">　　　　　　　　　with cte1(id) as (select 1),cte2 as (select id+1 from cte1) select * from cte1 join cte2;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2.递归 CTE</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="四、窗口函数"><a href="#四、窗口函数" class="headerlink" title="四、窗口函数"></a><strong>四、窗口函数</strong></h3><h3 id="五、InnoDB增强"><a href="#五、InnoDB增强" class="headerlink" title="五、InnoDB增强"></a><strong>五、InnoDB增强</strong></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1.集成数据字段</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2.原子ddl操作</span><br><span class="line"></span><br><span class="line">　　MySQL5.7执行drop命令 drop table t1,t2; 如果t1存在，t2不存在，会提示t2表不存在，但是t1表仍然会被删除。</span><br><span class="line"></span><br><span class="line">　　MySQL8.0执行同样的drop命令，会提示t2表不存在，而且t1表不会被删除，保证了原子性。</span><br><span class="line"></span><br><span class="line">　　ddl操作（针对表）的原子性前提是该表使用的存储引擎是InnoDB</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">3.自增列持久化</span><br><span class="line"></span><br><span class="line">　　解决了之前的版本，主键重复的问题。</span><br><span class="line"></span><br><span class="line">　　MySQL5.7及其以前的版本，MySQL服务器重启，会重新扫描表的主键最大值，如果之前已经删除过id=100的数据，但是表中当前记录的最大值如果是99，那么经过扫描，下一条记录的id是100，而不是101。</span><br><span class="line">　　</span><br><span class="line">　　MySQL8.0则是每次在变化的时候，都会将自增计数器的最大值写入redo log,同时在每次检查点将其写入引擎私有的系统表。则不会出现自增主键重复的问题。</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">4.死锁检查控制</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">5.锁定语句选项</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="六、JSON增强"><a href="#六、JSON增强" class="headerlink" title="六、JSON增强"></a><strong>六、JSON增强</strong></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1.内联路径操作符 </span><br><span class="line">　　</span><br><span class="line">column-&gt;&gt;path</span><br><span class="line"></span><br><span class="line">等价于之前的：</span><br><span class="line"></span><br><span class="line">JSON_UNQUOTE(column -&gt; path)</span><br><span class="line"></span><br><span class="line">JSON_UNQUOTE(JSON_EXTRACT(column,path))</span><br></pre></td></tr></table></figure>
+
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2.JSON聚合函数</span><br><span class="line"></span><br><span class="line">MySQL8.0和MySQL5.7.22增加了2个聚合函数</span><br></pre></td></tr></table></figure>
+<p>  <img src="/images/img-26.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1)JSON_ARRAYAGG(),将多行数据组合成json数组</span><br><span class="line">	示例：select o_id,json_arrayagg(attribute) as attributes from t group by o_id;</span><br></pre></td></tr></table></figure>
+<p>  <img src="/images/img-28.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2)JSON_OBJECTAGG()，用于生成json对象</span><br><span class="line">	示例：select o_id json_objectagg(attribute,value) as attributes from t group by o_id;  </span><br></pre></td></tr></table></figure>
+<p>  <img src="/images/img-29.png"></p>
+<p>　　注意：json的聚合函数针对重复key,会使用最后的覆盖前面已有的值，如果下面的o_id=3，它的color有2个值，一个green,一个yellow,使用生成json的聚合函数的时候，前面的green会被覆盖掉。<br>  <img src="/images/img-30.png">  </p>
+<p>  <img src="/images/img-31.png">  </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">3.JSON实用函数</span><br><span class="line"></span><br><span class="line">　　1)JSON_PRETTY()  输出json数据的时候，格式化。</span><br><span class="line"></span><br><span class="line">　　select json_object(&#x27;id&#x27;,3,&#x27;name&#x27;,&#x27;Barney&#x27;);</span><br></pre></td></tr></table></figure>
+<p>  <img src="/images/img-32.png"></p>
+<p>　　</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">　　select json_pretty(json_object(&#x27;id&#x27;,3,&#x27;name&#x27;,&#x27;Barney&#x27;));</span><br></pre></td></tr></table></figure>
+<p>  <img src="/images/img-33.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">　　2)JSON_STORAGE_SIZE() json数据所占用的存储空间（单位：字节）</span><br><span class="line"></span><br><span class="line">　　3)JSON_STORAGE_FREE() json数据更新后所释放的空间（单位：字节）</span><br></pre></td></tr></table></figure>
+
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">4.JSON合并函数</span><br><span class="line"></span><br><span class="line">MySQL8.0废弃了JSON_MERGE()函数，推荐使用以下两个函数合并JSON数据</span><br><span class="line"></span><br><span class="line">　　1)JSON_MERGE_PATCH()</span><br><span class="line"></span><br><span class="line">　　2)JSON_MERGE_PRESERV()</span><br><span class="line"></span><br><span class="line">上面两个函数都是JSON数据合并，最大的区别就是前者遇到相同key的时候会用后面的覆盖前面的，后者会都保留，看下面的截图：</span><br></pre></td></tr></table></figure>
+<p>  <img src="/images/img-34.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">5.JSON表函数</span><br><span class="line">　　</span><br><span class="line">　　MySQL8.0新增了JSON_TABLE()函数，将JSON数据转换成关系表，可以将该函数的返回结果当做一个普通的临时表进行sql查询。</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>摘抄笔记</category>
+      </categories>
+      <tags>
+        <tag>MySql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySql MVCC机制</title>
+    <url>/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/</url>
+    <content><![CDATA[<blockquote>
+<p>MVCC：Multi-Version Concurrent Control，多版本并发控制。</p>
+</blockquote>
+<h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><ol>
+<li>当多个线程执行事务的时候，对同一个缓存页里的一行数据进行更新。这个冲突如何处理</li>
+<li>当一个事务更新一条数据时，另一个事务在查询这条数据。</li>
+</ol>
+<h1 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h1><h2 id="脏写-amp-脏读"><a href="#脏写-amp-脏读" class="headerlink" title="脏写&amp;脏读"></a>脏写&amp;脏读</h2><p>因为一个事务去更新或者查询了另一个没有提交的事务更新过去的数据。因为另一个事务还没提交，所以随时可能回滚。导致自己更新的数据或者查询的数据没了。</p>
+<h2 id="不可重复读"><a href="#不可重复读" class="headerlink" title="不可重复读"></a>不可重复读</h2><p>在一个事务开始之后，多次读取同一条数据的结果因为其他事务修改的提交，显示为多次读取到不同的值。</p>
+<h2 id="幻读"><a href="#幻读" class="headerlink" title="幻读"></a>幻读</h2><span id="more"></span>
+<p>在一个是事务开始后，多次读取一组数据的结果因为其他事务的新增或者删除的提交，显示为新增了数据或者减少了数据。</p>
+<h1 id="四种隔离级别"><a href="#四种隔离级别" class="headerlink" title="四种隔离级别"></a>四种隔离级别</h1><h2 id="读未提交"><a href="#读未提交" class="headerlink" title="读未提交"></a>读未提交</h2><p>read uncommitted<br>能够解决脏写，因为一个事务对同一条数据进行操作时（更新，删除），其他对该条数据的操作的事务将会卡住。当第一个事务提交后第二个事务才会执行。否则第二个事务等待一段时间后报错。一般没人用这个。  <br><img src="/images/img-42.png"><br><img src="/images/img-43.png"></p>
+<h2 id="读已提交"><a href="#读已提交" class="headerlink" title="读已提交"></a>读已提交</h2><p>read committed<br>能够解决脏读和脏写，只会读取到其他事物已经提交的数据。ORACLE的默认隔离级别</p>
+<h2 id="可重复读"><a href="#可重复读" class="headerlink" title="可重复读"></a>可重复读</h2><p>repeatable read<br>能够解决脏读，脏写和不可重复读。但是会出现幻读。事务一旦开始，多次查询一个值，会一直读取到同一个值。<em>MYSQL的默认隔离级别，MYSQL中RR级别不存在幻读。</em></p>
+<h2 id="串行化"><a href="#串行化" class="headerlink" title="串行化"></a>串行化</h2><p>serializable<br>基本解决以上所有问题，因为事务是串行进行，不存在并发的情况。</p>
+<h2 id="隔离级别的修改"><a href="#隔离级别的修改" class="headerlink" title="隔离级别的修改"></a>隔离级别的修改</h2><p>set [global | session] transaction_isolation level xxx<br>xxx：REPEATABLE READ，READ COMMITTED，READ UNCOMMITTED，SERIALIZABLE</p>
+<h1 id="基于undo多版本链表实现的ReadView机制"><a href="#基于undo多版本链表实现的ReadView机制" class="headerlink" title="基于undo多版本链表实现的ReadView机制"></a>基于undo多版本链表实现的ReadView机制</h1><p><font color="red">在MYSQL中，事务的ID是自增的，这是一个重点！！！</font><br>在执行一个事务的时候，会生成一个ReadView，其中包括了以下4个（不仅仅是4个）关键内容：</p>
+<ul>
+<li>m_ids：在生成readview时，当前系统中==活跃的读写事务==的事务id列表【当前事务（新建事务）与正在内存中commit的事务不在活跃事务列表中】</li>
+<li>min_trx_id：表示在生成readview时当前系统中活跃的读写事务中最小的事务id，也就是m_ids中的最小值</li>
+<li>max_trx_id：生成readview时系统中==应该分配给下一个事务的id值==</li>
+<li>creator_trx_id：生成readview的事务的事务id<br>通过这些信息，在Readview生成后，当前事务更新的数据可以被自身读到，或者是在Readview生成前提交的事务修改的值，也是可以读到的。但是在生成ReadView的时候就已经活跃的事务，或者是ReadView生成后再开启的事务，修改的数据也是读不到的。</li>
+</ul>
+<h2 id="举个栗子（RR）"><a href="#举个栗子（RR）" class="headerlink" title="举个栗子（RR）"></a>举个栗子（RR）</h2><ol start="0">
+<li><p>数据库中存在一条数据，事务id是32，是初始值。  <br><img src="/images/img-44.png"></p>
+</li>
+<li><p>事务A（trx=36）和事务B（trx=39）同时开启，事务A查询，事务B更新。<br><img src="/images/img-46.png"></p>
+</li>
+<li><p>事务A根据min_trx=36&gt;trx_id=32，知道这个数据在事务开启前就已经提交过了。所以可以查询到该条数据。<br>事务B同理也能查询到，然后事务B把值改成了值B。<br><img src="/images/img-47.png"></p>
+</li>
+<li><p>事务A再次查询的时候，此时数据中的trx_id=39处于[min_trx_id,max_trx_id]，说明更新数据的事务是和自己差不多同时开启的，并且trx_id=39∈[36,39]。所以就不能查询这条数据了</p>
+</li>
+<li><p>虽然事务A不能查询trx_id=39这条数据，但是可以顺着roll_ptr找下去，能找到最近的一条trx_id=32&lt;36的数据。说明这一个undo log版本是在事务A开启之前就提交过的。所以查询得到的是原始值。<br><img src="/images/img-48.png"></p>
+</li>
+<li><p>如果此时事务A更新该数据为值A，trx_id修改为36，同时保存之前事务B修改的值的快照，如下图<br><img src="/images/img-49.png"></p>
+</li>
+<li><p>当事务A来查询数据时，发现trx_id=45刚好和自己Read_View中的creator_trx_id一致，说明数据是自己修改的，自己可以直接读取到。</p>
+</li>
+<li><p>当事务C来进行一次更新操作后。事务A再去读取，发现trx_id=41&gt;max_trx_id，说明在自己开启事务后有一个事务去更新了这笔数据，自己也不能去查询。然后顺着roll_ptr刚好找到一个trx_id=36的undo日志，说明是自己修改过的，直接拿到了值A<br><img src="/images/img-50.png"></p>
+</li>
+</ol>
+<h2 id="READ-COMMITTED是如何基于READ-VIEW实现的"><a href="#READ-COMMITTED是如何基于READ-VIEW实现的" class="headerlink" title="READ COMMITTED是如何基于READ VIEW实现的"></a>READ COMMITTED是如何基于READ VIEW实现的</h2><p>核心点在于：每次发起的查询，都生成一个新的Read View<br>上面的例子中，第2步事务B提交后，事务A查询时，创建新的Read View，此时活跃的事务就只有事务A（trx_id=36）了，查询到的数据trx_id=39，在min_trx_id和max_trx_id这个区间内，并且不在m_ids列表中，说明已经提交了，所以可以读取到这个值。    <br><img src="/images/img-51.png"></p>
+<h2 id="REPEATABLE-READ是如何基于READ-VIEW实现的"><a href="#REPEATABLE-READ是如何基于READ-VIEW实现的" class="headerlink" title="REPEATABLE READ是如何基于READ VIEW实现的"></a>REPEATABLE READ是如何基于READ VIEW实现的</h2><p>核心点在于：每次发起的查询，使用的Read View仍然是第一次SELECT生成的。所以即便其他的事务提交了，m_ids中的内容也不会发生变化。    </p>
+<h2 id="RR如何基于READ-VIEW解决幻读"><a href="#RR如何基于READ-VIEW解决幻读" class="headerlink" title="RR如何基于READ VIEW解决幻读"></a>RR如何基于READ VIEW解决幻读</h2><p>在事务A开启后，进行了一次范围查询；之后事务C插入了符合范围查询的数据，但是这些数据的DB_TRX_ID是事务C的ID，因为Read View只会创建一次，事务C大于事务A的ReadView中的max_trx_id，所以事务A的再次查询是获取不到新增的数据的。</p>
+<p>A57</p>
+]]></content>
+      <categories>
+        <category>摘抄笔记</category>
+      </categories>
+      <tags>
+        <tag>MySql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySql Redolog（重做日志）</title>
+    <url>/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/</url>
+    <content><![CDATA[<h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><p>在执行增删改操作的时候，是基于Buffer Pool中的缓存页中的数据的。更新了缓存页中的数据后，会写入一条数据到Redo Log中。在提交事务的时候，会立马把Redo Log刷入磁盘（推荐方式），然后在RedoLog中写入binlog信息和一个commit标记，事务至此提交完毕。</p>
+<h1 id="FAQ"><a href="#FAQ" class="headerlink" title="FAQ"></a>FAQ</h1><h2 id="RedoLog保障了什么"><a href="#RedoLog保障了什么" class="headerlink" title="RedoLog保障了什么"></a>RedoLog保障了什么</h2><p>当更新了缓存中的数据页后，缓存页还没有刷到磁盘上。MYSQL宕机，那么MYSQL重启后，会直接读取RedoLog中的内容，重做到Buffer Pool中，然后在刷到磁盘。因为RedoLog是顺序读写，所以效率很高。并且为了保证数据的不丢失，RedoLog也要设置成不经过OS Cache。</p>
+<h2 id="为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？"><a href="#为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？" class="headerlink" title="为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？"></a>为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？</h2><ol>
+<li>一个缓存页是16KB，刷盘比较耗时。而且你可能只修改了几个字节的数据。</li>
+<li>缓存页刷入磁盘是随机读写。效率很低。而RedoLog是顺序读写，效率高</li>
+</ol>
+<span id="more"></span>
+
+<h1 id="详细介绍"><a href="#详细介绍" class="headerlink" title="详细介绍"></a>详细介绍</h1><h2 id="RedoLog的类型"><a href="#RedoLog的类型" class="headerlink" title="RedoLog的类型"></a>RedoLog的类型</h2><p>根据数据页修改的字节数划分了不同的类型    </p>
+<ul>
+<li>MLOG_1BYTE：修改了1个字节</li>
+<li>MLOG_2BYTE：修改了2个字节</li>
+<li>MLOG_4BYTE：修改了4个字节</li>
+<li>MLOG_WRITE_STRING：修改了一大串的值</li>
+</ul>
+<h2 id="RedoLog的大致内容"><a href="#RedoLog的大致内容" class="headerlink" title="RedoLog的大致内容"></a>RedoLog的大致内容</h2><p>MLOG_NBYTE，表空间ID，数据页号，数据页中的偏移量，具体修改的值<br>MLOG_WRITE_STRING，表空间ID，数据页号，数据页中的偏移量，修改的长度，具体修改的值</p>
+<h2 id="RedoLog-Block"><a href="#RedoLog-Block" class="headerlink" title="RedoLog Block"></a>RedoLog Block</h2><p>RedoLog中，包含着多个RedoLog Block。每个RedoLog大小是512KB；<br>在写入Redolog之前先写入内存中的RedoLog Block，然后再把RedoLog Block写入磁盘文件。具体的结构见图。    <br><img src="/images/img-40.png"></p>
+<h2 id="RedoLog-buffer"><a href="#RedoLog-buffer" class="headerlink" title="RedoLog buffer"></a>RedoLog buffer</h2><p>好比Buffer Pool，基于内存中的一块连续空间。里面分配了多个空的RedoLog block。用来存放redolog。    </p>
+<ul>
+<li>在一个事务中，多个操作对应多个redo Log，对应着一组redolog，现在别的地方暂存，执行完了再把一组的redolog写入到内存中的redolog buffer中的block中</li>
+<li>如果一个事务对应的redoLog太多，就会放到两个甚至多个redolog block中。</li>
+<li>如果一个redolog group比较小，也可能会把多个redolog group合并在一个redolog block中。</li>
+</ul>
+<h2 id="刷盘时机"><a href="#刷盘时机" class="headerlink" title="刷盘时机"></a>刷盘时机</h2><ol>
+<li>写入redolog buffer的日志占用了总容量（innodb_log_buffer_size）的50%。</li>
+<li>事务提交的时候</li>
+<li>后台线程定时刷新</li>
+<li>MYSQL关闭的时候</li>
+</ol>
+<h2 id="RedoLog的一些默认处理"><a href="#RedoLog的一些默认处理" class="headerlink" title="RedoLog的一些默认处理"></a>RedoLog的一些默认处理</h2><p>磁盘上默认redolog数量：2个(innodb_log_files_in_group)<br>磁盘上默认redolog大小：48MB(innodb_log_file_size)<br>磁盘上的默认名：ib_logfile0，ib_logfile1<br>一般情况是向一个redolog中写，写满了就换下一个。所以redolog最多保存96MB的redolog，如果第二个写满了，就覆盖第一个日志文件里面原来的redolog</p>
+]]></content>
+      <categories>
+        <category>摘抄笔记</category>
+      </categories>
+      <tags>
+        <tag>MySql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySql Undolog（回滚日志）</title>
+    <url>/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/</url>
+    <content><![CDATA[<h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><p>为了在事务提交前，随时能够回滚缓存页中已经修改的数据，就需要用undolog来记录之前的改动情况。新增操作就对应着一个删除操作来回滚，删除操作也有对应的一个新增操作。更新操作也有对应的更新操作。</p>
+<h1 id="回滚类型"><a href="#回滚类型" class="headerlink" title="回滚类型"></a>回滚类型</h1><p>undolog根据操作类型分为3种类型。</p>
+<h2 id="新增"><a href="#新增" class="headerlink" title="新增"></a>新增</h2><p>类型：TRX_UNDO_INSERT_REC<br>内容：</p>
+<ul>
+<li>日志开始位置</li>
+<li>主键的各列长度和值（可能是联合主键）</li>
+<li>表id</li>
+<li>undolog日志编号</li>
+<li>undolog日志类型</li>
+<li>日志结束位置<br>操作：<br>在回滚时，通过获取主键的值以及表id可以直接定位到对应的缓存页，从里面删除之前插入的数据 </li>
+</ul>
+<span id="more"></span>
+<h2 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h2><h2 id="更新"><a href="#更新" class="headerlink" title="更新"></a>更新</h2><p>如果更新的条件是主键列，则删除行然后添加一条记录。<br>如果更新的条件不是主键列，则进行反向更新。</p>
+<h1 id="undolog版本链"><a href="#undolog版本链" class="headerlink" title="undolog版本链"></a>undolog版本链</h1><p>在<font color="red"><b>03.数据在磁盘上的存储</b></font>中，说到了数据在磁盘上的存储格式，其中就包含了隐藏字段：DB_TRX_ID和DB_ROLL_PTR。    </p>
+<ul>
+<li>DB_TRX_ID：最近一次更新这条数据事务的ID</li>
+<li>DB_ROLL_PTR：更新这个事务之前生成的undolog<br>通过这2个隐藏字段，就可以在多事务并发访问下，保证数据的串行修改。</li>
+</ul>
+<h2 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h2><p><img src="/images/img-41.png"></p>
+]]></content>
+      <categories>
+        <category>摘抄笔记</category>
+      </categories>
+      <tags>
+        <tag>MySql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySql 关于索引的一些特殊情况</title>
+    <url>/2021/08/25/MySql-%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5/</url>
+    <content><![CDATA[<h1 id="范围查询数据量过大导致索引失效"><a href="#范围查询数据量过大导致索引失效" class="headerlink" title="范围查询数据量过大导致索引失效"></a>范围查询数据量过大导致索引失效</h1><p>存在索引idx_fk_customer_id(customer_id)，表中数据16000条。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> rental <span class="keyword">WHERE</span> customer_id<span class="operator">&lt;</span><span class="number">102</span>; # 使用索引</span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> rental <span class="keyword">WHERE</span> customer_id<span class="operator">&lt;</span><span class="number">103</span>; # 全表扫描</span><br></pre></td></tr></table></figure>
+<p>当范围查询时，如果符合条件的数据过多时，因为建立索引的字段虽然在索引树上有序，但是这一部分数据还要回源到聚簇索引中再次查询，并且得到的数据在磁盘上并不是连续的，这样会产生大量的随机IO，而随机IO是非常慢的，与其这样还不如全表扫描。全表扫描最起码是顺序IO。</p>
+<h1 id="Semi-join半连接"><a href="#Semi-join半连接" class="headerlink" title="Semi join半连接"></a>Semi join半连接</h1><ul>
+<li>explain列中filtered为什么有时候不准</li>
+<li>Extra列中Using index condition都是索引下推吗？</li>
+</ul>
+]]></content>
+      <categories>
+        <category>摘抄笔记</category>
+      </categories>
+      <tags>
+        <tag>MySql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySql 基础</title>
+    <url>/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/</url>
+    <content><![CDATA[<h1 id="名词说明"><a href="#名词说明" class="headerlink" title="名词说明"></a>名词说明</h1><h2 id="MYSQL驱动"><a href="#MYSQL驱动" class="headerlink" title="MYSQL驱动"></a>MYSQL驱动</h2><p>在底层跟数据库建立网络连接</p>
+<h2 id="系统连接池"><a href="#系统连接池" class="headerlink" title="系统连接池"></a>系统连接池</h2><p>建立数据库连接是一个非常耗时的操作，而实际业务中往往会有很多请求去访问数据库，所以要使用一个数据库连接池来维护多个数据库连接。线程使用完连接后不用销毁，直接放回连接池以便后续使用。</p>
+<h2 id="MYSQL连接池"><a href="#MYSQL连接池" class="headerlink" title="MYSQL连接池"></a>MYSQL连接池</h2><p>维护了与系统之间的多个数据库连接。除此之外，系统每次与MYSQL建立连接的时候，还会进行账户信息验证，库表权限验证。</p>
+<h2 id="SQL接口"><a href="#SQL接口" class="headerlink" title="SQL接口"></a>SQL接口</h2><p>MYSQL内部提供的一个组件，负责执行线程传递过来的SQL语句</p>
+<span id="more"></span>
+<h2 id="查询解析器"><a href="#查询解析器" class="headerlink" title="查询解析器"></a>查询解析器</h2><p>负责对SQL语句进行解析，知道做什么操作，对哪张表操作，操作哪些数据，怎么操作等</p>
+<h2 id="查询优化器"><a href="#查询优化器" class="headerlink" title="查询优化器"></a>查询优化器</h2><p>得到一个效率最高的执行计划</p>
+<h2 id="执行器"><a href="#执行器" class="headerlink" title="执行器"></a>执行器</h2><p>根据查询优化器选择的一套执行计划，不停的调用存储引擎的各种接口去完成SQL语句的执行计划。    </p>
+<blockquote>
+<p>比如执行器可能先会调用存储引擎的一个接口去获取user表的第一行数据，判断id是否为我们期望的一个值，如果不是就继续调用接口获取下一行数据继续判断</p>
+</blockquote>
+<h2 id="存储引擎接口"><a href="#存储引擎接口" class="headerlink" title="存储引擎接口"></a>存储引擎接口</h2><p>执行SQL语句，按照一定的步骤去查询内存缓存数据，更新磁盘数据，查询磁盘数据等。</p>
+<h2 id="流程图"><a href="#流程图" class="headerlink" title="流程图"></a>流程图</h2><p><img src="/images/img-35.png" alt="流程图"></p>
+<h1 id="InnoDB内存结构"><a href="#InnoDB内存结构" class="headerlink" title="InnoDB内存结构"></a>InnoDB内存结构</h1><h2 id="缓冲池"><a href="#缓冲池" class="headerlink" title="缓冲池"></a>缓冲池</h2><p>缓冲池（Buffer Pool），方便查询的时候，直接可以从内存缓冲池中获取，减少对磁盘的查询    </p>
+<h2 id="undo日志"><a href="#undo日志" class="headerlink" title="undo日志"></a>undo日志</h2><p>用于回滚数据</p>
+<h2 id="更新缓存数据流程"><a href="#更新缓存数据流程" class="headerlink" title="更新缓存数据流程"></a>更新缓存数据流程</h2><ol>
+<li>记录加载到缓冲池</li>
+<li>加锁</li>
+<li>旧值写入undo日志文件</li>
+<li>更新缓冲池中的记录，此时这个数据就是脏数据了（和磁盘数据不一致）</li>
+</ol>
+<h2 id="redo日志"><a href="#redo日志" class="headerlink" title="redo日志"></a>redo日志</h2><p>记录内存中的数据修改，避免内存修改后没有同步到磁盘上。InnoDB存储引擎特有的一个东西。在mysql重启时会加载redo日志中的修改到内存里去，然后等适当时机通过IO线程把修改后的数据同步到磁盘上。</p>
+<h2 id="RedoLog-Buffer"><a href="#RedoLog-Buffer" class="headerlink" title="RedoLog Buffer"></a>RedoLog Buffer</h2><p>内存中的一个缓冲区。暂时存放redo日志。</p>
+<h2 id="binlog"><a href="#binlog" class="headerlink" title="binlog"></a>binlog</h2><p>归档日志，<font color="red"><strong>偏向物理性质的重做日志</strong></font>，类似于，对XX表中某一行数据进行了修改，修改后的值是XXX；在提交事务的时候，还会把binlog的文件名，位置以及commit标记写入对应的redo日志中。</p>
+<h2 id="事务提交流程"><a href="#事务提交流程" class="headerlink" title="事务提交流程"></a>事务提交流程</h2><p><img src="/images/img-36.png" alt="事务提交流程"><br>1.根据策略(innodb_flush_log_at_trx_commit)，把redo日志从redo log buffer刷到磁盘文件。    </p>
+<blockquote>
+<p>0：不管事务，每一秒都会把日志写入，并且刷到磁盘。事务提交时不会主动触发写磁盘的操作。<br><strong>1：只要事务提交成功，redo log就必然在磁盘里（建议）</strong><br>2：提交事务的时候，把redo日志写入磁盘对应的os cache缓存，而不是直接进入磁盘文件，可能要过一段时间再写入磁盘    </p>
+</blockquote>
+<ol start="2">
+<li><p>根据策略(sync_binlog)，把binlog日志写入磁盘</p>
+<blockquote>
+<p>0：写入os cache，一段时间后写入磁盘（默认）<br>1：强制在提交事务的时候，直接写入到磁盘文件</p>
+</blockquote>
+</li>
+<li><p>把写入磁盘的binlog日志的文件名，位置以及一个commit标记写入到redo日志</p>
+</li>
+<li><p>至此，事务才算提交完成。只要redo日志中不存在commit标记则认为提交失败。</p>
+</li>
+</ol>
+]]></content>
+      <categories>
+        <category>摘抄笔记</category>
+      </categories>
+      <tags>
+        <tag>MySql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySql 执行计划</title>
+    <url>/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/</url>
+    <content><![CDATA[<h1 id="执行计划类型"><a href="#执行计划类型" class="headerlink" title="执行计划类型"></a>执行计划类型</h1><h2 id="const"><a href="#const" class="headerlink" title="const"></a>const</h2><p>直接通过聚簇索引或者二级索引+聚簇索引回源，查询到想要的数据。这种根据索引可以直接快速查询到数据的过程，在执行计划里称之为<strong>const</strong>。<br><font color="red">二级索引必须是unique，才是const。否则就是ref</font></p>
+<h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><p>一般走索引都是ref，如果是组合索引，则要求查询条件必须是从索引最左侧开始连续多列都是等值比较。    </p>
+<h2 id="range"><a href="#range" class="headerlink" title="range"></a>range</h2><p>对索引列使用范围查询。</p>
+<h2 id="index"><a href="#index" class="headerlink" title="index"></a>index</h2><p>只需要遍历二级索引就可以拿到想要的数据，而不需要回源到聚簇索引的访问方式。<br>索引：idx(S21,S22,S23,S24)；<br>SQL：SELECT S21,S22,S23 FROM TABLE WHERE S22 = ‘X’ AND S23 = ‘Z’;<br>第一反应：这个SQL无法直接从联合索引树的根节点进行二分查找。<br>基于上面的索引以及SQL，可以直接遍历联合索引树的叶子节点，找到所需要的数据，不需要再回源到聚簇索引进行二次查询，这种方式就是使用的index访问。<br>虽然遍历了叶子节点，但是叶子节点内容少。也比回表查询快。</p>
+<span id="more"></span>
+<h1 id="什么情况下一次查询用到多个索引"><a href="#什么情况下一次查询用到多个索引" class="headerlink" title="什么情况下一次查询用到多个索引"></a>什么情况下一次查询用到多个索引</h1><p>现有索引：idx(x1)，idx(x2)<br>现有SQL：SELECT * FROM TABLE WHERE X1 = XX AND X2 = ZZ；<br>在一般情况下，查询优化器生成执行计划只会按照其中一个字段的索引树去查找，然后再回表到聚簇索引查完整数据，然后根据另一个字段的值过滤。<br><strong>当按照某个索引值查询之后得到了上万条的数据，此时就要考虑再通过另一个索引查询，将两个索引得到的结果的主键进行求交集，然后再去回表查询。</strong></p>
+<h1 id="多表关联的SQL语句的执行计划"><a href="#多表关联的SQL语句的执行计划" class="headerlink" title="多表关联的SQL语句的执行计划"></a>多表关联的SQL语句的执行计划</h1><h2 id="驱动表与被驱动表"><a href="#驱动表与被驱动表" class="headerlink" title="驱动表与被驱动表"></a>驱动表与被驱动表</h2><p>在多表关联查询时，一般是通过部分条件先从一张表中取出符合条件的数据，然后再在这些数据中进行后续的条件匹配。先查询的表叫做驱动表，后查询的表就叫被驱动表。</p>
+<h2 id="内连接与外连接"><a href="#内连接与外连接" class="headerlink" title="内连接与外连接"></a>内连接与外连接</h2><ul>
+<li>内连接：INNER JOIN，连接条件写在WHERE中，并且按照表与表之间的字段关系严格判断，为空的不会显示</li>
+<li>外连接：[LEFT | RIGHT] OUTER JOIN，连接条件写在ON中；如果是LEFT则表示左侧表中的数据不管右侧表里是否有关联都会返回出来，右侧大不了显示为NULL。</li>
+</ul>
+<h2 id="嵌套循环关联"><a href="#嵌套循环关联" class="headerlink" title="嵌套循环关联"></a>嵌套循环关联</h2><p>多表关联查询，往往都是利用驱动表的结果，去被驱动表中通过where条件，on条件进行遍历匹配。因此如果关联表很多，就会因为遍历的效率影响整个SQL的执行效率，所以要合理的在驱动表和被驱动表上建立合适的索引。</p>
+<h1 id="执行成本的计算"><a href="#执行成本的计算" class="headerlink" title="执行成本的计算"></a>执行成本的计算</h1><h2 id="成本的组成"><a href="#成本的组成" class="headerlink" title="成本的组成"></a>成本的组成</h2><ul>
+<li>IO成本</li>
+<li>CPU成本</li>
+</ul>
+<h2 id="计算方式"><a href="#计算方式" class="headerlink" title="计算方式"></a><a href="https://www.jianshu.com/p/aecdcc2babdd">计算方式</a></h2><ol>
+<li>MYSQL规定读取一页花费的成本默认是1.0，读取以及检测一条记录是否符合搜索条件的成本默认是0.2。</li>
+<li>不管读取到的记录需不需要检测是否符合搜索条件，其成本都是0.2</li>
+<li>通过show table status like ‘表名’，可以查看指定表的一些信息</li>
+<li>rows是表中的记录数（对于innodb来说这个是个估计值），data_length是聚簇索引的字节数大小。通过data_length/(1024*16)可以算出有多少页，就能算出全表扫描的成本。</li>
+<li>IO成本=数据页数量*1+1.1</li>
+<li>CPU成本=行记录数*0.2+1.0</li>
+<li>总成本=IO成本+CPU成本</li>
+</ol>
+<h3 id="计算示例"><a href="#计算示例" class="headerlink" title="计算示例"></a>计算示例</h3><p><img src="/images/img-62.png"><br>数据页数=(98304/1024)/16=6<br>行记录数=603<br>总成本=6<em>1+0.2</em>603=126.6</p>
+<h3 id="二级索引要注意的点"><a href="#二级索引要注意的点" class="headerlink" title="二级索引要注意的点"></a>二级索引要注意的点</h3><ul>
+<li>二级索引在计算时要先计算二级索引根据条件查一波数据的IO成本，比如score between 25,200 or score between 250,300，这是2个范围，否则score=XX就是一个区间。</li>
+<li>一般一个区间可以简单的认为是<strong>一个数据页</strong>，也可能是n个数据页，反正是个位数级别的。</li>
+<li>二级索引得到的结果再回表，一条数据回表一次。</li>
+<li>a104</li>
+</ul>
+]]></content>
+  </entry>
+  <entry>
+    <title>MySql 数据在磁盘上的存储</title>
+    <url>/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/</url>
+    <content><![CDATA[<h1 id="物理数据存储格式"><a href="#物理数据存储格式" class="headerlink" title="物理数据存储格式"></a>物理数据存储格式</h1><h2 id="行格式"><a href="#行格式" class="headerlink" title="行格式"></a>行格式</h2><ul>
+<li>COMPACT格式<br>  大致格式：变长字段的长度列表，null值列表（长度为8n），数据头[隐藏字段]，col1的值，col2的值。。。    </li>
+<li>xxx格式</li>
+</ul>
+<h2 id="变长字段的存储"><a href="#变长字段的存储" class="headerlink" title="变长字段的存储"></a>变长字段的存储</h2><p>因为变长字段的内容不固定，所以无法判断数据要从何处截断，因此在数据的头部保存了变长字段的长度列表。多个变长字段按照字段顺序<font color="red"><strong>逆序</strong></font>放入变长字段的长度列表中。不考虑为null的列。    </p>
+<span id="more"></span>
+<h2 id="NULL值的存储"><a href="#NULL值的存储" class="headerlink" title="NULL值的存储"></a>NULL值的存储</h2><p>对于所有的NULL值，是通过二进制的bit位来存储，一行数据如果有多个字段的值为NULL，那么这些字段的NULL会以bit位的形式存放在NULL值列表中。0表示不是NULL，1表示是NULL，同样也是<font color="red"><strong>逆序</strong></font>存放.==需要注意的是，不允许为NULL的列是不考虑的==。</p>
+<h2 id="数据头"><a href="#数据头" class="headerlink" title="数据头"></a>数据头</h2><table>
+<thead>
+<tr>
+<th>bit位</th>
+<th>名称</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>预留位</td>
+<td>无</td>
+</tr>
+<tr>
+<td>1</td>
+<td>预留位</td>
+<td>无</td>
+</tr>
+<tr>
+<td>1</td>
+<td>delete_mask</td>
+<td>删除标志位</td>
+</tr>
+<tr>
+<td>1</td>
+<td>min_rec_mask</td>
+<td>B+树的每一层非叶子节点的最小值会有这个标志</td>
+</tr>
+<tr>
+<td>4</td>
+<td>n_owned</td>
+<td>拥有的记录数</td>
+</tr>
+<tr>
+<td>13</td>
+<td>heap_no</td>
+<td>当前记录在记录堆的位置信息</td>
+</tr>
+<tr>
+<td>3</td>
+<td>record_type</td>
+<td>当前记录的类型，0：普通；1：B+树非叶子节点；2：最小值数据；3：最大值数据</td>
+</tr>
+<tr>
+<td>16</td>
+<td>next_record</td>
+<td>下一条数据的指针</td>
+</tr>
+</tbody></table>
+<h2 id="隐藏字段"><a href="#隐藏字段" class="headerlink" title="隐藏字段"></a>隐藏字段</h2><ul>
+<li>DB_ROW_ID：行唯一标识，在没有指定主键和Unique key唯一索引的时候，会以他作为主键</li>
+<li>DB_TRX_ID：事务相关</li>
+<li>DB_ROLL_PTR：回滚指针，用于事务回滚</li>
+</ul>
+<h2 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h2><blockquote>
+<p>红色的列表示不允许为空</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th><font color="red"> varchar(10)</font></th>
+<th>varchar(20)</th>
+<th>varchar(5)</th>
+<th>char(2)</th>
+<th>char(3)</th>
+<th>可能格式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>hello</td>
+<td>nice</td>
+<td>a</td>
+<td>zx</td>
+<td>cc</td>
+<td>[0x01,0x04,0x05][00000000][头字段]hello nice a zx cc</td>
+</tr>
+<tr>
+<td>ppt</td>
+<td>word</td>
+<td>flash</td>
+<td>d</td>
+<td>z</td>
+<td>[0x05,0x04,0x03][00000000][头字段]ppt wprd flash d z</td>
+</tr>
+<tr>
+<td>jack</td>
+<td>NULL</td>
+<td>cc</td>
+<td>ps</td>
+<td>NULL</td>
+<td>[0x02,0x04][00001001][头字段]jack cc ps</td>
+</tr>
+<tr>
+<td>tom</td>
+<td>3</td>
+<td>mg</td>
+<td>NULL</td>
+<td>KG</td>
+<td>[0x02,0x01,0x03][00000100][头字段]tom 3 mg KG</td>
+</tr>
+</tbody></table>
+<h3 id="紧凑的意义"><a href="#紧凑的意义" class="headerlink" title="紧凑的意义"></a>紧凑的意义</h3><p>节省空间？</p>
+<h2 id="读取的过程"><a href="#读取的过程" class="headerlink" title="读取的过程"></a>读取的过程</h2><ol start="0">
+<li>示例样本(选自上方)<br>[0x02,0x01,0x03][00000100][010000001000011111]tom 3 mg KG   </li>
+<li>先读取出变长字段长度列表和NULL值列表，分析得到几个变长字段以及哪几个字段是NULL。因为MYSQL自己定义的列以及类型自己最清楚哪些列是变长哪些列允许NULL</li>
+<li>第一个字段不允许为空所以不会出现在NULL值列表中，是变长类型所以从变长列表中取出0x03，就去字段列表中读取3个字符的长度，得到tom</li>
+<li>第二个字段为变长允许为空，所以读取NULL值列表知道不为空，在读取变长列表得到长度为0x01,所以读取1个字符的长度得到3</li>
+<li>第三个字段为变长允许为空，所以读取NULL值列表知道不为空，在读取变长列表得到长度为0x02,所以读取2个字符的长度得到mg</li>
+<li>第四个字段为定长允许为空，所以直接读取NULL值列表知道为空，所以直接为null</li>
+<li>第五个字段为定长允许为空，直接读取NULL值列表知道不为空，所以直接读取固定的3个长度得到KG 。（这里KG后面还有一个空格补充长度）</li>
+</ol>
+<h1 id="行溢出"><a href="#行溢出" class="headerlink" title="行溢出"></a>行溢出</h1><p>因为每行数据都是存放在一个数据页中的，一个数据页是16KB，如果一行数据的大小超过了数据页的大小。比如一个字段是VARCHAR(65532),最多可以放65532个字符，65532个字符至少也是65532b≈64kb&gt;&gt;16kb。<br>这个时候就会在那一页存放你的数据，然后特别长的字段中，只会包含部分数据，同时还==包含一个20个字节的指针，指向其他的数据页==，用于把这些数据页用链表串联起来，存放超大数据。</p>
+<h1 id="数据页的拆分"><a href="#数据页的拆分" class="headerlink" title="数据页的拆分"></a>数据页的拆分</h1><p>数据页16kb的大小实际上被拆分成了多个部分，包括    </p>
+<ul>
+<li>文件头（38b）</li>
+<li>数据页头（56b）</li>
+<li>最小记录和最大记录（26b）</li>
+<li>多个数据行</li>
+<li>空闲空间</li>
+<li>数据页目录</li>
+<li>文件尾部（8b）</li>
+</ul>
+<h1 id="数据区与数据组"><a href="#数据区与数据组" class="headerlink" title="数据区与数据组"></a>数据区与数据组</h1><p>在磁盘上，一个表空间的数据文件中可能包含多个数据页，为了便于管理，引入了数据区的概念。一个数据区对应着64个连续的数据页，每页16kb，所以一个数据区是1MB。256个数据区划分为1组(extent)。所以1组是256MB。    </p>
+<h2 id="第一个数据区特殊的3页"><a href="#第一个数据区特殊的3页" class="headerlink" title="第一个数据区特殊的3页"></a>第一个数据区特殊的3页</h2><p>一个表空间的第一个数据区的前3个数据页是固定的，存放描述性信息。</p>
+<ul>
+<li>FSP_HDR</li>
+<li>IBUF_BITMAP</li>
+<li>INODE</li>
+</ul>
+<h2 id="其他数据区特殊的2页"><a href="#其他数据区特殊的2页" class="headerlink" title="其他数据区特殊的2页"></a>其他数据区特殊的2页</h2><p>同理也是存放描述性信息</p>
+<ul>
+<li>XDES</li>
+<li>未知</li>
+</ul>
+<h1 id="一个口述的数据插入流程"><a href="#一个口述的数据插入流程" class="headerlink" title="一个口述的数据插入流程"></a>一个口述的数据插入流程</h1><ol>
+<li>根据表名找到对应的表空间，定位到对应的磁盘文件</li>
+<li>从磁盘文件中拿到一个extent组，从里面找出一页数据页</li>
+<li>加载数据页到Buffer Pool</li>
+</ol>
+]]></content>
+      <categories>
+        <category>摘抄笔记</category>
+      </categories>
+      <tags>
+        <tag>MySql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySql 索引引入的前提</title>
+    <url>/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E5%BC%95%E5%85%A5%E7%9A%84%E5%89%8D%E6%8F%90/</url>
+    <content><![CDATA[<h1 id="磁盘数据页的存储结构"><a href="#磁盘数据页的存储结构" class="headerlink" title="磁盘数据页的存储结构"></a>磁盘数据页的存储结构</h1><h2 id="特性"><a href="#特性" class="headerlink" title="特性"></a>特性</h2><ul>
+<li>数据页是按顺序一页一页的存放的，两两相邻的数据页之间会采用双向链表的格式相互引用。</li>
+<li>数据页内部多个数据行通过主键顺序形成单向链表</li>
+<li>每个数据页都有一个页目录，根据数据行的主键存放了一个目录，同时数据行是被分散存储到不同的槽位里去的。所以每个数据页的目录里，就是这个页里没个主键跟所在槽位的映射关系。</li>
+</ul>
+<h2 id="主键查询"><a href="#主键查询" class="headerlink" title="主键查询"></a>主键查询</h2><p>通过传入的主键到页目录中根据主键进行二分查找，通过二分查找在目录中定位到数据的槽位，到对应的槽位遍历每一行数据进行对比</p>
+<h2 id="非主键查询"><a href="#非主键查询" class="headerlink" title="非主键查询"></a>非主键查询</h2><p>进入数据页里，根据单向链表依次遍历查找数据，性能很差</p>
+<h1 id="全表扫描"><a href="#全表扫描" class="headerlink" title="全表扫描"></a>全表扫描</h1><p>在没有任何索引数据结构的时候，无论如何查询数据，都是一个全表扫描的过程。根据双向链表依次把磁盘上的数据页加载到缓存页里去，然后在缓存页内部来查找那条数据。</p>
+<h1 id="页分裂"><a href="#页分裂" class="headerlink" title="页分裂"></a>页分裂</h1><p><img src="/images/img-61.png"><br>数据页中包含了一个起始行，行类型是2；包含了一个行类型为3的结束行（具体可以看03.数据在磁盘上的存储，里面有提到行格式）。其他行都是普通行，类型为0；<br>当不停的插入数据时，最开始在第一个数据页。当第一个数据页满了，就创建了第二个数据页。但是有时候主键不一定是自增长的，所以会出现第二页中的数据的主键大于第一页中的数据的主键；<br><strong>为了避免这种情况，在新增一个数据页的时候，会把前一个数据页中主键值较大的，挪动到新的数据页中来。然后把新插入的主键较小的数据挪到上一个数据页中，保证新数据页中的主键值一定比上一个数据页里的主键值大（索引的一个核心基础），这就是页分裂</strong></p>
+]]></content>
+      <categories>
+        <category>摘抄笔记</category>
+      </categories>
+      <tags>
+        <tag>MySql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySql 索引机制</title>
+    <url>/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/</url>
+    <content><![CDATA[<h1 id="主键索引的设计"><a href="#主键索引的设计" class="headerlink" title="主键索引的设计"></a>主键索引的设计</h1><p>每个数据页中都有一个页目录，可以方便在当前数据页中进行数据的查询。但是如果有多个数据页的情况下，对于一个主键的查询，得知数据在哪个数据页显得尤为重要。<br>因此针对主键设计了一个主键目录，就是把每个数据页的页号以及数据页中最小的主键放在一起，组成一个索引的目录，如下图：<br><img src="/images/img-54.png"><br>基于主键目录，先通过主键目录可以对比得到查询的数据可能在哪个数据页，然后到对应的数据页中基于二分法查找。</p>
+<h1 id="索引页"><a href="#索引页" class="headerlink" title="索引页"></a>索引页</h1><span id="more"></span>
+
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>当数据量超级大的时候，数据页的数量也非常的多。主键目录就得存放大量的数据页和最小主键值。性能没有得到突破。<br>此时，通过<strong>索引页</strong>来存放索引数据。<br><img src="/images/img-56.png"><br>需要注意的是，索引页中，出现了类型为1的行数据。表示的是B+树非叶子节点。<br><strong>虽然索引页多了，但是又应该到哪个索引页中去查主键数据，此时又可以把索引页进行一次“索引”，在更高层的索引层级中，保存了每个索引页里的最小主键值和索引页号。</strong><br><img src="/images/img-58.png"><br><strong>（如果跟高层的索引层级中数据也嫌多，那就继续套娃，这就形成了一个树结构）</strong><br><img src="/images/img-59.png"></p>
+<h2 id="基于索引页的查找"><a href="#基于索引页的查找" class="headerlink" title="基于索引页的查找"></a>基于索引页的查找</h2><p>如果要查询一个数据的主键为19，就应该先从顶层的索引页60里去找，通过二分法的方式得到下层要去索引页17中查找。然后一直找到了数据可能在数据页2中，然后去数据页2中，通过页目录，找到对应的槽位，读取数据。</p>
+<h1 id="索引分类"><a href="#索引分类" class="headerlink" title="索引分类"></a>索引分类</h1><h2 id="聚簇索引"><a href="#聚簇索引" class="headerlink" title="聚簇索引"></a>聚簇索引</h2><p>如果在一个B+树索引数据结构中，叶子节点就是数据页本身，那么可以称这个B+数为聚簇索引。（innodb默认创建的一套基于主键的索引结构，表中的数据直接放在聚簇索引里，作为叶子节点的数据页）</p>
+<h2 id="二级索引"><a href="#二级索引" class="headerlink" title="二级索引"></a>二级索引</h2><p>如果要对非主键的字段创建索引，那么会重新生成一颗B+树，叶子节点也是数据页，<strong>但是数据页中只会存放主键字段和对应的索引字段</strong>。<br>排序规则也是按照创建索引字段的顺序来严格排序的，也会有页分裂来保证顺序。</p>
+<h3 id="回表"><a href="#回表" class="headerlink" title="回表"></a>回表</h3><p>在二级索引上进行查询时，比如对name字段建立的二级索引，当select name from xxx where id = xxx时，通过叶子节点中的数据页内容就能直接返回。<br>但是如果select * from xxx where name = xxx时，叶子节点的数据不足以返回，还得通过主键去聚簇索引中定位到主键对应的完整数据行，此时才能把select * 要查询的字段值全部拿出来。</p>
+<h2 id="联合索引"><a href="#联合索引" class="headerlink" title="联合索引"></a>联合索引</h2><p>多个字段建立二级索引，也是一颗独立的B+树，叶子节点的数据页中包含了id，colA，colB。然后按照colA排序，如果colA相同就按照colB排序。</p>
+<h1 id="插入数据时如何维护不同索引的B-树"><a href="#插入数据时如何维护不同索引的B-树" class="headerlink" title="插入数据时如何维护不同索引的B+树"></a>插入数据时如何维护不同索引的B+树</h1><ol>
+<li>创建表时，就一个数据页。目前为空</li>
+<li>开始插入数据，这个初始的数据页就是根页。数据页内部有一个基于主键的页目录，此时通过页目录查询就行。</li>
+<li>数据越来越多数据页满了，创建一个新的数据页，然后把根页中的数据拷贝过去，同时再搞一个新的数据页，根据主键值的大小进行挪动，让两个数据页根据主键值排序，使得第二个数据页的主键值都大于第一个数据页的主键值。此时根页就变成了索引页。根页中存放了两个数据页的页号和他们里面的最小的主键值。</li>
+<li>随着不停的增加数据，数据页不断的页分裂。索引页中的数据页索引条目越来越多，索引页开始分裂成两个索引页，然后根页继续往上走一个层级，引用两个索引页。</li>
+<li>然后开始套娃。</li>
+</ol>
+<blockquote>
+<p>与聚簇索引不同的是，二级索引的B+树的索引页中，除了存放页号和最小的索引字段值外，还会额外存放最小索引字段对应的主键值。</p>
+</blockquote>
+<h1 id="使用索引的几个原则"><a href="#使用索引的几个原则" class="headerlink" title="使用索引的几个原则"></a>使用索引的几个原则</h1><blockquote>
+<p>索引idx_abc(a,b,c)</p>
+</blockquote>
+<h2 id="等值匹配原则"><a href="#等值匹配原则" class="headerlink" title="等值匹配原则"></a>等值匹配原则</h2><p>where条件中字段采用等于连接，并且完全包含了索引中的所有字段。<br>比如where a=1 and b=2 and c=3</p>
+<h2 id="最左侧列匹配"><a href="#最左侧列匹配" class="headerlink" title="最左侧列匹配"></a>最左侧列匹配</h2><p>采用索引中左侧的部分字段来查询，不能跳跃。<br>比如where a=1 and b=2 可以使用索引。但是where a=1 and c=3 不行。</p>
+<h2 id="最左前缀匹配原则"><a href="#最左前缀匹配原则" class="headerlink" title="最左前缀匹配原则"></a>最左前缀匹配原则</h2><p>如果使用like查询，则最左侧不能出现通配符。<br>比如where a like ‘1%’。</p>
+<h2 id="范围查找规则"><a href="#范围查找规则" class="headerlink" title="范围查找规则"></a>范围查找规则</h2><p>where语句里如果有范围查询，那只有对联合索引里最左侧的列进行范围查询才能用到索引！后续的字段无法使用到索引。<br>比如where a &gt; 1 and a&lt;5 and b&lt;1只会使用a列的索引</p>
+<h2 id="等值匹配-范围匹配"><a href="#等值匹配-范围匹配" class="headerlink" title="等值匹配+范围匹配"></a>等值匹配+范围匹配</h2><p>按照前面的列等值匹配，后面的列范围匹配，需要注意的是，如果多列范围匹配只会生效最靠左的那一列。<br>比如where a=1 and b &gt;1 and b&lt;4 and c&lt;5只会使用a,b列的索引</p>
+<h1 id="利用索引优化查询"><a href="#利用索引优化查询" class="headerlink" title="利用索引优化查询"></a>利用索引优化查询</h1><h2 id="SQL排序如何利用索引"><a href="#SQL排序如何利用索引" class="headerlink" title="SQL排序如何利用索引"></a>SQL排序如何利用索引</h2><p>对语句<code>SELECT * FROM TABLE ORDER BY TOTAL_SCORE DESC, NAME DESC LIMIT 20,10</code><br>语句主要是把表根据总分降序，名字降序排序后从第20页取出10条数据，可以建立（TOTAL_SCORE,NAME）的一个索引，这样的话，直接从索引树中最大的数据开始进行偏移，然后读取10条数据就行。因为索引树本身自带排序。<br><strong>这样的索引建立有一个前提，就是ORDER BY后面要么都是升序，要么都是降序，不能出现部分升序，部分降序。</strong></p>
+<h2 id="SQL分组如何利用索引"><a href="#SQL分组如何利用索引" class="headerlink" title="SQL分组如何利用索引"></a>SQL分组如何利用索引</h2><p>通常而言，对于group by后的字段，最好也是按照联合索引里的最左侧的字段开始，按顺序排列开来，这样的话，其实就可以完美的运用上索引来直接提取一组一组的数据，然后针对每一组的数据执行聚合函数就可以了。</p>
+<h2 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h2><p>如果我们建立了一个索引idx_name_age，那么我们在执行select * from student where name = ‘张三’ and age &gt;5 时，会先扫描一次idx_name_age索引，拿到主键后再去聚簇索引中查询一次，这叫做回表。但是如果查询的字段恰好是索引中的一部分，比如select name，这样的话，直接通过索引树就能够直接返回，这叫做覆盖索引。</p>
+<h1 id="如何尽可能的减少回表"><a href="#如何尽可能的减少回表" class="headerlink" title="如何尽可能的减少回表"></a>如何尽可能的减少回表</h1><p>在利用联合索引查询的实际情况下，往往可能因为回表到聚簇索引的次数太多，直接进行全表扫描。因此要尽可能的减少回表次数。    </p>
+<ul>
+<li>尽可能在SQL中指定要查询的字段名，尽量走覆盖索引</li>
+<li>即便是要回表，尽可能使用limit，where等语句限定回表到聚簇索引的次数。</li>
+</ul>
+<h1 id="设计索引的考虑因素"><a href="#设计索引的考虑因素" class="headerlink" title="设计索引的考虑因素"></a>设计索引的考虑因素</h1><ol>
+<li>实际查询中在where，group by,order by后面高频出现的字段</li>
+<li>基数比较大的字段（基数：不同的数据对于同一个列的不同值，比如性别这一列的基数最大只能是2，而出生年月日因人而异就会很多）</li>
+<li>字段类型比较小的字段</li>
+<li>如果非得在varchar(255)这样的字段上建立索引，也可以考虑只建立前20个字符的一个索引。</li>
+<li>对索引列使用函数会导致无法使用到索引</li>
+<li>不要建立太多的索引，因为新增数据可能会导致多个索引树的页分裂，很费时间</li>
+</ol>
+<h1 id="一款交友软件，陌生人搜索相关的索引建立过程"><a href="#一款交友软件，陌生人搜索相关的索引建立过程" class="headerlink" title="一款交友软件，陌生人搜索相关的索引建立过程"></a>一款交友软件，陌生人搜索相关的索引建立过程</h1><h2 id="字段的确定"><a href="#字段的确定" class="headerlink" title="字段的确定"></a>字段的确定</h2><ul>
+<li>省份provice</li>
+<li>城市city</li>
+<li>性别sex</li>
+<li>年龄age</li>
+</ul>
+<h2 id="如果where和order-by中的字段不同，建立谁的索引？"><a href="#如果where和order-by中的字段不同，建立谁的索引？" class="headerlink" title="如果where和order by中的字段不同，建立谁的索引？"></a>如果where和order by中的字段不同，建立谁的索引？</h2><p>对于SQL：SELECT * FROM USER WHERE provice = ‘四川’ order by age = 24<br>WHERE条件和ORDER BY使用了不同的字段；建立PROVINCE的索引，ORDER BY利用不到索引；建立age的索引，WHERE条件利用不到索引；如果建立联合索引Idx(province,age)也解决不了问题，只能二选一建立索引。<br>以where条件中的字段建立索引，因为基于where筛选可以最快速度筛选出所需要的少量数据。如果数据量不是特别大的情况下，order by的成本也不会太大</p>
+<h2 id="如何跳过基数很小的字段在索引中的位置"><a href="#如何跳过基数很小的字段在索引中的位置" class="headerlink" title="如何跳过基数很小的字段在索引中的位置"></a>如何跳过基数很小的字段在索引中的位置</h2><p>对于建立了索引idx(provice,city,sex,age)的SQL：<br>SELECT * FROM USER WHERE provice = xx and city = xx and age = 15    </p>
+<p>上面的SQL，说明了对于sex的条件没有勾选；<br>因为sex的基数最大是2。上面的SQL在已有的索引下，是无法通过age在索引中进行筛选的。但是可以通过添加上sex in (‘male’,’female’) 这个等值条件，使得索引生效。</p>
+<h2 id="根据七天内是否在线作为过滤条件"><a href="#根据七天内是否在线作为过滤条件" class="headerlink" title="根据七天内是否在线作为过滤条件"></a>根据七天内是否在线作为过滤条件</h2><p>原始字段：latest_login_time<br>如果添加了这个字段，势必会利用latest_login_time的一个大于或者小于操作来筛选数据，但是在idx(provice,city,sex,age)的情况下，修改索引为(provice,city,sex,latest_login_time,age)也会导致age使用不到索引。<br>新增字段：does_login_in_latest_7_days（基数为2，原理同sex，利用等值查询）</p>
+<h2 id="通过对基数很小的字段进行索引的创建"><a href="#通过对基数很小的字段进行索引的创建" class="headerlink" title="通过对基数很小的字段进行索引的创建"></a>通过对基数很小的字段进行索引的创建</h2><p>对于SQL：SELECT * FROM USER WHERE SEX = ‘female’ ORDER BY VIP_SCORE DESC LIMIT 0,10<br>如果只是建立索引idx(sex)，上面的SQL经过索引后依然有海量的数据，再进行磁盘文件排序，性能很低。<br>再这样的情况下，可以针对于基数很低的字段再加上一个排序字段单独设计一个辅助索引，idx(sex,score)。此时依然可以使用到索引来排序。因为sex=’female’的数据在磁盘上是排在一起的。找到这一部分数据后，他们肯定都是按照score排序的，此时根据score字段值的顺序去读取limit语句指定的数据就行。</p>
+<h2 id="区间查询的字段一定要放在索引的最右边"><a href="#区间查询的字段一定要放在索引的最右边" class="headerlink" title="区间查询的字段一定要放在索引的最右边"></a>区间查询的字段一定要放在索引的最右边</h2>]]></content>
+      <categories>
+        <category>摘抄笔记</category>
+      </categories>
+      <tags>
+        <tag>MySql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySql 锁机制</title>
+    <url>/2021/08/25/MySql-%E9%94%81/</url>
+    <content><![CDATA[<h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><p>当多个事务同时更新一条数据的时候，如何防止脏写的问题</p>
+<h1 id="锁机制的引入"><a href="#锁机制的引入" class="headerlink" title="锁机制的引入"></a>锁机制的引入</h1><p>依靠锁机制让多个事务更新同一行数据的时候串行化，避免同时更新。</p>
+<h1 id="锁机制下的更新步骤"><a href="#锁机制下的更新步骤" class="headerlink" title="锁机制下的更新步骤"></a>锁机制下的更新步骤</h1><ol>
+<li>事务A要更新一条数据，先判断当前数据是否有锁。没锁则当前事务创建一个锁，其中包含了自己的trx_id和等待状态，然后把锁和数据关联起来。</li>
+<li>此时数据和锁都是在内存中。</li>
+<li>事务B也要更新这条数据，检查数据是否有锁时发现存在着事务A创建的锁。则创建了属于自己的一个锁，其中等待状态为true。表示正在等待</li>
+<li>事务A更新完后，释放锁，然后寻找到事务B对这条数据加锁了。此时就会把事务B的锁中的等待状态修改为false，然后唤醒事务B。</li>
+</ol>
+<h1 id="行锁"><a href="#行锁" class="headerlink" title="行锁"></a>行锁</h1><h2 id="独占锁"><a href="#独占锁" class="headerlink" title="独占锁"></a>独占锁</h2><span id="more"></span>
+<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>又叫X锁，Exclude锁。当有一个事务加了独占锁后，其他事务再来更新当前数据，都是要加独占锁的，但是只能在独占锁后面等待。</p>
+<h3 id="备注说明"><a href="#备注说明" class="headerlink" title="备注说明"></a>备注说明</h3><p>当多事务更新同一行数据时，其他事物是能够直接读取这行数据的，并不需要加锁。因为默认开启mvcc机制可以基于ReadView去undo log版本链中找到一个能够读取的版本。</p>
+<h2 id="共享锁"><a href="#共享锁" class="headerlink" title="共享锁"></a>共享锁</h2><h3 id="简介-1"><a href="#简介-1" class="headerlink" title="简介"></a>简介</h3><p>又叫S锁。语法是：SELECT * FROM TABLE <strong>LOCK IN SHARE MODE</strong>；意思是在查询的时候对一行数据加共享锁。</p>
+<h3 id="备注说明-1"><a href="#备注说明-1" class="headerlink" title="备注说明"></a>备注说明</h3><p>当一行数据加了X锁后，S锁是无法添加的，因为两者互斥。<br>当一行数据加了S锁后，其他事物也能添加S锁，因为S锁不互斥。</p>
+<h3 id="其他情况"><a href="#其他情况" class="headerlink" title="其他情况"></a>其他情况</h3><p>查询操作通过<strong>LOCK IN SHARE</strong> 添加共享锁；<br>查询操作通过<strong>FOR UPDATE</strong> 添加互斥锁；</p>
+<h1 id="表锁"><a href="#表锁" class="headerlink" title="表锁"></a>表锁</h1><h2 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h2><p>LOCK TABLES xxx READ；加表级共享锁（很少用）<br>LOCK TABLES xxx WRITE；加表级独占锁（很少用）        </p>
+<h2 id="其他加锁的操作"><a href="#其他加锁的操作" class="headerlink" title="其他加锁的操作"></a>其他加锁的操作</h2><ol>
+<li>如果有事务在表里执行增删改操作，就会在行级加独占锁。还会在表级加一个<strong>意向独占锁</strong>。</li>
+<li>如果事务在表里执行查询操作，那么会在表级添加一个<strong>意向共享锁</strong>。</li>
+</ol>
+<h2 id="备注说明-2"><a href="#备注说明-2" class="headerlink" title="备注说明"></a>备注说明</h2><ol>
+<li>意向独占锁和意向共享锁不互斥</li>
+</ol>
+<h1 id="互斥关系"><a href="#互斥关系" class="headerlink" title="互斥关系"></a>互斥关系</h1><table>
+<thead>
+<tr>
+<th>锁类型</th>
+<th>独占锁</th>
+<th>意向独占锁</th>
+<th>共享锁</th>
+<th>意向共享锁</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>独占锁</td>
+<td>互斥</td>
+<td>互斥</td>
+<td>互斥</td>
+<td>互斥</td>
+</tr>
+<tr>
+<td>意向独占锁</td>
+<td>互斥</td>
+<td><strong>不互斥</strong></td>
+<td>互斥</td>
+<td><strong>不互斥</strong></td>
+</tr>
+<tr>
+<td>共享锁</td>
+<td>互斥</td>
+<td>互斥</td>
+<td><strong>不互斥</strong></td>
+<td><strong>不互斥</strong></td>
+</tr>
+<tr>
+<td>意向共享锁</td>
+<td>互斥</td>
+<td><strong>不互斥</strong></td>
+<td><strong>不互斥</strong></td>
+<td><strong>不互斥</strong></td>
+</tr>
+</tbody></table>
+<blockquote>
+<ol>
+<li><strong>独占锁与其他锁都互斥</strong></li>
+<li>意向XX锁与意向XX锁之间不互斥</li>
+<li>共享锁，意向共享锁之间不互斥</li>
+<li>意向共享锁只与独占锁互斥</li>
+</ol>
+</blockquote>
+<h1 id="不确定性的性能抖动"><a href="#不确定性的性能抖动" class="headerlink" title="不确定性的性能抖动"></a>不确定性的性能抖动</h1><h2 id="脏页刷盘"><a href="#脏页刷盘" class="headerlink" title="脏页刷盘"></a>脏页刷盘</h2><h3 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h3><p>当一个查询语句，加载了大量的数据到缓存页中，导致内存中大量的缓存页被淘汰然后刷回磁盘。</p>
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p>减少缓存页刷盘的频率：增加buffer pool分配的内存空间</p>
+<h2 id="Redolog刷盘"><a href="#Redolog刷盘" class="headerlink" title="Redolog刷盘"></a>Redolog刷盘</h2><h3 id="原因分析-1"><a href="#原因分析-1" class="headerlink" title="原因分析"></a>原因分析</h3><p>redolog不断的写入，当日志文件写满了，就会对第一个日志文件进行覆盖写入，此时如果<br>第一个日志文件中的一些redolog<br>对应的内存里的缓存页的数据<br>如果还没有被刷回磁盘的话。也会触发脏页回盘的过程。</p>
+<h3 id="解决方案-1"><a href="#解决方案-1" class="headerlink" title="解决方案"></a>解决方案</h3><p>提升缓存页刷盘的速度</p>
+<ul>
+<li>因为刷盘是典型的随机IO，所以要提升随机IO的性能，使用SSD固态硬盘。</li>
+<li>配置参数innodb_io_capacity：采用多大的IO速率刷盘（每秒随机IO的次数）</li>
+<li>配置参数innodb_flush_neighbors：刷盘时把缓存页临近的其他缓存页也刷盘，但是这样刷回的缓存页就会变多，如果是SSD，把这个设置为0就行。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>摘抄笔记</category>
+      </categories>
+      <tags>
+        <tag>MySql</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Spring 启动流程简述</title>
     <url>/2021/08/20/Spring-%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/</url>
     <content><![CDATA[<blockquote>
@@ -112,7 +753,7 @@
 <td>自动赋值.</td>
 </tr>
 </tbody></table>
-<h3 id="3-Spring-注解编程演化"><a href="#3-Spring-注解编程演化" class="headerlink" title="3. Spring 注解编程演化"></a>3. Spring 注解编程演化</h3><p> V1.X | V2.0 | V2.5 | V3.X | V4.X | V5.X<br>—|—|—|—|—|—|—<br> <strong>注解驱动启蒙时代</strong> | <strong>注解驱动过渡时代</strong> | <strong>引入新的骨架式Annotation</strong> | <strong>注解驱动黄金时代</strong> | <strong>注解驱动完善时代</strong> | <strong>注解驱动成熟时代</strong></p>
+<h3 id="3-Spring-注解编程演化"><a href="#3-Spring-注解编程演化" class="headerlink" title="3. Spring 注解编程演化"></a>3. Spring 注解编程演化</h3><p>V1.X | V2.0 | V2.5 | V3.X | V4.X | V5.X<br>— | — | — | — | — | — | —<br><strong>注解驱动启蒙时代</strong> | <strong>注解驱动过渡时代</strong> | <strong>引入新的骨架式Annotation</strong> | <strong>注解驱动黄金时代</strong> | <strong>注解驱动完善时代</strong> | <strong>注解驱动成熟时代</strong></p>
 <h3 id="4-Spring-模块结构"><a href="#4-Spring-模块结构" class="headerlink" title="4. Spring 模块结构"></a>4. Spring 模块结构</h3><blockquote>
 <p>Spring 总共大约有 20 个模块， 由 1300 多个不同的文件构成。 而这些组件被分别整合在核心容器（Core Container） 、 AOP（Aspect Oriented Programming）和设备支持（Instrmentation） 、数据访问与集成（Data Access/Integeration） 、 Web、 消息（Messaging） 、 Test等 6 个模块中。 </p>
 </blockquote>
@@ -285,6 +926,50 @@
       </tags>
   </entry>
   <entry>
+    <title>Spring 循环依赖及三级缓存</title>
+    <url>/2021/08/20/Spring-%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96%E5%8F%8A%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98/</url>
+    <content><![CDATA[<h3 id="Spring-循环依赖及三级缓存"><a href="#Spring-循环依赖及三级缓存" class="headerlink" title="Spring 循环依赖及三级缓存"></a>Spring 循环依赖及三级缓存</h3><ul>
+<li><p>Spring 在启动过程中，使用到了三个map，称为三级缓存。<br><img src="/images/img-19.png" alt="三级缓存"></p>
+</li>
+<li><p>Spring启动过程大致如下：</p>
+<blockquote>
+<p>1.加载配置文件<br>2.解析配置文件转化beanDefination，获取到bean的所有属性、依赖及初始化用到的各类处理器等<br>3.创建beanFactory并初始化所有单例bean<br>4.注册所有的单例bean并返回可用的容器，一般为扩展的applicationContext</p>
+</blockquote>
+</li>
+</ul>
+<span id="more"></span>
+
+<h4 id="一级缓存"><a href="#一级缓存" class="headerlink" title="一级缓存"></a>一级缓存</h4><ul>
+<li>在第三步中，所有单例的bean初始化完成后会存放在一个Map(singletonObjects)中，beanName为key，单例bean为value。<br>第三步单例bean的初始化过程大致如下：<blockquote>
+<p>0.标记bean为创建中<br>1.new出bean对象<br>2.如果支持循环依赖则生成三级缓存，可以提前暴露bean<br>3.填充bean属性，解决属性依赖<br>4.初始化bean，处理Aware接口并执行各类bean后处理器，执行初始化方法，如果需要生成aop代理对象<br>5.如果存在循环依赖，解决之 – 这里有点问题，这一步是如果之前解决了aop循环依赖，则缓存中放置了提前生成的代理对象，然后使用原始bean继续执行初始化，所以需要再返回最终bean前，把原始bean置换为代理对象返回。<br>6.此时bean已经可以被使用，进行bean注册(标记)并注册销毁方法。<br>7.将bean放入容器中(一级缓存)，移除创建中标记及二三级缓存(后面再具体分析)<br><img src="/images/img-20.png" alt="1"><br><img src="/images/img-21.png" alt="2"><br><img src="/images/img-22.png" alt="3"></p>
+</blockquote>
+</li>
+</ul>
+<h4 id="循环依赖及三级缓存"><a href="#循环依赖及三级缓存" class="headerlink" title="循环依赖及三级缓存"></a>循环依赖及三级缓存</h4><ul>
+<li><p>根据以上步骤可以看出bean初始化是一个相当复杂的过程，假如<strong>初始化A bean时，发现A bean依赖B bean</strong>,即A初始化执行到了第2步，此时B还没有初始化，则需要暂停A，先去初始化B，那么此时new出来的A对象放哪里，直接放在容器Map里显然不合适，半残品怎么能用，所以需要提供一个可以<strong>标记创建中bean(A)的Map，可以提前暴露正在创建的bean供其他bean依赖</strong>，如果在初始化A所依赖的bean B时，发现B也需要注入一个A的依赖，<strong>则B可以从创建中的beanMap中直接获取A对象（创建中）注入A</strong>，然后完成B的初始化，返回给正在注入属性的A，最终A也完成初始化，皆大欢喜。</p>
+</li>
+<li><p>如果配置不允许循环依赖，则上述缓存就用不到了，A 依赖B，就是创建B，B依赖C就去创建C，创建完了逐级返回就行，所以，<strong>一级缓存之后的其他缓存(二三级缓存)就是为了解决循环依赖</strong>！而配置支持循环依赖后，就一定要解决循环依赖吗？肯定不是！循环依赖在实际应用中也有，但不会太多，简单的应用场景是： controller注入service，service注入mapper，只有复杂的业务，可能service互相引用，有可能出现循环依赖，<strong>所以为了出现循环依赖才去解决，不出现就不解决，虽然支持循环依赖，但是只有在出现循环依赖时才真正暴露早期对象，否则只暴露个获取bean的方法，并没有真正暴露bean，因为这个方法不会被执行到，这块的实现就是三级缓存（singletonFactories），只缓存了一个单例bean工厂</strong>。<br><img src="/images/img-23.png">  </p>
+</li>
+<li><p>这个bean工厂不仅可以暴露早期bean还可以暴露代理bean，如果存在aop代理，则依赖的应该是代理对象，而不是原始的bean。而暴露原始bean是在单例bean初始化的第2步，填充属性第3步，生成代理对象第4步，这就矛盾了，A依赖到B并去解决B依赖时，要去初始化B，然后B又回来依赖A，而此时A还没有执行代理的过程，所以，需要在填充属性前就生成A的代理并暴露出去，第2步时机就刚刚好。</p>
+</li>
+<li><p>三级缓存的bean工厂getObject方式，实际执行的是getEarlyBeanReference，如果对象需要被代理(存在beanPostProcessors -&gt; SmartInstantiationAwareBeanPostProcessor)，则提前生成代理对象。<br><img src="/images/img-24.png"></p>
+</li>
+</ul>
+<h4 id="二级缓存"><a href="#二级缓存" class="headerlink" title="二级缓存"></a>二级缓存</h4><ul>
+<li><p>根据以上步骤可以看出bean初始化是一个相当复杂的过程，但是貌似三级缓存已经解决所有问题了，二级缓存用来做什么呢？为什么三级缓存不直接叫做二级缓存?这个应该是在缓存使用时决定的：<br><img src="/images/img-25.png">  </p>
+</li>
+<li><p>三级缓存中提到<strong>出现循环依赖才去解决</strong>，也就是说出现循环依赖时，才会执行工厂的getObject生成(获取)早期依赖，这个时候就需要给它挪个窝了，因为真正暴露的不是工厂，而是对象，所以需要使用一个新的缓存保存暴露的早期对象(<strong>earlySingletonObjects</strong>)，同时移除提前暴露的工厂，也不需要在多重循环依赖时每次去执行getObject(虽然个人觉得不会出问题，因为代理对象不会重复生成，详细可以了解下代理里面的逻辑，如wrapIfNecessary)。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>摘抄笔记</category>
+      </categories>
+      <tags>
+        <tag>Spring</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Hello World</title>
     <url>/2021/08/06/newpapername/</url>
     <content><![CDATA[<div class="poem-wrap">
@@ -304,6 +989,80 @@
   });
   </script>
 </div>]]></content>
+  </entry>
+  <entry>
+    <title>MySql Buffer Pool 与数据页</title>
+    <url>/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/</url>
+    <content><![CDATA[<h1 id="Buffer-Pool"><a href="#Buffer-Pool" class="headerlink" title="Buffer Pool"></a>Buffer Pool</h1><p>在对数据库执行增删改查操作的时候，因为对磁盘的随机读写操作速度非常慢。所以通过Buffer Pool缓存磁盘的真实数据。</p>
+<h1 id="数据页"><a href="#数据页" class="headerlink" title="数据页"></a>数据页</h1><p>MYSQL中抽象出来的数据单位，MYSQL把很多行数据放在一个数据页里。实际上我们更新一行数据的时候，是通过数据库找到这行数据所在的数据页，然后加载到Buffer Pool中。<br>默认情况下，一个数据页是16KB</p>
+<h1 id="缓存页"><a href="#缓存页" class="headerlink" title="缓存页"></a>缓存页</h1><p>因为在Buffer Pool中存放的也是一个一个的数据页，也叫作缓存页。在默认情况下，是和磁盘上的数据页一一对应的，所以也是16KB。</p>
+<span id="more"></span>
+<h2 id="缓存页的描述信息"><a href="#缓存页的描述信息" class="headerlink" title="缓存页的描述信息"></a>缓存页的描述信息</h2><p>用于描述缓存页的一些基本信息，比如数据页所属表空间、数据页的编号、在Buffer Pool中的地址等。<br>每个缓存页都有对应的一个描述信息，在Buffer Pool中，每个缓存页的描述信息在最前面，然后各个缓存页放在后面<br>描述数据大概相当于缓存页是5%。</p>
+<h1 id="free链表"><a href="#free链表" class="headerlink" title="free链表"></a>free链表</h1><h2 id="概念引入"><a href="#概念引入" class="headerlink" title="概念引入"></a>概念引入</h2><p>当读取数据页放入Buffer Pool的时候，怎么知道哪些缓存页是空闲的？<br><font color="red">free链表是一个双向链表，每个节点是一个空闲的缓存页的描述块地址</font>。    </p>
+<h2 id="空间占用"><a href="#空间占用" class="headerlink" title="空间占用"></a>空间占用</h2><ul>
+<li>free链表只是一个逻辑上的概念，因为每个缓存页的描述数据块中维护了两个指针，free_prev和free_next，分别指向free链表的上一个节点和下一个节点，这样就串成了一个free链表。    </li>
+<li>free链表还有一个基础节点（但是不在链表中，链表头结点的prev=null，尾结点的next=null），40个字节，存放了free链表的头结点的地址、尾结点的地址以及free链表里当前还有多少个节点。</li>
+</ul>
+<h1 id="数据页读取到Buffer-Pool的过程"><a href="#数据页读取到Buffer-Pool的过程" class="headerlink" title="数据页读取到Buffer Pool的过程"></a>数据页读取到Buffer Pool的过程</h1><ol>
+<li>从free链表里获取一个描述数据块，获取到对应的空闲缓存页</li>
+<li>把数据页读取到对应的缓存页，写入相关的描述信息到描述数据块中</li>
+<li>从free链表中移除</li>
+</ol>
+<h1 id="flush链表"><a href="#flush链表" class="headerlink" title="flush链表"></a>flush链表</h1><p>在执行增删改的时候，都是基于内存中的缓存页进行操作的，一旦更新了缓存页中的数据，使得和磁盘上的数据页里的数据不一致。那么这就是脏数据页。<br>类似于free链表，通过缓存页描述数据块中的两个指针来将脏数据页串起来。组成一个双向链表，也有一个基础节点存放头结点尾结点的地址等。</p>
+<h1 id="MYSQL预读机制"><a href="#MYSQL预读机制" class="headerlink" title="MYSQL预读机制"></a>MYSQL预读机制</h1><p>当从磁盘上加载一个数据页的时候，可能会连带把这个数据页相邻的其他数据页也加载到缓存中去。分为以下两种预读方式，暂时不做说明    </p>
+<ul>
+<li>线性预读    <blockquote>
+<p>顺序访问了一个区里的多个数据页（默认56页），就会把下一个相邻区中的所有数据页加载到缓存中</p>
+</blockquote>
+</li>
+<li>随机预读    <blockquote>
+<p>如果Buffer Pool中缓存了一个区的13个随机数据页，而且这些数据页是比较频繁被访问的，就会把这个区的其他数据页都加载到缓存中</p>
+</blockquote>
+</li>
+</ul>
+<h1 id="LRU链表"><a href="#LRU链表" class="headerlink" title="LRU链表"></a>LRU链表</h1><h2 id="简化版"><a href="#简化版" class="headerlink" title="简化版"></a>简化版</h2><ul>
+<li>当free链表已经没有空闲页的时候，所有的缓存页都塞了数据库，此时就要淘汰掉一些缓存页。    </li>
+<li>此时可以将一个脏数据页刷到磁盘，然后清空这个缓存页，就有了一个空闲的缓存页。但是选择哪一个脏数据页去清空，此时就要用到LRU链表。    </li>
+<li>当把一个数据页加载到缓存页的时候，把对应的描述数据块放到LRU链表头部。后续查询了或者修改了某个缓存页，也会把这个缓存页挪动到LRU链表头部。    </li>
+<li>但是MYSQL的预读机制可能会加载没人访问的数据页，如下图。<br><img src="/images/img-37.png"></li>
+</ul>
+<h2 id="基于冷热分离的LRU链表"><a href="#基于冷热分离的LRU链表" class="headerlink" title="基于冷热分离的LRU链表"></a>基于冷热分离的LRU链表</h2><ul>
+<li>将链表按照5:3的比例分割，63%的热数据，37%的冷数据。</li>
+<li>数据页第一次加载到缓存的时候，放入冷数据头部。在1s后（参数配置）访问这个缓存页，就会被加入热数据头部。</li>
+<li>在热数据区域的前1/4部分缓存页被访问后不会移动到链表头部，避免浪费性能</li>
+<li>有一个后台线程会定时把冷数据区域的尾部缓存页刷回磁盘，清空加入回free链表。</li>
+<li>热数据区域也会在MYSQL闲暇的时候刷回磁盘</li>
+<li>无空闲缓存页时从冷数据区域尾部找到一个缓存页刷回磁盘并清空成为空闲页。</li>
+</ul>
+<h1 id="Buffer-Pool-1"><a href="#Buffer-Pool-1" class="headerlink" title="Buffer Pool"></a>Buffer Pool</h1><h2 id="并发访问Buffer-Pool的性能问题"><a href="#并发访问Buffer-Pool的性能问题" class="headerlink" title="并发访问Buffer Pool的性能问题"></a>并发访问Buffer Pool的性能问题</h2><ul>
+<li>多线程同时访问Buffer Pool，就会同时操作同一个free链表、flush链表和lru链表。那必然要进行加锁</li>
+<li>因为是基于内存的操作，所以很快。其次这些链表的操作，也是基于指针的操作，也不存在性能低下的可能。<h2 id="多个Buffer-Pool优化并发能力"><a href="#多个Buffer-Pool优化并发能力" class="headerlink" title="多个Buffer Pool优化并发能力"></a>多个Buffer Pool优化并发能力</h2>给Buffer Pool分配比较大的内存，则可以设置多个Buffer Pool.如果给分配的内存小于1G，最多就只有1个Buffer Pool。    <blockquote>
+<p>innodb_buffer_pool_instances=8</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="基于chunk机制动态调整Buffer-Pool的大小"><a href="#基于chunk机制动态调整Buffer-Pool的大小" class="headerlink" title="基于chunk机制动态调整Buffer Pool的大小"></a>基于chunk机制动态调整Buffer Pool的大小</h2><ul>
+<li>Buffer Pool是由多个chunk组成的，默认一个chunk的大小是128M。    <blockquote>
+<p>分配Buffer Pool的内存8G，4个Buffer Pool实例，那么每个Buffer Pool是2G，拥有16个chunk。</p>
+</blockquote>
+</li>
+<li>需要动态扩容的话只需要申请一系列128MB大小的chunk就行，然后分配给buffer pool就行。<br><img src="/images/img-38.png"></li>
+</ul>
+<h2 id="内存的分配"><a href="#内存的分配" class="headerlink" title="内存的分配"></a>内存的分配</h2><ul>
+<li>Buffer Pool总共占用机器内存的50%-60%</li>
+<li>buffer Pool总大小 = (chunk size * buffer pool instance) * chunk count<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2></li>
+<li>根据机器的内存设置合理的buffer pool的大小，然后设置buffer pool的数量，使得chunk数量*chunk size 接近单个buffer pool的内存。充分利用内存减少内存碎片</li>
+<li>每个buffer pool里的多个chunk共用一套链表数据结构。</li>
+<li>后台线程定时根据lru链表和flush链表，去把一批缓存页刷入磁盘并释放，同时更新free链表</li>
+<li>如果缓存页满了，无法加载自己的缓存页，就把lru链表冷数据区域的缓存页刷盘</li>
+</ul>
+]]></content>
+      <categories>
+        <category>摘抄笔记</category>
+      </categories>
+      <tags>
+        <tag>MySql</tag>
+      </tags>
   </entry>
   <entry>
     <title>外网访问家庭网络小记</title>
@@ -392,7 +1151,7 @@
 </ul>
 <p>1.该脚本需要持续运行, 如果是Linux系统, 直接挂后台运行即可, 该脚本资源消耗不高<br>2.如果提示没requests 运行下, 打开cmd窗口<br>输入: <strong>pip install requests</strong><br><img src="/images/img-12.png" alt="pip install requests"><br>3.如运行闪退, 请检查域名等是否正确填写</p>
 </blockquote>
-<p>如有问题请评论或留言: <a href="mailto:&#53;&#52;&#52;&#48;&#x31;&#48;&#x31;&#x36;&#53;&#x40;&#x71;&#x71;&#46;&#99;&#111;&#x6d;">&#53;&#52;&#52;&#48;&#x31;&#48;&#x31;&#x36;&#53;&#x40;&#x71;&#x71;&#46;&#99;&#111;&#x6d;</a></p>
+<p>如有问题请评论或留言: <a href="mailto:&#53;&#52;&#x34;&#x30;&#49;&#x30;&#x31;&#54;&#53;&#64;&#x71;&#113;&#x2e;&#99;&#x6f;&#x6d;">&#53;&#52;&#x34;&#x30;&#49;&#x30;&#x31;&#54;&#53;&#64;&#x71;&#113;&#x2e;&#99;&#x6f;&#x6d;</a></p>
 ]]></content>
       <categories>
         <category>摘抄笔记</category>

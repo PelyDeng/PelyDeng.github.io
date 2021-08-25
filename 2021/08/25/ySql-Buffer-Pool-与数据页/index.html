@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<!-- 樱花特效 -->
+  
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+  <link rel="mask-icon" href="/images/favicon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Buffer Pool在对数据库执行增删改查操作的时候，因为对磁盘的随机读写操作速度非常慢。所以通过Buffer Pool缓存磁盘的真实数据。 数据页MYSQL中抽象出来的数据单位，MYSQL把很多行数据放在一个数据页里。实际上我们更新一行数据的时候，是通过数据库找到这行数据所在的数据页，然后加载到Buffer Pool中。默认情况下，一个数据页是16KB 缓存页因为在Buffer Pool中存放">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySql Buffer Pool 与数据页">
+<meta property="og:url" content="http://pdyun.cc/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/index.html">
+<meta property="og:site_name" content="牧场小站">
+<meta property="og:description" content="Buffer Pool在对数据库执行增删改查操作的时候，因为对磁盘的随机读写操作速度非常慢。所以通过Buffer Pool缓存磁盘的真实数据。 数据页MYSQL中抽象出来的数据单位，MYSQL把很多行数据放在一个数据页里。实际上我们更新一行数据的时候，是通过数据库找到这行数据所在的数据页，然后加载到Buffer Pool中。默认情况下，一个数据页是16KB 缓存页因为在Buffer Pool中存放">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://pdyun.cc/images/img-37.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-38.png">
+<meta property="article:published_time" content="2021-08-25T13:03:00.000Z">
+<meta property="article:modified_time" content="2021-08-25T13:17:03.892Z">
+<meta property="article:author" content="Peilin Deng">
+<meta property="article:tag" content="MySql">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://pdyun.cc/images/img-37.png">
+
+<link rel="canonical" href="http://pdyun.cc/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  
+  
+
+
+  <title>MySql Buffer Pool 与数据页 | 牧场小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">牧场小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySql Buffer Pool 与数据页
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-25 21:03:00 / 修改时间：21:17:03" itemprop="dateCreated datePublished" datetime="2021-08-25T21:03:00+08:00">2021-08-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/" class="post-meta-item leancloud_visitors" data-flag-title="MySql Buffer Pool 与数据页" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Buffer-Pool"><a href="#Buffer-Pool" class="headerlink" title="Buffer Pool"></a>Buffer Pool</h1><p>在对数据库执行增删改查操作的时候，因为对磁盘的随机读写操作速度非常慢。所以通过Buffer Pool缓存磁盘的真实数据。</p>
+<h1 id="数据页"><a href="#数据页" class="headerlink" title="数据页"></a>数据页</h1><p>MYSQL中抽象出来的数据单位，MYSQL把很多行数据放在一个数据页里。实际上我们更新一行数据的时候，是通过数据库找到这行数据所在的数据页，然后加载到Buffer Pool中。<br>默认情况下，一个数据页是16KB</p>
+<h1 id="缓存页"><a href="#缓存页" class="headerlink" title="缓存页"></a>缓存页</h1><p>因为在Buffer Pool中存放的也是一个一个的数据页，也叫作缓存页。在默认情况下，是和磁盘上的数据页一一对应的，所以也是16KB。</p>
+<span id="more"></span>
+<h2 id="缓存页的描述信息"><a href="#缓存页的描述信息" class="headerlink" title="缓存页的描述信息"></a>缓存页的描述信息</h2><p>用于描述缓存页的一些基本信息，比如数据页所属表空间、数据页的编号、在Buffer Pool中的地址等。<br>每个缓存页都有对应的一个描述信息，在Buffer Pool中，每个缓存页的描述信息在最前面，然后各个缓存页放在后面<br>描述数据大概相当于缓存页是5%。</p>
+<h1 id="free链表"><a href="#free链表" class="headerlink" title="free链表"></a>free链表</h1><h2 id="概念引入"><a href="#概念引入" class="headerlink" title="概念引入"></a>概念引入</h2><p>当读取数据页放入Buffer Pool的时候，怎么知道哪些缓存页是空闲的？<br><font color="red">free链表是一个双向链表，每个节点是一个空闲的缓存页的描述块地址</font>。    </p>
+<h2 id="空间占用"><a href="#空间占用" class="headerlink" title="空间占用"></a>空间占用</h2><ul>
+<li>free链表只是一个逻辑上的概念，因为每个缓存页的描述数据块中维护了两个指针，free_prev和free_next，分别指向free链表的上一个节点和下一个节点，这样就串成了一个free链表。    </li>
+<li>free链表还有一个基础节点（但是不在链表中，链表头结点的prev=null，尾结点的next=null），40个字节，存放了free链表的头结点的地址、尾结点的地址以及free链表里当前还有多少个节点。</li>
+</ul>
+<h1 id="数据页读取到Buffer-Pool的过程"><a href="#数据页读取到Buffer-Pool的过程" class="headerlink" title="数据页读取到Buffer Pool的过程"></a>数据页读取到Buffer Pool的过程</h1><ol>
+<li>从free链表里获取一个描述数据块，获取到对应的空闲缓存页</li>
+<li>把数据页读取到对应的缓存页，写入相关的描述信息到描述数据块中</li>
+<li>从free链表中移除</li>
+</ol>
+<h1 id="flush链表"><a href="#flush链表" class="headerlink" title="flush链表"></a>flush链表</h1><p>在执行增删改的时候，都是基于内存中的缓存页进行操作的，一旦更新了缓存页中的数据，使得和磁盘上的数据页里的数据不一致。那么这就是脏数据页。<br>类似于free链表，通过缓存页描述数据块中的两个指针来将脏数据页串起来。组成一个双向链表，也有一个基础节点存放头结点尾结点的地址等。</p>
+<h1 id="MYSQL预读机制"><a href="#MYSQL预读机制" class="headerlink" title="MYSQL预读机制"></a>MYSQL预读机制</h1><p>当从磁盘上加载一个数据页的时候，可能会连带把这个数据页相邻的其他数据页也加载到缓存中去。分为以下两种预读方式，暂时不做说明    </p>
+<ul>
+<li>线性预读    <blockquote>
+<p>顺序访问了一个区里的多个数据页（默认56页），就会把下一个相邻区中的所有数据页加载到缓存中</p>
+</blockquote>
+</li>
+<li>随机预读    <blockquote>
+<p>如果Buffer Pool中缓存了一个区的13个随机数据页，而且这些数据页是比较频繁被访问的，就会把这个区的其他数据页都加载到缓存中</p>
+</blockquote>
+</li>
+</ul>
+<h1 id="LRU链表"><a href="#LRU链表" class="headerlink" title="LRU链表"></a>LRU链表</h1><h2 id="简化版"><a href="#简化版" class="headerlink" title="简化版"></a>简化版</h2><ul>
+<li>当free链表已经没有空闲页的时候，所有的缓存页都塞了数据库，此时就要淘汰掉一些缓存页。    </li>
+<li>此时可以将一个脏数据页刷到磁盘，然后清空这个缓存页，就有了一个空闲的缓存页。但是选择哪一个脏数据页去清空，此时就要用到LRU链表。    </li>
+<li>当把一个数据页加载到缓存页的时候，把对应的描述数据块放到LRU链表头部。后续查询了或者修改了某个缓存页，也会把这个缓存页挪动到LRU链表头部。    </li>
+<li>但是MYSQL的预读机制可能会加载没人访问的数据页，如下图。<br><img src="/images/img-37.png"></li>
+</ul>
+<h2 id="基于冷热分离的LRU链表"><a href="#基于冷热分离的LRU链表" class="headerlink" title="基于冷热分离的LRU链表"></a>基于冷热分离的LRU链表</h2><ul>
+<li>将链表按照5:3的比例分割，63%的热数据，37%的冷数据。</li>
+<li>数据页第一次加载到缓存的时候，放入冷数据头部。在1s后（参数配置）访问这个缓存页，就会被加入热数据头部。</li>
+<li>在热数据区域的前1/4部分缓存页被访问后不会移动到链表头部，避免浪费性能</li>
+<li>有一个后台线程会定时把冷数据区域的尾部缓存页刷回磁盘，清空加入回free链表。</li>
+<li>热数据区域也会在MYSQL闲暇的时候刷回磁盘</li>
+<li>无空闲缓存页时从冷数据区域尾部找到一个缓存页刷回磁盘并清空成为空闲页。</li>
+</ul>
+<h1 id="Buffer-Pool-1"><a href="#Buffer-Pool-1" class="headerlink" title="Buffer Pool"></a>Buffer Pool</h1><h2 id="并发访问Buffer-Pool的性能问题"><a href="#并发访问Buffer-Pool的性能问题" class="headerlink" title="并发访问Buffer Pool的性能问题"></a>并发访问Buffer Pool的性能问题</h2><ul>
+<li>多线程同时访问Buffer Pool，就会同时操作同一个free链表、flush链表和lru链表。那必然要进行加锁</li>
+<li>因为是基于内存的操作，所以很快。其次这些链表的操作，也是基于指针的操作，也不存在性能低下的可能。<h2 id="多个Buffer-Pool优化并发能力"><a href="#多个Buffer-Pool优化并发能力" class="headerlink" title="多个Buffer Pool优化并发能力"></a>多个Buffer Pool优化并发能力</h2>给Buffer Pool分配比较大的内存，则可以设置多个Buffer Pool.如果给分配的内存小于1G，最多就只有1个Buffer Pool。    <blockquote>
+<p>innodb_buffer_pool_instances=8</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="基于chunk机制动态调整Buffer-Pool的大小"><a href="#基于chunk机制动态调整Buffer-Pool的大小" class="headerlink" title="基于chunk机制动态调整Buffer Pool的大小"></a>基于chunk机制动态调整Buffer Pool的大小</h2><ul>
+<li>Buffer Pool是由多个chunk组成的，默认一个chunk的大小是128M。    <blockquote>
+<p>分配Buffer Pool的内存8G，4个Buffer Pool实例，那么每个Buffer Pool是2G，拥有16个chunk。</p>
+</blockquote>
+</li>
+<li>需要动态扩容的话只需要申请一系列128MB大小的chunk就行，然后分配给buffer pool就行。<br><img src="/images/img-38.png"></li>
+</ul>
+<h2 id="内存的分配"><a href="#内存的分配" class="headerlink" title="内存的分配"></a>内存的分配</h2><ul>
+<li>Buffer Pool总共占用机器内存的50%-60%</li>
+<li>buffer Pool总大小 = (chunk size * buffer pool instance) * chunk count<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2></li>
+<li>根据机器的内存设置合理的buffer pool的大小，然后设置buffer pool的数量，使得chunk数量*chunk size 接近单个buffer pool的内存。充分利用内存减少内存碎片</li>
+<li>每个buffer pool里的多个chunk共用一套链表数据结构。</li>
+<li>后台线程定时根据lru链表和flush链表，去把一批缓存页刷入磁盘并释放，同时更新free链表</li>
+<li>如果缓存页满了，无法加载自己的缓存页，就把lru链表冷数据区域的缓存页刷盘</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+<div>
+  
+    <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+  
+</div>
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Peilin Deng
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://pdyun.cc/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/" title="MySql Buffer Pool 与数据页">http://pdyun.cc/2021/08/25/ySql-Buffer-Pool-与数据页/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/MySql/" rel="tag"><i class="fa fa-tag"></i> MySql</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/" rel="prev" title="MySql 基础">
+      <i class="fa fa-chevron-left"></i> MySql 基础
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/" rel="next" title="MySql 数据在磁盘上的存储">
+      MySql 数据在磁盘上的存储 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Buffer-Pool"><span class="nav-text">Buffer Pool</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E9%A1%B5"><span class="nav-text">数据页</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BC%93%E5%AD%98%E9%A1%B5"><span class="nav-text">缓存页</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%93%E5%AD%98%E9%A1%B5%E7%9A%84%E6%8F%8F%E8%BF%B0%E4%BF%A1%E6%81%AF"><span class="nav-text">缓存页的描述信息</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#free%E9%93%BE%E8%A1%A8"><span class="nav-text">free链表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5%E5%BC%95%E5%85%A5"><span class="nav-text">概念引入</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A9%BA%E9%97%B4%E5%8D%A0%E7%94%A8"><span class="nav-text">空间占用</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E9%A1%B5%E8%AF%BB%E5%8F%96%E5%88%B0Buffer-Pool%E7%9A%84%E8%BF%87%E7%A8%8B"><span class="nav-text">数据页读取到Buffer Pool的过程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#flush%E9%93%BE%E8%A1%A8"><span class="nav-text">flush链表</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MYSQL%E9%A2%84%E8%AF%BB%E6%9C%BA%E5%88%B6"><span class="nav-text">MYSQL预读机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#LRU%E9%93%BE%E8%A1%A8"><span class="nav-text">LRU链表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%80%E5%8C%96%E7%89%88"><span class="nav-text">简化版</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E5%86%B7%E7%83%AD%E5%88%86%E7%A6%BB%E7%9A%84LRU%E9%93%BE%E8%A1%A8"><span class="nav-text">基于冷热分离的LRU链表</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Buffer-Pool-1"><span class="nav-text">Buffer Pool</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%B6%E5%8F%91%E8%AE%BF%E9%97%AEBuffer-Pool%E7%9A%84%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98"><span class="nav-text">并发访问Buffer Pool的性能问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%9A%E4%B8%AABuffer-Pool%E4%BC%98%E5%8C%96%E5%B9%B6%E5%8F%91%E8%83%BD%E5%8A%9B"><span class="nav-text">多个Buffer Pool优化并发能力</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8Echunk%E6%9C%BA%E5%88%B6%E5%8A%A8%E6%80%81%E8%B0%83%E6%95%B4Buffer-Pool%E7%9A%84%E5%A4%A7%E5%B0%8F"><span class="nav-text">基于chunk机制动态调整Buffer Pool的大小</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E7%9A%84%E5%88%86%E9%85%8D"><span class="nav-text">内存的分配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-text">总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Peilin Deng"
+      src="/images/VX.png">
+  <p class="site-author-name" itemprop="name">Peilin Deng</p>
+  <div class="site-description" itemprop="description">IT 小站， 记录美好码园生活</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://www.cnblogs.com/dpl9963" title="博客园 → https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dpl9963" rel="noopener" target="_blank"><i class=" fa-fw"></i>博客园</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/PelyDeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;PelyDeng" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:544010165@qq.com" title="E-Mail → mailto:544010165@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+<script type="text/javascript" charset="utf-8" src="/js/tagcloud.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/tagcanvas.js"></script>
+<div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div id="myCanvasContainer" class="widget tagcloud">
+        <canvas width="250" height="250" id="resCanvas" style="width=100%">
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li></ul>
+        </canvas>
+    </div>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peilin Deng</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : true,
+      notify     : true,
+      appId      : 'HnJ9Yibfx60VyyJ8xucUkOS5-gzGzoHsz',
+      appKey     : 'tMGT7R2fSxRbTrOkaf3DfEg2',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+<script src="/live2d_models/packages/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2d_models/packages/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2d_models/packages/assets/assets/koharu.model.json"},"display":{"position":"left","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body>
+</html>
