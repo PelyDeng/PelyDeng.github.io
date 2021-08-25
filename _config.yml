@@ -105,7 +105,8 @@ theme: hexo-theme-next
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
   type: git
-  repo: https://github.com/PelyDeng/PelyDeng.github.io.git
+  #repo: https://github.com/PelyDeng/PelyDeng.github.io.git
+  repo: git@github.com:PelyDeng/PelyDeng.github.io.git
   branch: master
 
 search:
@@ -147,5 +148,5 @@ admin:
   password_hash: $2a$10$v0mkKOLywJAzjurCZ74jQO/UvHtEBmYt3VOnsenYStv54uWS9Ylt6
   secret: ddd
 
-
+# 近期文章设置
 
