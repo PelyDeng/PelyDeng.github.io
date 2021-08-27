@@ -4,8 +4,7 @@ tags:
   - MyBatis
 categories:
   - 摘抄笔记
-  - ''
-date: 2021-08-07 15:41:00
+date: 2021-08-20 18:53:00
 ---
 ### 1. xml 配置
 > 通过在Spring的 applicationContext.xml文件中做以下配置, 指定MyBatis 的mapper.xml 文件扫描路径, MapperScannerConfigurer 是 Mybatis 用于整合 Spring 的核心对象.

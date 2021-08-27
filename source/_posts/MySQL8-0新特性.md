@@ -1,4 +1,4 @@
-title: MySql8.0新特性
+title: MySql 8.0新特性
 author: Peilin Deng
 tags:
   - MySql
