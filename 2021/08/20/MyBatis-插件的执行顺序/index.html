@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<!-- 樱花特效 -->
+  
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+  <link rel="mask-icon" href="/images/favicon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="多个插件执行顺序 本文转载自 https:&#x2F;&#x2F;zhuanlan.zhihu.com&#x2F;p&#x2F;266735787在 mybatis 中允许针对 SQL 在执行前后进行扩展操作，而这些扩展操作也叫做插件。允许用插件来拦截的方法包括： MyBatis 默认支持对4大对象（Executor，StatementHandler，ParameterHandler，ResultSetHandler）上的方法执行拦截，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MyBatis 插件的执行顺序">
+<meta property="og:url" content="http://pdyun.cc/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/index.html">
+<meta property="og:site_name" content="牧场小站">
+<meta property="og:description" content="多个插件执行顺序 本文转载自 https:&#x2F;&#x2F;zhuanlan.zhihu.com&#x2F;p&#x2F;266735787在 mybatis 中允许针对 SQL 在执行前后进行扩展操作，而这些扩展操作也叫做插件。允许用插件来拦截的方法包括： MyBatis 默认支持对4大对象（Executor，StatementHandler，ParameterHandler，ResultSetHandler）上的方法执行拦截，">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://pdyun.cc/images/img-71.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-72.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-73.png">
+<meta property="og:image" content="http://pdyun.cc/images/img-74.png">
+<meta property="article:published_time" content="2021-08-20T10:58:00.000Z">
+<meta property="article:modified_time" content="2021-08-27T03:29:01.214Z">
+<meta property="article:author" content="Peilin Deng">
+<meta property="article:tag" content="MyBatis">
+<meta property="article:tag" content="自定义插件">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://pdyun.cc/images/img-71.png">
+
+<link rel="canonical" href="http://pdyun.cc/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  
+  
+
+
+  <title>MyBatis 插件的执行顺序 | 牧场小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">牧场小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MyBatis 插件的执行顺序
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-20 18:58:00" itemprop="dateCreated datePublished" datetime="2021-08-20T18:58:00+08:00">2021-08-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-08-27 11:29:01" itemprop="dateModified" datetime="2021-08-27T11:29:01+08:00">2021-08-27</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/" class="post-meta-item leancloud_visitors" data-flag-title="MyBatis 插件的执行顺序" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="多个插件执行顺序"><a href="#多个插件执行顺序" class="headerlink" title="多个插件执行顺序 "></a>多个插件执行顺序 </h2><h6 id="本文转载自-https-zhuanlan-zhihu-com-p-266735787"><a href="#本文转载自-https-zhuanlan-zhihu-com-p-266735787" class="headerlink" title="本文转载自 https://zhuanlan.zhihu.com/p/266735787"></a>本文转载自 <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/266735787">https://zhuanlan.zhihu.com/p/266735787</a></h6><h6 id="在-mybatis-中允许针对-SQL-在执行前后进行扩展操作，而这些扩展操作也叫做插件。允许用插件来拦截的方法包括："><a href="#在-mybatis-中允许针对-SQL-在执行前后进行扩展操作，而这些扩展操作也叫做插件。允许用插件来拦截的方法包括：" class="headerlink" title="在 mybatis 中允许针对 SQL 在执行前后进行扩展操作，而这些扩展操作也叫做插件。允许用插件来拦截的方法包括："></a>在 mybatis 中允许针对 SQL 在执行前后进行扩展操作，而这些扩展操作也叫做插件。<br>允许用插件来拦截的方法包括：</h6><blockquote>
+<p>MyBatis 默认支持对<strong>4大对象</strong>（<strong>Executor，StatementHandler，ParameterHandler，ResultSetHandler</strong>）上的方法执行拦截，具体支持的方法为：</p>
+<ul>
+<li><strong>Executor</strong> (update, query, flushStatements, commit, rollback, getTransaction, close, isClosed)，主要用于sql重写。</li>
+<li><strong>ParameterHandler</strong> (getParameterObject, setParameters)，用于参数处理。</li>
+<li><strong>ResultSetHandler</strong> (handleResultSets, handleOutputParameters)，用于结果集二次处理。</li>
+<li><strong>StatementHandler</strong> (prepare, parameterize, batch, update, query)，用于jdbc层的控制。</li>
+</ul>
+<p>通过插件可以实现 SQL 打印，分页插件等功能。<br><br>这时候就会延伸出一个问题：如果存在多个插件，这些插件的执行顺序是怎样的？</p>
+</blockquote>
+<h3 id="一、插件的执行顺序"><a href="#一、插件的执行顺序" class="headerlink" title="一、插件的执行顺序"></a>一、插件的执行顺序</h3><h6 id="插件执行顺序一共有两种"><a href="#插件执行顺序一共有两种" class="headerlink" title="插件执行顺序一共有两种"></a>插件执行顺序一共有两种</h6><h4 id="1、不同拦截对象的执行顺序"><a href="#1、不同拦截对象的执行顺序" class="headerlink" title="1、不同拦截对象的执行顺序"></a>1、不同拦截对象的执行顺序</h4><blockquote>
+<p>Mybatis 针对以上这四种对象的拦截的执行顺序是固定的，因为 Mybatis代码的执行流程是固定的。<br><br>以 <strong>SimpleExecutor</strong>#query 来说，这四种对象的执行代码如下：<br><br><img src="/images/img-71.png"></p>
+</blockquote>
+<blockquote>
+<p>通过源码知道，执行顺序为：<br><br><strong>Executor<code>-&gt;</code>StatementHandler<code>-&gt;</code>ParameterHandler<code>-&gt;</code>StatementHandler<code>-&gt;</code>ResultSetHandler</strong></p>
+<p>虽然中间 StatementHandler 执行了多次，但是总的来说，执行顺序优先级从高到低为：<br><br><strong>Executor<code>-&gt;</code>StatementHandler<code>-&gt;</code>ParameterHandler<code>-&gt;</code>ResultSetHandler</strong></p>
+</blockquote>
+<h4 id="2、同种拦截对象的执行顺序"><a href="#2、同种拦截对象的执行顺序" class="headerlink" title="2、同种拦截对象的执行顺序"></a>2、同种拦截对象的执行顺序</h4><h6 id="针对同种对象如果存在多种拦截器对象，其拦截顺序如何？"><a href="#针对同种对象如果存在多种拦截器对象，其拦截顺序如何？" class="headerlink" title="针对同种对象如果存在多种拦截器对象，其拦截顺序如何？"></a>针对同种对象如果存在多种拦截器对象，其拦截顺序如何？</h6><blockquote>
+<p>首先在前面，知道了插件功能的实现是通过代理的方式对原有的如：Executor、ParameterHandler 等进行了代理增强，而经过代理后的原有的 Executor 、ParameterHandler 等对象会以如下方式存在：<br><img src="/images/img-72.png"></p>
+<p>如图，存在多个拦截器都是先进后出，针对代理模式来说来说，可以对被代理的原始对象的处理前后进行代码增强操作。</p>
+<p>而那个拦截器优先执行，取决于在生成代理对象时的顺序，也就是包裹在最外层的插件（拦截器）优先执行。</p>
+<p>来回顾一下代理对象生成时的逻辑然后结合mybatis-config.xml 配置文件的关于 <plugins> 的配置信息，即可知道相关的执行顺序。</p>
+</blockquote>
+<h6 id="来看代理生成代码-InterceptorChain-pluginAll，如下："><a href="#来看代理生成代码-InterceptorChain-pluginAll，如下：" class="headerlink" title="来看代理生成代码 InterceptorChain#pluginAll，如下："></a>来看代理生成代码 InterceptorChain#pluginAll，如下：</h6><blockquote>
+<p><img src="/images/img-73.png"><br>如上述代码所示，通过遍历 interceptors List 列表对 target 对象进行包装（target 可以是 Executor or ParameterHandler等）。</p>
+<p>也就是在 List 列表的最开始的 interceptor 插件最先被包裹在 target 对象外层，也就是如下图所示：<br><img src="/images/img-74.png" alt="upload successful"></p>
+<p>如上图所示，在配置文件中越靠前的插件配置，在 interceptors List 列表中的位置自然越靠前，其执行顺序自然越靠后。</p>
+</blockquote>
+<h4 id="总结：同个对象的多个拦截器执行顺序根据配置文件-mybatis-config-xml-插件配置顺序有关，配置越靠前，执行顺序越靠后"><a href="#总结：同个对象的多个拦截器执行顺序根据配置文件-mybatis-config-xml-插件配置顺序有关，配置越靠前，执行顺序越靠后" class="headerlink" title="总结：同个对象的多个拦截器执行顺序根据配置文件 mybatis-config.xml 插件配置顺序有关，配置越靠前，执行顺序越靠后"></a>总结：同个对象的多个拦截器执行顺序根据配置文件 mybatis-config.xml 插件配置顺序有关，配置越靠前，执行顺序越靠后</h4>
+    </div>
+
+    
+    
+    
+<div>
+  
+    <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+  
+</div>
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Peilin Deng
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://pdyun.cc/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/" title="MyBatis 插件的执行顺序">http://pdyun.cc/2021/08/20/MyBatis-插件的执行顺序/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/MyBatis/" rel="tag"><i class="fa fa-tag"></i> MyBatis</a>
+              <a href="/tags/%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6/" rel="tag"><i class="fa fa-tag"></i> 自定义插件</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E4%BB%8B%E7%BB%8D%E5%8F%8A%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6/" rel="prev" title="MyBatis 插件介绍及自定义插件">
+      <i class="fa fa-chevron-left"></i> MyBatis 插件介绍及自定义插件
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/08/20/MyBatis%E6%8F%92%E4%BB%B6%E5%85%B3%E9%94%AE%E5%AF%B9%E8%B1%A1/" rel="next" title="MyBatis插件关键对象">
+      MyBatis插件关键对象 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%9A%E4%B8%AA%E6%8F%92%E4%BB%B6%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F"><span class="nav-text">多个插件执行顺序 </span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#%E6%9C%AC%E6%96%87%E8%BD%AC%E8%BD%BD%E8%87%AA-https-zhuanlan-zhihu-com-p-266735787"><span class="nav-text">本文转载自 https:&#x2F;&#x2F;zhuanlan.zhihu.com&#x2F;p&#x2F;266735787</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E5%9C%A8-mybatis-%E4%B8%AD%E5%85%81%E8%AE%B8%E9%92%88%E5%AF%B9-SQL-%E5%9C%A8%E6%89%A7%E8%A1%8C%E5%89%8D%E5%90%8E%E8%BF%9B%E8%A1%8C%E6%89%A9%E5%B1%95%E6%93%8D%E4%BD%9C%EF%BC%8C%E8%80%8C%E8%BF%99%E4%BA%9B%E6%89%A9%E5%B1%95%E6%93%8D%E4%BD%9C%E4%B9%9F%E5%8F%AB%E5%81%9A%E6%8F%92%E4%BB%B6%E3%80%82%E5%85%81%E8%AE%B8%E7%94%A8%E6%8F%92%E4%BB%B6%E6%9D%A5%E6%8B%A6%E6%88%AA%E7%9A%84%E6%96%B9%E6%B3%95%E5%8C%85%E6%8B%AC%EF%BC%9A"><span class="nav-text">在 mybatis 中允许针对 SQL 在执行前后进行扩展操作，而这些扩展操作也叫做插件。
+允许用插件来拦截的方法包括：</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%8F%92%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F"><span class="nav-text">一、插件的执行顺序</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#%E6%8F%92%E4%BB%B6%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F%E4%B8%80%E5%85%B1%E6%9C%89%E4%B8%A4%E7%A7%8D"><span class="nav-text">插件执行顺序一共有两种</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1%E3%80%81%E4%B8%8D%E5%90%8C%E6%8B%A6%E6%88%AA%E5%AF%B9%E8%B1%A1%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F"><span class="nav-text">1、不同拦截对象的执行顺序</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%E3%80%81%E5%90%8C%E7%A7%8D%E6%8B%A6%E6%88%AA%E5%AF%B9%E8%B1%A1%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F"><span class="nav-text">2、同种拦截对象的执行顺序</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#%E9%92%88%E5%AF%B9%E5%90%8C%E7%A7%8D%E5%AF%B9%E8%B1%A1%E5%A6%82%E6%9E%9C%E5%AD%98%E5%9C%A8%E5%A4%9A%E7%A7%8D%E6%8B%A6%E6%88%AA%E5%99%A8%E5%AF%B9%E8%B1%A1%EF%BC%8C%E5%85%B6%E6%8B%A6%E6%88%AA%E9%A1%BA%E5%BA%8F%E5%A6%82%E4%BD%95%EF%BC%9F"><span class="nav-text">针对同种对象如果存在多种拦截器对象，其拦截顺序如何？</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#%E6%9D%A5%E7%9C%8B%E4%BB%A3%E7%90%86%E7%94%9F%E6%88%90%E4%BB%A3%E7%A0%81-InterceptorChain-pluginAll%EF%BC%8C%E5%A6%82%E4%B8%8B%EF%BC%9A"><span class="nav-text">来看代理生成代码 InterceptorChain#pluginAll，如下：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%EF%BC%9A%E5%90%8C%E4%B8%AA%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%A4%9A%E4%B8%AA%E6%8B%A6%E6%88%AA%E5%99%A8%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F%E6%A0%B9%E6%8D%AE%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6-mybatis-config-xml-%E6%8F%92%E4%BB%B6%E9%85%8D%E7%BD%AE%E9%A1%BA%E5%BA%8F%E6%9C%89%E5%85%B3%EF%BC%8C%E9%85%8D%E7%BD%AE%E8%B6%8A%E9%9D%A0%E5%89%8D%EF%BC%8C%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F%E8%B6%8A%E9%9D%A0%E5%90%8E"><span class="nav-text">总结：同个对象的多个拦截器执行顺序根据配置文件 mybatis-config.xml 插件配置顺序有关，配置越靠前，执行顺序越靠后</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Peilin Deng"
+      src="/images/VX.png">
+  <p class="site-author-name" itemprop="name">Peilin Deng</p>
+  <div class="site-description" itemprop="description">IT 小站， 记录美好码园生活</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://www.cnblogs.com/dpl9963" title="博客园 → https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dpl9963" rel="noopener" target="_blank"><i class=" fa-fw"></i>博客园</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/PelyDeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;PelyDeng" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:544010165@qq.com" title="E-Mail → mailto:544010165@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+<script type="text/javascript" charset="utf-8" src="/js/tagcloud.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/tagcanvas.js"></script>
+<div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div id="myCanvasContainer" class="widget tagcloud">
+        <canvas width="250" height="250" id="resCanvas" style="width=100%">
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8B%E5%8A%A1/" rel="tag">事务</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6/" rel="tag">自定义插件</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li></ul>
+        </canvas>
+    </div>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peilin Deng</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : true,
+      notify     : true,
+      appId      : 'HnJ9Yibfx60VyyJ8xucUkOS5-gzGzoHsz',
+      appKey     : 'tMGT7R2fSxRbTrOkaf3DfEg2',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+<script src="/live2d_models/packages/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2d_models/packages/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2d_models/packages/assets/assets/koharu.model.json"},"display":{"position":"left","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body>
+</html>

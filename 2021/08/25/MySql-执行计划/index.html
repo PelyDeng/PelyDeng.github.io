@@ -22,7 +22,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="执行计划类型const直接通过聚簇索引或者二级索引+聚簇索引回源，查询到想要的数据。这种根据索引可以直接快速查询到数据的过程，在执行计划里称之为const。二级索引必须是unique，才是const。否则就是ref ref一般走索引都是ref，如果是组合索引，则要求查询条件必须是从索引最左侧开始连续多列都是等值比较。     range对索引列使用范围查询。 index只需要遍历二级索引就可以拿到">
@@ -34,7 +34,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://pdyun.cc/images/img-62.png">
 <meta property="article:published_time" content="2021-08-25T14:00:18.000Z">
-<meta property="article:modified_time" content="2021-08-25T14:02:04.819Z">
+<meta property="article:modified_time" content="2021-08-26T05:53:46.254Z">
 <meta property="article:author" content="Peilin Deng">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://pdyun.cc/images/img-62.png">
@@ -223,10 +223,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2021-08-25 22:00:18 / 修改时间：22:02:04" itemprop="dateCreated datePublished" datetime="2021-08-25T22:00:18+08:00">2021-08-25</time>
+              <time title="创建时间：2021-08-25 22:00:18" itemprop="dateCreated datePublished" datetime="2021-08-25T22:00:18+08:00">2021-08-25</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-08-26 13:53:46" itemprop="dateModified" datetime="2021-08-26T13:53:46+08:00">2021-08-26</time>
+              </span>
 
           
             <span id="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 执行计划" title="阅读次数">
@@ -263,34 +269,46 @@
         <h1 id="执行计划类型"><a href="#执行计划类型" class="headerlink" title="执行计划类型"></a>执行计划类型</h1><h2 id="const"><a href="#const" class="headerlink" title="const"></a>const</h2><p>直接通过聚簇索引或者二级索引+聚簇索引回源，查询到想要的数据。这种根据索引可以直接快速查询到数据的过程，在执行计划里称之为<strong>const</strong>。<br><font color="red">二级索引必须是unique，才是const。否则就是ref</font></p>
 <h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><p>一般走索引都是ref，如果是组合索引，则要求查询条件必须是从索引最左侧开始连续多列都是等值比较。    </p>
 <h2 id="range"><a href="#range" class="headerlink" title="range"></a>range</h2><p>对索引列使用范围查询。</p>
-<h2 id="index"><a href="#index" class="headerlink" title="index"></a>index</h2><p>只需要遍历二级索引就可以拿到想要的数据，而不需要回源到聚簇索引的访问方式。<br>索引：idx(S21,S22,S23,S24)；<br>SQL：SELECT S21,S22,S23 FROM TABLE WHERE S22 = ‘X’ AND S23 = ‘Z’;<br>第一反应：这个SQL无法直接从联合索引树的根节点进行二分查找。<br>基于上面的索引以及SQL，可以直接遍历联合索引树的叶子节点，找到所需要的数据，不需要再回源到聚簇索引进行二次查询，这种方式就是使用的index访问。<br>虽然遍历了叶子节点，但是叶子节点内容少。也比回表查询快。</p>
+<h2 id="index"><a href="#index" class="headerlink" title="index"></a>index</h2><p>只需要遍历二级索引就可以拿到想要的数据，而不需要回源到聚簇索引的访问方式。</p>
+<ul>
+<li>索引：  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">idx(S21,S22,S23,S24)</span><br></pre></td></tr></table></figure>
+SQL：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT S21,S22,S23 FROM TABLE WHERE S22 = &#x27;X&#x27; AND S23 = &#x27;Z&#x27;; </span><br></pre></td></tr></table></figure>
+  第一反应：这个SQL无法直接从联合索引树的根节点进行二分查找。    基于上面的索引以及SQL，可以直接遍历联合索引树的叶子节点，找到所需要的数据，不需要再回源到聚簇索引进行二次查询，这种方式就是使用的index访问。    虽然遍历了叶子节点，但是叶子节点内容少。也比回表查询快。</li>
+</ul>
 <span id="more"></span>
-<h1 id="什么情况下一次查询用到多个索引"><a href="#什么情况下一次查询用到多个索引" class="headerlink" title="什么情况下一次查询用到多个索引"></a>什么情况下一次查询用到多个索引</h1><p>现有索引：idx(x1)，idx(x2)<br>现有SQL：SELECT * FROM TABLE WHERE X1 = XX AND X2 = ZZ；<br>在一般情况下，查询优化器生成执行计划只会按照其中一个字段的索引树去查找，然后再回表到聚簇索引查完整数据，然后根据另一个字段的值过滤。<br><strong>当按照某个索引值查询之后得到了上万条的数据，此时就要考虑再通过另一个索引查询，将两个索引得到的结果的主键进行求交集，然后再去回表查询。</strong></p>
+<h1 id="什么情况下一次查询用到多个索引"><a href="#什么情况下一次查询用到多个索引" class="headerlink" title="什么情况下一次查询用到多个索引"></a>什么情况下一次查询用到多个索引</h1><ul>
+<li>现有索引：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">idx(x1)，idx(x2);</span><br></pre></td></tr></table></figure>
+现有SQL：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM TABLE WHERE X1 = XX AND X2 = ZZ;</span><br></pre></td></tr></table></figure>
+  在一般情况下，查询优化器生成执行计划只会按照其中一个字段的索引树去查找，然后再回表到聚簇索引查完整数据，然后根据另一个字段的值过滤。    <strong>当按照某个索引值查询之后得到了上万条的数据，此时就要考虑再通过另一个索引查询，将两个索引得到的结果的主键进行求交集，然后再去回表查询。</strong></li>
+</ul>
 <h1 id="多表关联的SQL语句的执行计划"><a href="#多表关联的SQL语句的执行计划" class="headerlink" title="多表关联的SQL语句的执行计划"></a>多表关联的SQL语句的执行计划</h1><h2 id="驱动表与被驱动表"><a href="#驱动表与被驱动表" class="headerlink" title="驱动表与被驱动表"></a>驱动表与被驱动表</h2><p>在多表关联查询时，一般是通过部分条件先从一张表中取出符合条件的数据，然后再在这些数据中进行后续的条件匹配。先查询的表叫做驱动表，后查询的表就叫被驱动表。</p>
 <h2 id="内连接与外连接"><a href="#内连接与外连接" class="headerlink" title="内连接与外连接"></a>内连接与外连接</h2><ul>
-<li>内连接：INNER JOIN，连接条件写在WHERE中，并且按照表与表之间的字段关系严格判断，为空的不会显示</li>
-<li>外连接：[LEFT | RIGHT] OUTER JOIN，连接条件写在ON中；如果是LEFT则表示左侧表中的数据不管右侧表里是否有关联都会返回出来，右侧大不了显示为NULL。</li>
+<li><p>内连接：INNER JOIN，连接条件写在WHERE中，并且按照表与表之间的字段关系严格判断，为空的不会显示</p>
+</li>
+<li><p>外连接：[LEFT | RIGHT] OUTER JOIN，连接条件写在ON中；如果是LEFT则表示左侧表中的数据不管右侧表里是否有关联都会返回出来，右侧大不了显示为NULL。</p>
+</li>
 </ul>
 <h2 id="嵌套循环关联"><a href="#嵌套循环关联" class="headerlink" title="嵌套循环关联"></a>嵌套循环关联</h2><p>多表关联查询，往往都是利用驱动表的结果，去被驱动表中通过where条件，on条件进行遍历匹配。因此如果关联表很多，就会因为遍历的效率影响整个SQL的执行效率，所以要合理的在驱动表和被驱动表上建立合适的索引。</p>
 <h1 id="执行成本的计算"><a href="#执行成本的计算" class="headerlink" title="执行成本的计算"></a>执行成本的计算</h1><h2 id="成本的组成"><a href="#成本的组成" class="headerlink" title="成本的组成"></a>成本的组成</h2><ul>
-<li>IO成本</li>
-<li>CPU成本</li>
+<li><p>IO成本</p>
+</li>
+<li><p>CPU成本</p>
+</li>
 </ul>
-<h2 id="计算方式"><a href="#计算方式" class="headerlink" title="计算方式"></a><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/aecdcc2babdd">计算方式</a></h2><ol>
-<li>MYSQL规定读取一页花费的成本默认是1.0，读取以及检测一条记录是否符合搜索条件的成本默认是0.2。</li>
-<li>不管读取到的记录需不需要检测是否符合搜索条件，其成本都是0.2</li>
-<li>通过show table status like ‘表名’，可以查看指定表的一些信息</li>
-<li>rows是表中的记录数（对于innodb来说这个是个估计值），data_length是聚簇索引的字节数大小。通过data_length/(1024*16)可以算出有多少页，就能算出全表扫描的成本。</li>
-<li>IO成本=数据页数量*1+1.1</li>
-<li>CPU成本=行记录数*0.2+1.0</li>
-<li>总成本=IO成本+CPU成本</li>
-</ol>
-<h3 id="计算示例"><a href="#计算示例" class="headerlink" title="计算示例"></a>计算示例</h3><p><img src="/images/img-62.png"><br>数据页数=(98304/1024)/16=6<br>行记录数=603<br>总成本=6<em>1+0.2</em>603=126.6</p>
+<h2 id="计算方式"><a href="#计算方式" class="headerlink" title="计算方式"></a><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/aecdcc2babdd">计算方式</a></h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">1. MYSQL规定读取一页花费的成本默认是1.0，读取以及检测一条记录是否符合搜索条件的成本默认是0.2。</span><br><span class="line">2. 不管读取到的记录需不需要检测是否符合搜索条件，其成本都是0.2</span><br><span class="line">3. 通过show table status like &#x27;表名&#x27;，可以查看指定表的一些信息</span><br><span class="line">4. rows是表中的记录数（对于innodb来说这个是个估计值），data_length是聚簇索引的字节数大小。通过data_length/(1024*16)可以算出有多少页，就能算出全表扫描的成本。</span><br><span class="line">5. IO成本=数据页数量*1+1.1</span><br><span class="line">6. CPU成本=行记录数*0.2+1.0</span><br><span class="line">7. 总成本=IO成本+CPU成本</span><br></pre></td></tr></table></figure>
+
+<h3 id="计算示例"><a href="#计算示例" class="headerlink" title="计算示例"></a>计算示例</h3><p><img src="/images/img-62.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">数据页数=(98304/1024)/16=6    </span><br><span class="line">行记录数=603    </span><br><span class="line">总成本=6*1+0.2*603=126.6</span><br></pre></td></tr></table></figure>
+
 <h3 id="二级索引要注意的点"><a href="#二级索引要注意的点" class="headerlink" title="二级索引要注意的点"></a>二级索引要注意的点</h3><ul>
-<li>二级索引在计算时要先计算二级索引根据条件查一波数据的IO成本，比如score between 25,200 or score between 250,300，这是2个范围，否则score=XX就是一个区间。</li>
-<li>一般一个区间可以简单的认为是<strong>一个数据页</strong>，也可能是n个数据页，反正是个位数级别的。</li>
-<li>二级索引得到的结果再回表，一条数据回表一次。</li>
-<li>a104</li>
+<li><p>二级索引在计算时要先计算二级索引根据条件查一波数据的IO成本，比如score between 25,200 or score between 250,300，这是2个范围，否则score=XX就是一个区间。</p>
+</li>
+<li><p>一般一个区间可以简单的认为是<strong>一个数据页</strong>，也可能是n个数据页，反正是个位数级别的。</p>
+</li>
+<li><p>二级索引得到的结果再回表，一条数据回表一次。</p>
+</li>
+<li><p>a104</p>
+</li>
 </ul>
 
     </div>
@@ -337,7 +355,10 @@
     <a href="/2021/08/25/MySql-%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5/" rel="prev" title="MySql 关于索引的一些特殊情况">
       <i class="fa fa-chevron-left"></i> MySql 关于索引的一些特殊情况
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/" rel="next" title="Mysql 数据库事务隔离级别">
+      Mysql 数据库事务隔离级别 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -413,7 +434,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-count">24</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -426,7 +447,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-count">7</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -451,7 +472,7 @@
     <h3 class="widget-title">标签云</h3>
     <div id="myCanvasContainer" class="widget tagcloud">
         <canvas width="250" height="250" id="resCanvas" style="width=100%">
-            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">11</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li></ul>
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8B%E5%8A%A1/" rel="tag">事务</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6/" rel="tag">自定义插件</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li></ul>
         </canvas>
     </div>
 </div>
