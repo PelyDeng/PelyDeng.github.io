@@ -7,21 +7,23 @@ categories:
   - 摘抄笔记
 date: 2021-08-20 18:57:00
 ---
-mybatis自定义插件（拦截器）开发详解
+## mybatis自定义插件（拦截器）开发详解
 ---
 
-###### mybatis插件（准确的说应该是around拦截器，因为接口名是interceptor，而且invocation.proceed要自己调用，配置中叫插件）功能非常强大，**可以让我们无侵入式的对SQL的执行进行干涉，从SQL语句重写、参数注入、结果集返回等每个主要环节，典型的包括权限控制检查与注入、只读库映射、K/V翻译、动态改写SQL。**
+mybatis插件（准确的说应该是around拦截器，因为接口名是interceptor，而且invocation.proceed要自己调用，配置中叫插件）功能非常强大，**可以让我们无侵入式的对SQL的执行进行干涉，从SQL语句重写、参数注入、结果集返回等每个主要环节，典型的包括权限控制检查与注入、只读库映射、K/V翻译、动态改写SQL。**
 
-> MyBatis 默认支持对**4大对象**（**Executor，StatementHandler，ParameterHandler，ResultSetHandler**）上的方法执行拦截，具体支持的方法为：
->
-> - **Executor** (update, query, flushStatements, commit, rollback, getTransaction, close, isClosed)，主要用于sql重写。
-> - **ParameterHandler** (getParameterObject, setParameters)，用于参数处理。
-> - **ResultSetHandler** (handleResultSets, handleOutputParameters)，用于结果集二次处理。
-> - **StatementHandler** (prepare, parameterize, batch, update, query)，用于jdbc层的控制。
+MyBatis 默认支持对**4大对象**（**Executor，StatementHandler，ParameterHandler，ResultSetHandler**）上的方法执行拦截，具体支持的方法为：
+- **Executor** (update, query, flushStatements, commit, rollback, getTransaction, close, isClosed)，主要用于sql重写。
+
+- **ParameterHandler** (getParameterObject, setParameters)，用于参数处理。
+
+- **ResultSetHandler** (handleResultSets, handleOutputParameters)，用于结果集二次处理。
+
+- **StatementHandler** (prepare, parameterize, batch, update, query)，用于jdbc层的控制。
 
 大多数情况下仅在Executor做插件比如SQL重写、结果集脱敏，ResultSetHandler和StatementHandler仅在高级场景中使用，而且某些场景中非常有价值。
 
-四大对象的在sql执行过程中的调用链如下：
+**四大对象的在sql执行过程中的调用链如下：**
 
 ![](/images/img-70.png)
 
@@ -72,12 +74,12 @@ public Executor newExecutor(Transaction transaction, ExecutorType executorType) 
 
 ```
 
-编写Interceptor的实现类
+## 编写Interceptor的实现类
 ---
 
-#### 一. Executor拦截器
+### 一. Executor拦截器
 
-###### 案例1:
+#### 案例1:
 
 ```java
 @Intercepts({
@@ -142,7 +144,7 @@ public class SelectPruningColumnPlugin implements Interceptor {
 ```
 
 
-###### 案例2: 带反射
+#### 案例2: 带反射
 
 ```java
 @Intercepts({
@@ -194,8 +196,7 @@ public class MyPageInterceptor implements Interceptor {
     }
 }
 ```
-
-#### 二. ResultSetHandler拦截器
+### 二. ResultSetHandler拦截器
 
 ```java
 @Intercepts({
@@ -227,7 +228,7 @@ public class OptMapPlugin implements Interceptor {
     }
 ```
 
-#### 最后将插件配置到mybatis-config.xml中，如下：
+### 三. 最后将插件配置到mybatis-config.xml
 
 ```xml
 <!-- mybatis-config.xml  注册插件-->

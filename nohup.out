@@ -206,3 +206,9 @@ INFO  ---- START COPYING TAG CLOUD FILES ----
 INFO  ---- END COPYING TAG CLOUD FILES ----
 INFO  ---- START COPYING TAG CLOUD FILES ----
 INFO  ---- END COPYING TAG CLOUD FILES ----
+INFO  Validating config
+INFO  Start processing
+INFO  ---- START COPYING TAG CLOUD FILES ----
+INFO  ---- END COPYING TAG CLOUD FILES ----
+INFO  Hexo is running at http://localhost:4000 . Press Ctrl+C to stop.
+(node:25797) [DEP0066] DeprecationWarning: OutgoingMessage.prototype._headers is deprecated
