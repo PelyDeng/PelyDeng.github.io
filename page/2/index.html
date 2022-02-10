@@ -196,7 +196,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2022/01/15/%E6%8E%92%E5%BA%8F-%E5%A0%86%E6%8E%92%E5%BA%8F/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -210,7 +210,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/" class="post-title-link" itemprop="url">MySql Buffer Pool 与数据页</a>
+            <a href="/2022/01/15/%E6%8E%92%E5%BA%8F-%E5%A0%86%E6%8E%92%E5%BA%8F/" class="post-title-link" itemprop="url">二叉堆、堆排序</a>
         </h2>
 
         <div class="post-meta">
@@ -221,7 +221,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-08-25 21:03:00 / 修改时间：21:17:03" itemprop="dateCreated datePublished" datetime="2021-08-25T21:03:00+08:00">2021-08-25</time>
+              <time title="创建时间：2022-01-15 11:14:00 / 修改时间：12:13:04" itemprop="dateCreated datePublished" datetime="2022-01-15T11:14:00+08:00">2022-01-15</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -229,12 +229,16 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/" itemprop="url" rel="index"><span itemprop="name">算法小抄</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" itemprop="url" rel="index"><span itemprop="name">数据结构</span></a>
                 </span>
             </span>
 
           
-            <span id="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/" class="post-meta-item leancloud_visitors" data-flag-title="MySql Buffer Pool 与数据页" title="阅读次数">
+            <span id="/2022/01/15/%E6%8E%92%E5%BA%8F-%E5%A0%86%E6%8E%92%E5%BA%8F/" class="post-meta-item leancloud_visitors" data-flag-title="二叉堆、堆排序" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -249,8 +253,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/" itemprop="commentCount"></span>
+    <a title="valine" href="/2022/01/15/%E6%8E%92%E5%BA%8F-%E5%A0%86%E6%8E%92%E5%BA%8F/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/15/%E6%8E%92%E5%BA%8F-%E5%A0%86%E6%8E%92%E5%BA%8F/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -265,17 +269,13 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Buffer-Pool"><a href="#Buffer-Pool" class="headerlink" title="Buffer Pool"></a>Buffer Pool</h1><p>在对数据库执行增删改查操作的时候，因为对磁盘的随机读写操作速度非常慢。所以通过Buffer Pool缓存磁盘的真实数据。</p>
-<h1 id="数据页"><a href="#数据页" class="headerlink" title="数据页"></a>数据页</h1><p>MYSQL中抽象出来的数据单位，MYSQL把很多行数据放在一个数据页里。实际上我们更新一行数据的时候，是通过数据库找到这行数据所在的数据页，然后加载到Buffer Pool中。<br>默认情况下，一个数据页是16KB</p>
-<h1 id="缓存页"><a href="#缓存页" class="headerlink" title="缓存页"></a>缓存页</h1><p>因为在Buffer Pool中存放的也是一个一个的数据页，也叫作缓存页。在默认情况下，是和磁盘上的数据页一一对应的，所以也是16KB。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
+          <h1 id="二叉堆实现"><a href="#二叉堆实现" class="headerlink" title="二叉堆实现"></a>二叉堆实现</h1><p>以下为最小堆代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 用例适用于  &#x27;最小堆&#x27;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> 二叉堆 </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span>[] arr = <span class="keyword">new</span> <span class="keyword">int</span>[]&#123;<span class="number">1</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">0</span>&#125;;</span><br><span class="line">        upAdjust(arr);</span><br><span class="line">        System.out.println(Arrays.toString(arr));</span><br><span class="line"></span><br><span class="line">        arr = <span class="keyword">new</span> <span class="keyword">int</span>[]&#123;<span class="number">9</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">11</span>, <span class="number">66</span>, <span class="number">5</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">1</span>, <span class="number">0</span>&#125;;</span><br><span class="line">        build(arr);</span><br><span class="line">        System.out.println(Arrays.toString(arr));</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    ------------------------------------------------------------</span><br><span class="line">    打印结果</span><br><span class="line">    [<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">3</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">5</span>]</span><br><span class="line">    [<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">66</span>]</span><br><span class="line">    ------------------------------------------------------------</span><br><span class="line">    </span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 上浮调整</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">upAdjust</span><span class="params">(<span class="keyword">int</span>[] arr)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> childIndex = arr.length - <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">int</span> parentIndex = (childIndex - <span class="number">1</span>) / <span class="number">2</span>;</span><br><span class="line">        <span class="comment">// temp 用于保存插入的叶子节点值, 用于最后的赋值</span></span><br><span class="line">        <span class="keyword">int</span> temp = arr[childIndex];</span><br><span class="line">        <span class="keyword">while</span> (childIndex &gt; <span class="number">0</span> &amp;&amp; temp &lt; arr[parentIndex]) &#123;</span><br><span class="line">            <span class="comment">// 无需真正交换, 单项赋值即可</span></span><br><span class="line">            arr[childIndex] = arr[parentIndex];</span><br><span class="line">            childIndex = parentIndex;</span><br><span class="line">            parentIndex = (parentIndex - <span class="number">1</span>) / <span class="number">2</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        arr[childIndex] = temp;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 下沉调整</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> arr         要调整的堆</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> parentIndex 要 &#x27;下沉&#x27; 的父节点</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> length      堆的有效大小</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">downAdjust</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> parentIndex, <span class="keyword">int</span> length)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// temp 用于保存插入的叶子节点值, 用于最后的赋值</span></span><br><span class="line">        <span class="keyword">int</span> temp = arr[parentIndex];</span><br><span class="line">        <span class="keyword">int</span> childIndex = parentIndex * <span class="number">2</span> + <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">while</span> (childIndex &lt; length) &#123;</span><br><span class="line">            <span class="comment">// 如果有右节点, 且右节点小于左节点的值, 则定位到右节点</span></span><br><span class="line">            <span class="keyword">if</span> (childIndex + <span class="number">1</span> &lt; length &amp;&amp; arr[childIndex + <span class="number">1</span>] &lt; arr[childIndex]) &#123;</span><br><span class="line">                childIndex++;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 如果父节点小于子节点的值则跳出, 不需要调整</span></span><br><span class="line">            <span class="keyword">if</span> (temp &lt; arr[childIndex]) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            arr[parentIndex] = arr[childIndex];</span><br><span class="line">            parentIndex = childIndex;</span><br><span class="line">            childIndex = childIndex * <span class="number">2</span> + <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">        arr[parentIndex] = temp;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 构建二叉堆</span></span><br><span class="line"><span class="comment">     * &lt;p&gt;</span></span><br><span class="line"><span class="comment">     * 二叉堆本质上是完全二叉树, 但是存储方式不是链式存储, 而是顺序存储, 所用数据结构为数组</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">build</span><span class="params">(<span class="keyword">int</span>[] arr)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 从最后一个非叶子节点开始, 依次做&#x27;下沉&#x27;调整</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = (arr.length - <span class="number">2</span>) / <span class="number">2</span>; i &gt;= <span class="number">0</span>; i--) &#123;</span><br><span class="line">            downAdjust(arr, i, arr.length);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h1 id="堆排序"><a href="#堆排序" class="headerlink" title="堆排序"></a>堆排序</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> 堆排序 </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span>[] arr = <span class="keyword">new</span> <span class="keyword">int</span>[]&#123;<span class="number">1</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">0</span>&#125;;</span><br><span class="line"></span><br><span class="line">        sort(arr);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">sort</span><span class="params">(<span class="keyword">int</span>[] arr)</span> </span>&#123;</span><br><span class="line">        二叉堆.build(arr);</span><br><span class="line">        System.out.println(Arrays.toString(arr));</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = arr.length - <span class="number">1</span>; i &gt;= <span class="number">0</span>; i--) &#123;</span><br><span class="line">            <span class="comment">// 最后一个元素和第一个元素交换</span></span><br><span class="line">            <span class="keyword">int</span> temp = arr[<span class="number">0</span>];</span><br><span class="line">            arr[<span class="number">0</span>] = arr[i];</span><br><span class="line">            arr[i] = temp;</span><br><span class="line"></span><br><span class="line">            二叉堆.downAdjust(arr,<span class="number">0</span>,i);</span><br><span class="line">            System.out.println(Arrays.toString(arr));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>排序结果</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">3</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">5</span>]</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">2</span>, <span class="number">3</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">10</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">8</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">6</span>, <span class="number">8</span>, <span class="number">7</span>, <span class="number">10</span>, <span class="number">9</span>, <span class="number">5</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">8</span>, <span class="number">10</span>, <span class="number">9</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">9</span>, <span class="number">10</span>, <span class="number">8</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">10</span>, <span class="number">9</span>, <span class="number">8</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">10</span>, <span class="number">9</span>, <span class="number">8</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br></pre></td></tr></table></figure>
       
     </div>
 
@@ -297,7 +297,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2022/01/14/%E6%95%B0%E7%BB%84-%E7%A7%BB%E5%8A%A8%E9%9B%B6/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -311,7 +311,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/" class="post-title-link" itemprop="url">MySql 基础</a>
+            <a href="/2022/01/14/%E6%95%B0%E7%BB%84-%E7%A7%BB%E5%8A%A8%E9%9B%B6/" class="post-title-link" itemprop="url">数组 - 移动零</a>
         </h2>
 
         <div class="post-meta">
@@ -322,7 +322,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-08-25 20:58:00 / 修改时间：21:17:44" itemprop="dateCreated datePublished" datetime="2021-08-25T20:58:00+08:00">2021-08-25</time>
+              <time title="创建时间：2022-01-14 11:01:00 / 修改时间：11:05:28" itemprop="dateCreated datePublished" datetime="2022-01-14T11:01:00+08:00">2022-01-14</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -330,12 +330,12 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/" itemprop="url" rel="index"><span itemprop="name">算法小抄</span></a>
                 </span>
             </span>
 
           
-            <span id="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 基础" title="阅读次数">
+            <span id="/2022/01/14/%E6%95%B0%E7%BB%84-%E7%A7%BB%E5%8A%A8%E9%9B%B6/" class="post-meta-item leancloud_visitors" data-flag-title="数组 - 移动零" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -350,8 +350,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/" itemprop="commentCount"></span>
+    <a title="valine" href="/2022/01/14/%E6%95%B0%E7%BB%84-%E7%A7%BB%E5%8A%A8%E9%9B%B6/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/14/%E6%95%B0%E7%BB%84-%E7%A7%BB%E5%8A%A8%E9%9B%B6/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -366,13 +366,497 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="名词说明"><a href="#名词说明" class="headerlink" title="名词说明"></a>名词说明</h1><h2 id="MYSQL驱动"><a href="#MYSQL驱动" class="headerlink" title="MYSQL驱动"></a>MYSQL驱动</h2><p>在底层跟数据库建立网络连接</p>
-<h2 id="系统连接池"><a href="#系统连接池" class="headerlink" title="系统连接池"></a>系统连接池</h2><p>建立数据库连接是一个非常耗时的操作，而实际业务中往往会有很多请求去访问数据库，所以要使用一个数据库连接池来维护多个数据库连接。线程使用完连接后不用销毁，直接放回连接池以便后续使用。</p>
-<h2 id="MYSQL连接池"><a href="#MYSQL连接池" class="headerlink" title="MYSQL连接池"></a>MYSQL连接池</h2><p>维护了与系统之间的多个数据库连接。除此之外，系统每次与MYSQL建立连接的时候，还会进行账户信息验证，库表权限验证。</p>
-<h2 id="SQL接口"><a href="#SQL接口" class="headerlink" title="SQL接口"></a>SQL接口</h2><p>MYSQL内部提供的一个组件，负责执行线程传递过来的SQL语句</p>
+          <h1 id="移动零"><a href="#移动零" class="headerlink" title="移动零"></a>移动零</h1><p>给定一个数组 nums，编写一个函数将所有 0 移动到数组的末尾，同时保持非零元素的相对顺序。</p>
+<p>示例:</p>
+<p>输入: [0,1,0,3,12]<br>输出: [1,3,12,0,0]</p>
+<p>说明:</p>
+<p>必须在原数组上操作，不能拷贝额外的数组。<br>尽量减少操作次数。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">moveZeroes</span><span class="params">(<span class="keyword">int</span>[] nums)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (nums == <span class="keyword">null</span> || nums.length &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> index = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nums.length; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span> (nums[i] != <span class="number">0</span>) &#123;</span><br><span class="line">                nums[index++] = nums[i];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">while</span> (index &lt; nums.length)&#123;</span><br><span class="line">            nums[index++] = <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2022/01/14/%E6%95%B0%E7%BB%84-%E4%B8%A4%E4%B8%AA%E6%95%B0%E7%BB%84%E7%9A%84%E4%BA%A4%E9%9B%86-II/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/01/14/%E6%95%B0%E7%BB%84-%E4%B8%A4%E4%B8%AA%E6%95%B0%E7%BB%84%E7%9A%84%E4%BA%A4%E9%9B%86-II/" class="post-title-link" itemprop="url">数组 - 两个数组的交集 II</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-01-14 10:58:00 / 修改时间：11:00:52" itemprop="dateCreated datePublished" datetime="2022-01-14T10:58:00+08:00">2022-01-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/" itemprop="url" rel="index"><span itemprop="name">算法小抄</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2022/01/14/%E6%95%B0%E7%BB%84-%E4%B8%A4%E4%B8%AA%E6%95%B0%E7%BB%84%E7%9A%84%E4%BA%A4%E9%9B%86-II/" class="post-meta-item leancloud_visitors" data-flag-title="数组 - 两个数组的交集 II" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2022/01/14/%E6%95%B0%E7%BB%84-%E4%B8%A4%E4%B8%AA%E6%95%B0%E7%BB%84%E7%9A%84%E4%BA%A4%E9%9B%86-II/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/14/%E6%95%B0%E7%BB%84-%E4%B8%A4%E4%B8%AA%E6%95%B0%E7%BB%84%E7%9A%84%E4%BA%A4%E9%9B%86-II/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="两个数组的交集-II"><a href="#两个数组的交集-II" class="headerlink" title="两个数组的交集 II"></a>两个数组的交集 II</h1><p>给你两个整数数组 nums1 和 nums2 ，请你以数组形式返回两数组的交集。返回结果中每个元素出现的次数，应与元素在两个数组中都出现的次数一致（如果出现次数不一致，则考虑取较小值）。可以不考虑输出结果的顺序。</p>
+<p>示例 1：</p>
+<p>输入：nums1 = [1,2,2,1], nums2 = [2,2]<br>输出：[2,2]<br>示例 2:</p>
+<p>输入：nums1 = [4,9,5], nums2 = [9,4,9,8,4]<br>输出：[4,9]
+ </p>
+<p>提示：</p>
+<p>1 &lt;= nums1.length, nums2.length &lt;= 1000<br>0 &lt;= nums1[i], nums2[i] &lt;= 1000
+ </p>
+<p>进阶：</p>
+<p>如果给定的数组已经排好序呢？你将如何优化你的算法？<br>如果 nums1 的大小比 nums2 小，哪种方法更优？<br>如果 nums2 的元素存储在磁盘上，内存是有限的，并且你不能一次加载所有的元素到内存中，你该怎么办？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span>[] intersect(<span class="keyword">int</span>[] arr1, <span class="keyword">int</span>[] arr2) &#123;</span><br><span class="line">        Arrays.sort(arr1);</span><br><span class="line">        Arrays.sort(arr2);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> arr1Len = arr1.length, arr2Len = arr2.length;</span><br><span class="line">        <span class="keyword">int</span> len = Math.min(arr1Len, arr2Len);</span><br><span class="line">        <span class="keyword">int</span>[] newInt = <span class="keyword">new</span> <span class="keyword">int</span>[len];</span><br><span class="line">        <span class="keyword">int</span> i = <span class="number">0</span>, j = <span class="number">0</span>, k = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">while</span> (i &lt; arr1Len &amp;&amp; j &lt; arr2Len) &#123;</span><br><span class="line">            <span class="keyword">if</span> (arr1[i] == arr2[j]) &#123;</span><br><span class="line">                newInt[k++] = arr1[i];</span><br><span class="line">                i++;</span><br><span class="line">                j++;</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (arr1[i] &lt; arr2[j]) &#123;</span><br><span class="line">                i++;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                j++;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> Arrays.copyOfRange(newInt, <span class="number">0</span>, k);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2022/01/14/%E6%95%B0%E7%BB%84-%E5%8F%AA%E5%87%BA%E7%8E%B0%E4%B8%80%E6%AC%A1%E7%9A%84%E6%95%B0%E5%AD%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%8F%AA%E5%87%BA%E7%8E%B0%E4%B8%80%E6%AC%A1%E7%9A%84%E6%95%B0%E5%AD%97/" class="post-title-link" itemprop="url">数组 - 只出现一次的数字</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-01-14 10:49:00 / 修改时间：10:51:16" itemprop="dateCreated datePublished" datetime="2022-01-14T10:49:00+08:00">2022-01-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/" itemprop="url" rel="index"><span itemprop="name">算法小抄</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%8F%AA%E5%87%BA%E7%8E%B0%E4%B8%80%E6%AC%A1%E7%9A%84%E6%95%B0%E5%AD%97/" class="post-meta-item leancloud_visitors" data-flag-title="数组 - 只出现一次的数字" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%8F%AA%E5%87%BA%E7%8E%B0%E4%B8%80%E6%AC%A1%E7%9A%84%E6%95%B0%E5%AD%97/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%8F%AA%E5%87%BA%E7%8E%B0%E4%B8%80%E6%AC%A1%E7%9A%84%E6%95%B0%E5%AD%97/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="只出现一次的数字"><a href="#只出现一次的数字" class="headerlink" title="只出现一次的数字"></a>只出现一次的数字</h1><p>给定一个非空整数数组，除了某个元素只出现一次以外，其余每个元素均出现两次。找出那个只出现了一次的元素。</p>
+<p>说明：</p>
+<p>你的算法应该具有线性时间复杂度。 你可以不使用额外空间来实现吗？</p>
+<p>示例 1:</p>
+<p>输入: [2,2,1]<br>输出: 1<br>示例 2:</p>
+<p>输入: [4,1,2,1,2]<br>输出: 4</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">singleNumber</span><span class="params">(<span class="keyword">int</span>[] nums)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> a = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> num: nums)&#123;</span><br><span class="line">            a = num ^ a;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> a;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2022/01/14/%E6%95%B0%E7%BB%84-%E6%98%AF%E5%90%A6%E5%AD%98%E5%9C%A8%E9%87%8D%E5%A4%8D%E5%85%83%E7%B4%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/01/14/%E6%95%B0%E7%BB%84-%E6%98%AF%E5%90%A6%E5%AD%98%E5%9C%A8%E9%87%8D%E5%A4%8D%E5%85%83%E7%B4%A0/" class="post-title-link" itemprop="url">数组 - 是否存在重复元素</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-01-14 10:46:00 / 修改时间：10:54:17" itemprop="dateCreated datePublished" datetime="2022-01-14T10:46:00+08:00">2022-01-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/" itemprop="url" rel="index"><span itemprop="name">算法小抄</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2022/01/14/%E6%95%B0%E7%BB%84-%E6%98%AF%E5%90%A6%E5%AD%98%E5%9C%A8%E9%87%8D%E5%A4%8D%E5%85%83%E7%B4%A0/" class="post-meta-item leancloud_visitors" data-flag-title="数组 - 是否存在重复元素" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2022/01/14/%E6%95%B0%E7%BB%84-%E6%98%AF%E5%90%A6%E5%AD%98%E5%9C%A8%E9%87%8D%E5%A4%8D%E5%85%83%E7%B4%A0/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/14/%E6%95%B0%E7%BB%84-%E6%98%AF%E5%90%A6%E5%AD%98%E5%9C%A8%E9%87%8D%E5%A4%8D%E5%85%83%E7%B4%A0/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="存在重复元素"><a href="#存在重复元素" class="headerlink" title="存在重复元素"></a>存在重复元素</h1><p>给定一个整数数组，判断是否存在重复元素。</p>
+<p>如果存在一值在数组中出现至少两次，函数返回 true 。如果数组中每个元素都不相同，则返回 false 。</p>
+<p>示例 1:</p>
+<p>输入: [1,2,3,1]<br>输出: true<br>示例 2:</p>
+<p>输入: [1,2,3,4]<br>输出: false<br>示例 3:</p>
+<p>输入: [1,1,1,3,3,4,3,2,4,2]<br>输出: true</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">containsDuplicate</span><span class="params">(<span class="keyword">int</span>[] nums)</span> </span>&#123;</span><br><span class="line">        Set&lt;Integer&gt; set = <span class="keyword">new</span> HashSet&lt;&gt;();</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> num : nums) &#123;</span><br><span class="line">            <span class="comment">//因为集合set中不能有重复的元素，如果有重复的</span></span><br><span class="line">            <span class="comment">//元素添加，就会添加失败</span></span><br><span class="line">            <span class="keyword">if</span> (!set.add(num))</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2022/01/14/%E6%95%B0%E7%BB%84-%E5%88%A0%E9%99%A4%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%88%A0%E9%99%A4%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9/" class="post-title-link" itemprop="url">数组 - 删除排序数组中的重复项</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-01-14 10:36:00 / 修改时间：10:54:53" itemprop="dateCreated datePublished" datetime="2022-01-14T10:36:00+08:00">2022-01-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/" itemprop="url" rel="index"><span itemprop="name">算法小抄</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%88%A0%E9%99%A4%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9/" class="post-meta-item leancloud_visitors" data-flag-title="数组 - 删除排序数组中的重复项" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%88%A0%E9%99%A4%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%88%A0%E9%99%A4%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="删除排序数组中的重复项"><a href="#删除排序数组中的重复项" class="headerlink" title="删除排序数组中的重复项"></a>删除排序数组中的重复项</h1><p>给你一个有序数组 nums ，请你 原地 删除重复出现的元素，使每个元素 只出现一次 ，返回删除后数组的新长度。</p>
+<p>不要使用额外的数组空间，你必须在 原地 修改输入数组 并在使用 O(1) 额外空间的条件下完成。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">removeDuplicates</span><span class="params">(<span class="keyword">int</span>[] nums)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (nums.length == <span class="number">0</span>) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">int</span> index = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; nums.length; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span> (nums[index6] != nums[i]) &#123;</span><br><span class="line">                index ++;</span><br><span class="line">                nums[index] = nums[i];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> index +<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/09/30/Spring-Boot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/09/30/Spring-Boot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D/" class="post-title-link" itemprop="url">Spring Boot自动装配</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-09-30 10:07:00 / 修改时间：14:31:30" itemprop="dateCreated datePublished" datetime="2021-09-30T10:07:00+08:00">2021-09-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/09/30/Spring-Boot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D/" class="post-meta-item leancloud_visitors" data-flag-title="Spring Boot自动装配" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/09/30/Spring-Boot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/09/30/Spring-Boot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>转载自: <a target="_blank" rel="noopener" href="https://mrbird.cc/deepin-springboot-autoconfig.html">https://mrbird.cc/deepin-springboot-autoconfig.html</a></p>
+<h2 id="模式注解"><a href="#模式注解" class="headerlink" title="模式注解"></a>模式注解</h2><p>Stereotype Annotation俗称为模式注解，Spring中常见的模式注解有@Service，@Repository，@Controller等，它们都“派生”自@Component注解。我们都知道，凡是被@Component标注的类都会被Spring扫描并纳入到IOC容器中，那么由@Component派生的注解所标注的类也会被扫描到IOC容器中。下面我们主要通过自定义模式注解来了解@Component的“派生性”和“层次性”。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/#more" rel="contents">
+              <a class="btn" href="/2021/09/30/Spring-Boot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -399,7 +883,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -413,7 +897,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/" class="post-title-link" itemprop="url">MySql 8.0新特性</a>
+            <a href="/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/" class="post-title-link" itemprop="url">Mysql 数据库事务隔离级别</a>
         </h2>
 
         <div class="post-meta">
@@ -423,14 +907,14 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2021-08-23 11:56:00" itemprop="dateCreated datePublished" datetime="2021-08-23T11:56:00+08:00">2021-08-23</time>
+              <time title="创建时间：2021-08-27 11:03:00" itemprop="dateCreated datePublished" datetime="2021-08-27T11:03:00+08:00">2021-08-27</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-08-27 11:10:59" itemprop="dateModified" datetime="2021-08-27T11:10:59+08:00">2021-08-27</time>
+                <time title="修改时间：2021-08-30 10:46:09" itemprop="dateModified" datetime="2021-08-30T10:46:09+08:00">2021-08-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -443,7 +927,7 @@
             </span>
 
           
-            <span id="/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 8.0新特性" title="阅读次数">
+            <span id="/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/" class="post-meta-item leancloud_visitors" data-flag-title="Mysql 数据库事务隔离级别" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -458,8 +942,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/" itemprop="commentCount"></span>
+    <a title="valine" href="/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -474,16 +958,25 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="MySql-8-0新特性"><a href="#MySql-8-0新特性" class="headerlink" title="MySql 8.0新特性"></a><strong>MySql 8.0新特性</strong></h1><p>MySQL从5.7一跃直接到8.0，这其中的缘由，咱就不关心那么多了，有兴趣的朋友自行百度，本次的版本更新，在功能上主要有以下6点：</p>
-<p>　　<strong>账户与安全</strong></p>
-<p>　　<strong>优化器索引</strong></p>
-<p>　　<strong>通用表表达式</strong></p>
-<p>　　<strong>窗口函数</strong></p>
-<p>　　<strong>InnoDB 增强</strong></p>
-<p>　　<strong>JSON 增强</strong></p>
+          <h2 id="Mysql-——-通过例子理解事务的4种隔离级别"><a href="#Mysql-——-通过例子理解事务的4种隔离级别" class="headerlink" title="[Mysql] —— 通过例子理解事务的4种隔离级别"></a>[Mysql] —— 通过例子理解事务的4种隔离级别</h2><blockquote>
+<p>第1级别：Read Uncommitted(读取未提交内容)</p>
+</blockquote>
+<blockquote>
+<p>第2级别：Read Committed(读取提交内容)</p>
+</blockquote>
+<blockquote>
+<p>第3级别：Repeatable Read(可重读)</p>
+</blockquote>
+<blockquote>
+<p>第4级别：Serializable(可串行化)</p>
+</blockquote>
+<p><strong>SQL标准定义了4种隔离级别，包括了一些具体规则，用来限定事务内外的哪些改变是可见的，哪些是不可见的。</strong></p>
+<p><strong>低级别的隔离级一般支持更高的并发处理，并拥有更低的系统开销。</strong></p>
+<p><strong>首先，我们使用 test 数据库，新建 tx 表，并且如图所示打开两个窗口来操作同一个数据库：</strong></p>
+<h2 id=""><a href="#" class="headerlink" title=""></a><img src="/images/img-68.png"></h2><h4 id="第1级别：Read-Uncommitted-读取未提交内容"><a href="#第1级别：Read-Uncommitted-读取未提交内容" class="headerlink" title="第1级别：Read Uncommitted(读取未提交内容)"></a>第1级别：Read Uncommitted(读取未提交内容)</h4><p>(1)所有事务都可以看到其他未提交事务的执行结果</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/#more" rel="contents">
+              <a class="btn" href="/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -510,7 +1003,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/20/MyBatis%E6%8F%92%E4%BB%B6%E5%85%B3%E9%94%AE%E5%AF%B9%E8%B1%A1/">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -524,7 +1017,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/20/MyBatis%E6%8F%92%E4%BB%B6%E5%85%B3%E9%94%AE%E5%AF%B9%E8%B1%A1/" class="post-title-link" itemprop="url">MyBatis插件关键对象</a>
+            <a href="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/" class="post-title-link" itemprop="url">MySql 执行计划</a>
         </h2>
 
         <div class="post-meta">
@@ -534,27 +1027,18 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2021-08-20 18:59:00" itemprop="dateCreated datePublished" datetime="2021-08-20T18:59:00+08:00">2021-08-20</time>
+              <time title="创建时间：2021-08-25 22:00:18" itemprop="dateCreated datePublished" datetime="2021-08-25T22:00:18+08:00">2021-08-25</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-08-27 11:32:10" itemprop="dateModified" datetime="2021-08-27T11:32:10+08:00">2021-08-27</time>
+                <time title="修改时间：2021-08-26 13:53:46" itemprop="dateModified" datetime="2021-08-26T13:53:46+08:00">2021-08-26</time>
               </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
-                </span>
-            </span>
 
           
-            <span id="/2021/08/20/MyBatis%E6%8F%92%E4%BB%B6%E5%85%B3%E9%94%AE%E5%AF%B9%E8%B1%A1/" class="post-meta-item leancloud_visitors" data-flag-title="MyBatis插件关键对象" title="阅读次数">
+            <span id="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 执行计划" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -569,8 +1053,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/20/MyBatis%E6%8F%92%E4%BB%B6%E5%85%B3%E9%94%AE%E5%AF%B9%E8%B1%A1/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/20/MyBatis%E6%8F%92%E4%BB%B6%E5%85%B3%E9%94%AE%E5%AF%B9%E8%B1%A1/" itemprop="commentCount"></span>
+    <a title="valine" href="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -585,363 +1069,18 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="MyBatis插件关键对象"><a href="#MyBatis插件关键对象" class="headerlink" title="MyBatis插件关键对象"></a>MyBatis插件关键对象</h2><blockquote>
-<p><strong>Interceptor</strong> 接口：自定义拦截器（实现类）</p>
-</blockquote>
-<blockquote>
-<p><strong>InterceptorChain</strong>：存放插件的容器</p>
-</blockquote>
-<blockquote>
-<p><strong>Plugin</strong>：h对象；提供创建代理类的方法</p>
-</blockquote>
-<blockquote>
-<p><strong>Invocation</strong>：对被代理对象的封装</p>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-<div>
-  
-</div>
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/VX.png">
-      <meta itemprop="name" content="Peilin Deng">
-      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="牧场小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/" class="post-title-link" itemprop="url">MyBatis 插件的执行顺序</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-08-20 18:58:00" itemprop="dateCreated datePublished" datetime="2021-08-20T18:58:00+08:00">2021-08-20</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-08-27 11:29:01" itemprop="dateModified" datetime="2021-08-27T11:29:01+08:00">2021-08-27</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
-                </span>
-            </span>
-
-          
-            <span id="/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/" class="post-meta-item leancloud_visitors" data-flag-title="MyBatis 插件的执行顺序" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="多个插件执行顺序"><a href="#多个插件执行顺序" class="headerlink" title="多个插件执行顺序 "></a>多个插件执行顺序 </h2><h6 id="本文转载自-https-zhuanlan-zhihu-com-p-266735787"><a href="#本文转载自-https-zhuanlan-zhihu-com-p-266735787" class="headerlink" title="本文转载自 https://zhuanlan.zhihu.com/p/266735787"></a>本文转载自 <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/266735787">https://zhuanlan.zhihu.com/p/266735787</a></h6><h6 id="在-mybatis-中允许针对-SQL-在执行前后进行扩展操作，而这些扩展操作也叫做插件。允许用插件来拦截的方法包括："><a href="#在-mybatis-中允许针对-SQL-在执行前后进行扩展操作，而这些扩展操作也叫做插件。允许用插件来拦截的方法包括：" class="headerlink" title="在 mybatis 中允许针对 SQL 在执行前后进行扩展操作，而这些扩展操作也叫做插件。允许用插件来拦截的方法包括："></a>在 mybatis 中允许针对 SQL 在执行前后进行扩展操作，而这些扩展操作也叫做插件。<br>允许用插件来拦截的方法包括：</h6><blockquote>
-<p>MyBatis 默认支持对<strong>4大对象</strong>（<strong>Executor，StatementHandler，ParameterHandler，ResultSetHandler</strong>）上的方法执行拦截，具体支持的方法为：</p>
+          <h1 id="执行计划类型"><a href="#执行计划类型" class="headerlink" title="执行计划类型"></a>执行计划类型</h1><h2 id="const"><a href="#const" class="headerlink" title="const"></a>const</h2><p>直接通过聚簇索引或者二级索引+聚簇索引回源，查询到想要的数据。这种根据索引可以直接快速查询到数据的过程，在执行计划里称之为<strong>const</strong>。<br><font color="red">二级索引必须是unique，才是const。否则就是ref</font></p>
+<h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><p>一般走索引都是ref，如果是组合索引，则要求查询条件必须是从索引最左侧开始连续多列都是等值比较。    </p>
+<h2 id="range"><a href="#range" class="headerlink" title="range"></a>range</h2><p>对索引列使用范围查询。</p>
+<h2 id="index"><a href="#index" class="headerlink" title="index"></a>index</h2><p>只需要遍历二级索引就可以拿到想要的数据，而不需要回源到聚簇索引的访问方式。</p>
 <ul>
-<li><strong>Executor</strong> (update, query, flushStatements, commit, rollback, getTransaction, close, isClosed)，主要用于sql重写。</li>
-<li><strong>ParameterHandler</strong> (getParameterObject, setParameters)，用于参数处理。</li>
-<li><strong>ResultSetHandler</strong> (handleResultSets, handleOutputParameters)，用于结果集二次处理。</li>
-<li><strong>StatementHandler</strong> (prepare, parameterize, batch, update, query)，用于jdbc层的控制。</li>
+<li>索引：  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">idx(S21,S22,S23,S24)</span><br></pre></td></tr></table></figure>
+SQL：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT S21,S22,S23 FROM TABLE WHERE S22 = &#x27;X&#x27; AND S23 = &#x27;Z&#x27;; </span><br></pre></td></tr></table></figure>
+  第一反应：这个SQL无法直接从联合索引树的根节点进行二分查找。    基于上面的索引以及SQL，可以直接遍历联合索引树的叶子节点，找到所需要的数据，不需要再回源到聚簇索引进行二次查询，这种方式就是使用的index访问。    虽然遍历了叶子节点，但是叶子节点内容少。也比回表查询快。</li>
 </ul>
-<p>通过插件可以实现 SQL 打印，分页插件等功能。<br><br>这时候就会延伸出一个问题：如果存在多个插件，这些插件的执行顺序是怎样的？</p>
-</blockquote>
-<h3 id="一、插件的执行顺序"><a href="#一、插件的执行顺序" class="headerlink" title="一、插件的执行顺序"></a>一、插件的执行顺序</h3><h6 id="插件执行顺序一共有两种"><a href="#插件执行顺序一共有两种" class="headerlink" title="插件执行顺序一共有两种"></a>插件执行顺序一共有两种</h6><h4 id="1、不同拦截对象的执行顺序"><a href="#1、不同拦截对象的执行顺序" class="headerlink" title="1、不同拦截对象的执行顺序"></a>1、不同拦截对象的执行顺序</h4><blockquote>
-<p>Mybatis 针对以上这四种对象的拦截的执行顺序是固定的，因为 Mybatis代码的执行流程是固定的。<br><br>以 <strong>SimpleExecutor</strong>#query 来说，这四种对象的执行代码如下：<br><br><img src="/images/img-71.png"></p>
-</blockquote>
-<blockquote>
-<p>通过源码知道，执行顺序为：<br><br><strong>Executor<code>-&gt;</code>StatementHandler<code>-&gt;</code>ParameterHandler<code>-&gt;</code>StatementHandler<code>-&gt;</code>ResultSetHandler</strong></p>
-<p>虽然中间 StatementHandler 执行了多次，但是总的来说，执行顺序优先级从高到低为：<br><br><strong>Executor<code>-&gt;</code>StatementHandler<code>-&gt;</code>ParameterHandler<code>-&gt;</code>ResultSetHandler</strong></p>
-</blockquote>
-<h4 id="2、同种拦截对象的执行顺序"><a href="#2、同种拦截对象的执行顺序" class="headerlink" title="2、同种拦截对象的执行顺序"></a>2、同种拦截对象的执行顺序</h4><h6 id="针对同种对象如果存在多种拦截器对象，其拦截顺序如何？"><a href="#针对同种对象如果存在多种拦截器对象，其拦截顺序如何？" class="headerlink" title="针对同种对象如果存在多种拦截器对象，其拦截顺序如何？"></a>针对同种对象如果存在多种拦截器对象，其拦截顺序如何？</h6><blockquote>
-<p>首先在前面，知道了插件功能的实现是通过代理的方式对原有的如：Executor、ParameterHandler 等进行了代理增强，而经过代理后的原有的 Executor 、ParameterHandler 等对象会以如下方式存在：<br><img src="/images/img-72.png"></p>
-<p>如图，存在多个拦截器都是先进后出，针对代理模式来说来说，可以对被代理的原始对象的处理前后进行代码增强操作。</p>
-<p>而那个拦截器优先执行，取决于在生成代理对象时的顺序，也就是包裹在最外层的插件（拦截器）优先执行。</p>
-<p>来回顾一下代理对象生成时的逻辑然后结合mybatis-config.xml 配置文件的关于 <plugins> 的配置信息，即可知道相关的执行顺序。</p>
-</blockquote>
-<h6 id="来看代理生成代码-InterceptorChain-pluginAll，如下："><a href="#来看代理生成代码-InterceptorChain-pluginAll，如下：" class="headerlink" title="来看代理生成代码 InterceptorChain#pluginAll，如下："></a>来看代理生成代码 InterceptorChain#pluginAll，如下：</h6><blockquote>
-<p><img src="/images/img-73.png"><br>如上述代码所示，通过遍历 interceptors List 列表对 target 对象进行包装（target 可以是 Executor or ParameterHandler等）。</p>
-<p>也就是在 List 列表的最开始的 interceptor 插件最先被包裹在 target 对象外层，也就是如下图所示：<br><img src="/images/img-74.png" alt="upload successful"></p>
-<p>如上图所示，在配置文件中越靠前的插件配置，在 interceptors List 列表中的位置自然越靠前，其执行顺序自然越靠后。</p>
-</blockquote>
-<h4 id="总结：同个对象的多个拦截器执行顺序根据配置文件-mybatis-config-xml-插件配置顺序有关，配置越靠前，执行顺序越靠后"><a href="#总结：同个对象的多个拦截器执行顺序根据配置文件-mybatis-config-xml-插件配置顺序有关，配置越靠前，执行顺序越靠后" class="headerlink" title="总结：同个对象的多个拦截器执行顺序根据配置文件 mybatis-config.xml 插件配置顺序有关，配置越靠前，执行顺序越靠后"></a>总结：同个对象的多个拦截器执行顺序根据配置文件 mybatis-config.xml 插件配置顺序有关，配置越靠前，执行顺序越靠后</h4>
-      
-    </div>
-
-    
-    
-    
-<div>
-  
-</div>
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E4%BB%8B%E7%BB%8D%E5%8F%8A%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/VX.png">
-      <meta itemprop="name" content="Peilin Deng">
-      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="牧场小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E4%BB%8B%E7%BB%8D%E5%8F%8A%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6/" class="post-title-link" itemprop="url">MyBatis 插件介绍及自定义插件</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-08-20 18:57:00" itemprop="dateCreated datePublished" datetime="2021-08-20T18:57:00+08:00">2021-08-20</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-08-27 11:24:42" itemprop="dateModified" datetime="2021-08-27T11:24:42+08:00">2021-08-27</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
-                </span>
-            </span>
-
-          
-            <span id="/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E4%BB%8B%E7%BB%8D%E5%8F%8A%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6/" class="post-meta-item leancloud_visitors" data-flag-title="MyBatis 插件介绍及自定义插件" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E4%BB%8B%E7%BB%8D%E5%8F%8A%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/20/MyBatis-%E6%8F%92%E4%BB%B6%E4%BB%8B%E7%BB%8D%E5%8F%8A%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="mybatis自定义插件（拦截器）开发详解"><a href="#mybatis自定义插件（拦截器）开发详解" class="headerlink" title="mybatis自定义插件（拦截器）开发详解"></a>mybatis自定义插件（拦截器）开发详解</h2><h6 id="mybatis插件（准确的说应该是around拦截器，因为接口名是interceptor，而且invocation-proceed要自己调用，配置中叫插件）功能非常强大，可以让我们无侵入式的对SQL的执行进行干涉，从SQL语句重写、参数注入、结果集返回等每个主要环节，典型的包括权限控制检查与注入、只读库映射、K-V翻译、动态改写SQL。"><a href="#mybatis插件（准确的说应该是around拦截器，因为接口名是interceptor，而且invocation-proceed要自己调用，配置中叫插件）功能非常强大，可以让我们无侵入式的对SQL的执行进行干涉，从SQL语句重写、参数注入、结果集返回等每个主要环节，典型的包括权限控制检查与注入、只读库映射、K-V翻译、动态改写SQL。" class="headerlink" title="mybatis插件（准确的说应该是around拦截器，因为接口名是interceptor，而且invocation.proceed要自己调用，配置中叫插件）功能非常强大，可以让我们无侵入式的对SQL的执行进行干涉，从SQL语句重写、参数注入、结果集返回等每个主要环节，典型的包括权限控制检查与注入、只读库映射、K/V翻译、动态改写SQL。"></a>mybatis插件（准确的说应该是around拦截器，因为接口名是interceptor，而且invocation.proceed要自己调用，配置中叫插件）功能非常强大，<strong>可以让我们无侵入式的对SQL的执行进行干涉，从SQL语句重写、参数注入、结果集返回等每个主要环节，典型的包括权限控制检查与注入、只读库映射、K/V翻译、动态改写SQL。</strong></h6><blockquote>
-<p>MyBatis 默认支持对<strong>4大对象</strong>（<strong>Executor，StatementHandler，ParameterHandler，ResultSetHandler</strong>）上的方法执行拦截，具体支持的方法为：</p>
-<ul>
-<li><strong>Executor</strong> (update, query, flushStatements, commit, rollback, getTransaction, close, isClosed)，主要用于sql重写。</li>
-<li><strong>ParameterHandler</strong> (getParameterObject, setParameters)，用于参数处理。</li>
-<li><strong>ResultSetHandler</strong> (handleResultSets, handleOutputParameters)，用于结果集二次处理。</li>
-<li><strong>StatementHandler</strong> (prepare, parameterize, batch, update, query)，用于jdbc层的控制。</li>
-</ul>
-</blockquote>
-<p>大多数情况下仅在Executor做插件比如SQL重写、结果集脱敏，ResultSetHandler和StatementHandler仅在高级场景中使用，而且某些场景中非常有价值。</p>
-<p>四大对象的在sql执行过程中的调用链如下：</p>
-<p><img src="/images/img-70.png"></p>
-<p>具体的方法定义可以参见每个类方法的签名，这里就不详细展开了。这四个类被创建后不是直接返回，而是创执行了interceptorChain.pluginAll(parameterHandler)才返回。如下所示：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//Configuration 中</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> ParameterHandler <span class="title">newParameterHandler</span><span class="params">(MappedStatement mappedStatement, Object parameterObject, BoundSql boundSql)</span> </span>&#123;</span><br><span class="line">    ParameterHandler parameterHandler = mappedStatement.getLang().createParameterHandler(mappedStatement, parameterObject, boundSql);</span><br><span class="line">    parameterHandler = (ParameterHandler) interceptorChain.pluginAll(parameterHandler);</span><br><span class="line">    <span class="keyword">return</span> parameterHandler;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> ResultSetHandler <span class="title">newResultSetHandler</span><span class="params">(Executor executor, MappedStatement mappedStatement, RowBounds rowBounds, ParameterHandler parameterHandler,</span></span></span><br><span class="line"><span class="params"><span class="function">                                            ResultHandler resultHandler, BoundSql boundSql)</span> </span>&#123;</span><br><span class="line">    ResultSetHandler resultSetHandler = <span class="keyword">new</span> DefaultResultSetHandler(executor, mappedStatement, parameterHandler, resultHandler, boundSql, rowBounds);</span><br><span class="line">    resultSetHandler = (ResultSetHandler) interceptorChain.pluginAll(resultSetHandler);</span><br><span class="line">    <span class="keyword">return</span> resultSetHandler;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> StatementHandler <span class="title">newStatementHandler</span><span class="params">(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql)</span> </span>&#123;</span><br><span class="line">    StatementHandler statementHandler = <span class="keyword">new</span> RoutingStatementHandler(executor, mappedStatement, parameterObject, rowBounds, resultHandler, boundSql);</span><br><span class="line">    statementHandler = (StatementHandler) interceptorChain.pluginAll(statementHandler);</span><br><span class="line">    <span class="keyword">return</span> statementHandler;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> Executor <span class="title">newExecutor</span><span class="params">(Transaction transaction)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> newExecutor(transaction, defaultExecutorType);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> Executor <span class="title">newExecutor</span><span class="params">(Transaction transaction, ExecutorType executorType)</span> </span>&#123;</span><br><span class="line">    executorType = executorType ** <span class="keyword">null</span> ? defaultExecutorType : executorType;</span><br><span class="line">    executorType = executorType ** <span class="keyword">null</span> ? ExecutorType.SIMPLE : executorType;</span><br><span class="line">    Executor executor;</span><br><span class="line">    <span class="keyword">if</span> (ExecutorType.BATCH ** executorType) &#123;</span><br><span class="line">        executor = <span class="keyword">new</span> BatchExecutor(<span class="keyword">this</span>, transaction);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (ExecutorType.REUSE ** executorType) &#123;</span><br><span class="line">        executor = <span class="keyword">new</span> ReuseExecutor(<span class="keyword">this</span>, transaction);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        executor = <span class="keyword">new</span> SimpleExecutor(<span class="keyword">this</span>, transaction);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (cacheEnabled) &#123;</span><br><span class="line">        executor = <span class="keyword">new</span> CachingExecutor(executor);</span><br><span class="line">    &#125;</span><br><span class="line">    executor = (Executor) interceptorChain.pluginAll(executor);</span><br><span class="line">    <span class="keyword">return</span> executor;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h2 id="编写Interceptor的实现类"><a href="#编写Interceptor的实现类" class="headerlink" title="编写Interceptor的实现类"></a>编写Interceptor的实现类</h2><h4 id="一-Executor拦截器"><a href="#一-Executor拦截器" class="headerlink" title="一. Executor拦截器"></a>一. Executor拦截器</h4><h6 id="案例1"><a href="#案例1" class="headerlink" title="案例1:"></a>案例1:</h6><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Intercepts(&#123;</span></span><br><span class="line"><span class="meta">    // @Signature(type = Executor.class, method = /* org.apache.ibatis.executor.Executor中定义的方法,参数也要对应 */&quot;update&quot;, args = &#123; MappedStatement.class, Object.class&#125;),</span></span><br><span class="line"><span class="meta">    @Signature(</span></span><br><span class="line"><span class="meta">        type = Executor.class, method = &quot;query&quot;, </span></span><br><span class="line"><span class="meta">        args = &#123; MappedStatement.class, Object.class,RowBounds.class, ResultHandler.class &#125;</span></span><br><span class="line"><span class="meta">    ) </span></span><br><span class="line"><span class="meta">&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SelectPruningColumnPlugin</span> <span class="keyword">implements</span> <span class="title">Interceptor</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> ThreadLocal&lt;ColumnPruning&gt; enablePruning = <span class="keyword">new</span> ThreadLocal&lt;ColumnPruning&gt;()&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> ColumnPruning <span class="title">initialValue</span><span class="params">()</span></span></span><br><span class="line"><span class="function">        </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    </span><br><span class="line">    Logger logger = LoggerFactory.getLogger(SelectPruningColumnPlugin.class);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> MAPPED_STATEMENT_INDEX = <span class="number">0</span>;<span class="comment">// 这是对应上面的args的序号</span></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> PARAMETER_INDEX = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> ROWBOUNDS_INDEX = <span class="number">2</span>;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> RESULT_HANDLER_INDEX = <span class="number">3</span>;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">intercept</span><span class="params">(Invocation invocation)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (enablePruning.get() != <span class="keyword">null</span> &amp;&amp; enablePruning.get().isEnablePruning()) &#123;</span><br><span class="line">            Object[] queryArgs = invocation.getArgs();</span><br><span class="line">            MappedStatement mappedStatement = (MappedStatement) queryArgs[MAPPED_STATEMENT_INDEX];</span><br><span class="line">            Object parameter = queryArgs[PARAMETER_INDEX];</span><br><span class="line">            BoundSql boundSql = mappedStatement.getBoundSql(parameter);</span><br><span class="line">            String sql = boundSql.getSql();<span class="comment">// 获取到SQL ，进行调整</span></span><br><span class="line">            String name = mappedStatement.getId();</span><br><span class="line">            logger.debug(<span class="string">&quot;拦截的方法名是:&quot;</span> + name + <span class="string">&quot;,sql是&quot;</span> + sql + <span class="string">&quot;,参数是&quot;</span> + JsonUtils.toJson(parameter));</span><br><span class="line">            String execSql = pruningColumn(enablePruning.get().getReserveColumns(), sql);</span><br><span class="line">            logger.debug(<span class="string">&quot;修改后的sql是:&quot;</span> + execSql);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 重新new一个查询语句对像</span></span><br><span class="line">            BoundSql newBoundSql = <span class="keyword">new</span> BoundSql(mappedStatement.getConfiguration(), execSql, boundSql.getParameterMappings(), boundSql.getParameterObject());</span><br><span class="line">            <span class="comment">// 把新的查询放到statement里</span></span><br><span class="line">            MappedStatement newMs = copyFromMappedStatement(mappedStatement, <span class="keyword">new</span> BoundSqlSqlSource(newBoundSql));</span><br><span class="line">            <span class="keyword">for</span> (ParameterMapping mapping : boundSql.getParameterMappings()) &#123;</span><br><span class="line">                String prop = mapping.getProperty();</span><br><span class="line">                <span class="keyword">if</span> (boundSql.hasAdditionalParameter(prop)) &#123;</span><br><span class="line">                    newBoundSql.setAdditionalParameter(prop, boundSql.getAdditionalParameter(prop));</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            queryArgs[MAPPED_STATEMENT_INDEX] = newMs;</span><br><span class="line">            <span class="comment">// 因为涉及分页查询PageHelper插件，所以不能设置为null，需要业务上下文执行完成后设置为null</span></span><br><span class="line"><span class="comment">//            enablePruning.set(null);</span></span><br><span class="line">        &#125;</span><br><span class="line">        Object result = invocation.proceed();</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">plugin</span><span class="params">(Object target)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> Plugin.wrap(target, <span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setProperties</span><span class="params">(Properties properties)</span> </span>&#123;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-
-<h6 id="案例2-带反射"><a href="#案例2-带反射" class="headerlink" title="案例2: 带反射"></a>案例2: 带反射</h6><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Intercepts(&#123;</span></span><br><span class="line"><span class="meta">        @Signature(</span></span><br><span class="line"><span class="meta">            type = Executor.class,method = &quot;query&quot;,</span></span><br><span class="line"><span class="meta">            args = &#123;MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class&#125;</span></span><br><span class="line"><span class="meta">        )</span></span><br><span class="line"><span class="meta">&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyPageInterceptor</span> <span class="keyword">implements</span> <span class="title">Interceptor</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">intercept</span><span class="params">(Invocation invocation)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;将逻辑分页改为物理分页&quot;</span>);</span><br><span class="line">        Object[] args = invocation.getArgs();</span><br><span class="line">        MappedStatement ms = (MappedStatement) args[<span class="number">0</span>]; <span class="comment">// MappedStatement</span></span><br><span class="line">        BoundSql boundSql = ms.getBoundSql(args[<span class="number">1</span>]); <span class="comment">// Object parameter</span></span><br><span class="line">        RowBounds rb = (RowBounds) args[<span class="number">2</span>]; <span class="comment">// RowBounds</span></span><br><span class="line">        <span class="comment">// RowBounds为空，无需分页</span></span><br><span class="line">        <span class="keyword">if</span> (rb ** RowBounds.DEFAULT) &#123;</span><br><span class="line">            <span class="keyword">return</span> invocation.proceed();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 将原 RowBounds 参数设为 RowBounds.DEFAULT，关闭 MyBatis 内置的分页机制</span></span><br><span class="line">        <span class="comment">//args[2] = RowBounds.DEFAULT;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 在SQL后加上limit语句</span></span><br><span class="line">        String sql = boundSql.getSql();</span><br><span class="line">        String limit = String.format(<span class="string">&quot;LIMIT %d,%d&quot;</span>, rb.getOffset(), rb.getLimit());</span><br><span class="line">        sql = sql + <span class="string">&quot; &quot;</span> + limit;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 自定义sqlSource</span></span><br><span class="line">        SqlSource sqlSource = <span class="keyword">new</span> StaticSqlSource(ms.getConfiguration(), sql, boundSql.getParameterMappings());</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 修改原来的sqlSource</span></span><br><span class="line">        Field field = MappedStatement.class.getDeclaredField(<span class="string">&quot;sqlSource&quot;</span>);</span><br><span class="line">        field.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">        field.set(ms, sqlSource);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 执行被拦截方法</span></span><br><span class="line">        <span class="keyword">return</span> invocation.proceed();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">plugin</span><span class="params">(Object target)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> Plugin.wrap(target, <span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setProperties</span><span class="params">(Properties properties)</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="二-ResultSetHandler拦截器"><a href="#二-ResultSetHandler拦截器" class="headerlink" title="二. ResultSetHandler拦截器"></a>二. ResultSetHandler拦截器</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Intercepts(&#123;</span></span><br><span class="line"><span class="meta">    @Signature(</span></span><br><span class="line"><span class="meta">        type = ResultSetHandler.class, </span></span><br><span class="line"><span class="meta">        method = &quot;handleResultSets&quot;, </span></span><br><span class="line"><span class="meta">        args = &#123; Statement.class&#125;</span></span><br><span class="line"><span class="meta">    ) </span></span><br><span class="line"><span class="meta">&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">OptMapPlugin</span> <span class="keyword">implements</span> <span class="title">Interceptor</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">intercept</span><span class="params">(Invocation invocation)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">        Object target = invocation.getTarget();</span><br><span class="line">        Statement stmt = (Statement) invocation.getArgs()[<span class="number">0</span>];</span><br><span class="line">        <span class="keyword">if</span> (target <span class="keyword">instanceof</span> DefaultResultSetHandler) &#123;</span><br><span class="line">            DefaultResultSetHandler resultSetHandler = (DefaultResultSetHandler) target;</span><br><span class="line">            Class clz = resultSetHandler.getMappedStatement().getResultMaps().get(<span class="number">0</span>).getType();</span><br><span class="line">            <span class="keyword">if</span> (clz ** OptMap.class) &#123;</span><br><span class="line">                List&lt;Object&gt; resultList = <span class="keyword">new</span> ArrayList&lt;Object&gt;();</span><br><span class="line">                OptMap optMap = <span class="keyword">new</span> OptMap();</span><br><span class="line">                resultList.add(optMap);</span><br><span class="line">                resultSet2OptMap(resultSetHandler.getConfiguration(),resultSetHandler,optMap,stmt.getResultSet());</span><br><span class="line">                <span class="keyword">return</span> resultList;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> invocation.proceed();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//如果没有进行拦截处理，则执行默认逻辑</span></span><br><span class="line">        <span class="keyword">return</span> invocation.proceed();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="最后将插件配置到mybatis-config-xml中，如下："><a href="#最后将插件配置到mybatis-config-xml中，如下：" class="headerlink" title="最后将插件配置到mybatis-config.xml中，如下："></a>最后将插件配置到mybatis-config.xml中，如下：</h4><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- mybatis-config.xml  注册插件--&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">plugins</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">plugin</span> <span class="attr">interceptor</span>=<span class="string">&quot;com.dpl.mybatis.plugin.SelectPruningColumnPlugin&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;someProperty&quot;</span> <span class="attr">value</span>=<span class="string">&quot;100&quot;</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">plugins</span>&gt;</span></span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-<div>
-  
-</div>
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/20/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/VX.png">
-      <meta itemprop="name" content="Peilin Deng">
-      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="牧场小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/08/20/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/" class="post-title-link" itemprop="url">MyBatis 运行时序图</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-08-20 18:55:00" itemprop="dateCreated datePublished" datetime="2021-08-20T18:55:00+08:00">2021-08-20</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-08-27 11:10:40" itemprop="dateModified" datetime="2021-08-27T11:10:40+08:00">2021-08-27</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
-                </span>
-            </span>
-
-          
-            <span id="/2021/08/20/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/" class="post-meta-item leancloud_visitors" data-flag-title="MyBatis 运行时序图" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/08/20/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/20/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="架构分层"><a href="#架构分层" class="headerlink" title="架构分层"></a>架构分层</h3><p><img src="/images/pasted-4.png" alt="架构分层"></p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/08/20/MyBatis-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F%E5%9B%BE/#more" rel="contents">
+              <a class="btn" href="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -968,7 +1107,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/20/A/">
+    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -982,218 +1121,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/20/A/" class="post-title-link" itemprop="url">MyBatis 整合到 Spring 原理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-08-20 18:53:00" itemprop="dateCreated datePublished" datetime="2021-08-20T18:53:00+08:00">2021-08-20</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-08-27 11:10:19" itemprop="dateModified" datetime="2021-08-27T11:10:19+08:00">2021-08-27</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
-                </span>
-            </span>
-
-          
-            <span id="/2021/08/20/A/" class="post-meta-item leancloud_visitors" data-flag-title="MyBatis 整合到 Spring 原理" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/08/20/A/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/20/A/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="1-xml-配置"><a href="#1-xml-配置" class="headerlink" title="1. xml 配置"></a>1. xml 配置</h3><blockquote>
-<p>通过在Spring的 applicationContext.xml文件中做以下配置, 指定MyBatis 的mapper.xml 文件扫描路径, MapperScannerConfigurer 是 Mybatis 用于整合 Spring 的核心对象.</p>
-</blockquote>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/08/20/A/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-<div>
-  
-</div>
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/20/Spring-%E4%BA%8B%E5%8A%A1%E4%BC%A0%E6%92%AD%E5%8E%9F%E7%90%86%E5%8F%8A%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E6%93%8D%E4%BD%9C%E5%8E%9F%E7%90%86/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/VX.png">
-      <meta itemprop="name" content="Peilin Deng">
-      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="牧场小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/08/20/Spring-%E4%BA%8B%E5%8A%A1%E4%BC%A0%E6%92%AD%E5%8E%9F%E7%90%86%E5%8F%8A%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E6%93%8D%E4%BD%9C%E5%8E%9F%E7%90%86/" class="post-title-link" itemprop="url">Spring 事务传播原理及数据库事务操作原理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-08-20 18:43:00" itemprop="dateCreated datePublished" datetime="2021-08-20T18:43:00+08:00">2021-08-20</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-08-27 11:05:59" itemprop="dateModified" datetime="2021-08-27T11:05:59+08:00">2021-08-27</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
-                </span>
-            </span>
-
-          
-            <span id="/2021/08/20/Spring-%E4%BA%8B%E5%8A%A1%E4%BC%A0%E6%92%AD%E5%8E%9F%E7%90%86%E5%8F%8A%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E6%93%8D%E4%BD%9C%E5%8E%9F%E7%90%86/" class="post-meta-item leancloud_visitors" data-flag-title="Spring 事务传播原理及数据库事务操作原理" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/08/20/Spring-%E4%BA%8B%E5%8A%A1%E4%BC%A0%E6%92%AD%E5%8E%9F%E7%90%86%E5%8F%8A%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E6%93%8D%E4%BD%9C%E5%8E%9F%E7%90%86/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/20/Spring-%E4%BA%8B%E5%8A%A1%E4%BC%A0%E6%92%AD%E5%8E%9F%E7%90%86%E5%8F%8A%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E6%93%8D%E4%BD%9C%E5%8E%9F%E7%90%86/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="1-什么是事务"><a href="#1-什么是事务" class="headerlink" title="1. 什么是事务?"></a>1. 什么是事务?</h3><p>事务(Transaction) 是访问并可能更新数据库中各个数据的一个程序执行单元(unit).<br>特点: 事务是恢复和并发控制的基本单位, 事务应该具备四个属性<br><strong>原子性、一致性、隔离性、持久性</strong>.<br>这四个属性通常称为 <strong>ACID</strong> 特性.</p>
-<h3 id="2-Spring-事务传播属性"><a href="#2-Spring-事务传播属性" class="headerlink" title="2. Spring 事务传播属性"></a>2. Spring 事务传播属性</h3><p><img src="/images/img-63.png" alt="Spring 事务传播属性"></p>
-<h3 id="3-数据库事务的隔离级别"><a href="#3-数据库事务的隔离级别" class="headerlink" title="3. 数据库事务的隔离级别"></a>3. 数据库事务的隔离级别</h3><blockquote>
-<p><a href="http://pdyun.cc:4000/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/">http://pdyun.cc:4000/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/</a><br><img src="/images/img-64.png" alt="数据库的隔离级别"></p>
-</blockquote>
-<p><img src="/images/img-66.png"></p>
-<h3 id="4-Spring-事务的隔离级别"><a href="#4-Spring-事务的隔离级别" class="headerlink" title="4. Spring 事务的隔离级别"></a>4. Spring 事务的隔离级别</h3><p><img src="/images/img-67.png" alt="Spring 事务的隔离级别"></p>
-
-      
-    </div>
-
-    
-    
-    
-<div>
-  
-</div>
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/20/Spring-%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96%E5%8F%8A%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/VX.png">
-      <meta itemprop="name" content="Peilin Deng">
-      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="牧场小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/08/20/Spring-%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96%E5%8F%8A%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98/" class="post-title-link" itemprop="url">Spring 循环依赖及三级缓存</a>
+            <a href="/2021/08/25/MySql-%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5/" class="post-title-link" itemprop="url">MySql 关于索引的一些特殊情况</a>
         </h2>
 
         <div class="post-meta">
@@ -1204,7 +1132,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-08-20 18:42:00 / 修改时间：19:09:17" itemprop="dateCreated datePublished" datetime="2021-08-20T18:42:00+08:00">2021-08-20</time>
+              <time title="创建时间：2021-08-25 21:59:00 / 修改时间：21:59:36" itemprop="dateCreated datePublished" datetime="2021-08-25T21:59:00+08:00">2021-08-25</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1217,7 +1145,7 @@
             </span>
 
           
-            <span id="/2021/08/20/Spring-%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96%E5%8F%8A%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98/" class="post-meta-item leancloud_visitors" data-flag-title="Spring 循环依赖及三级缓存" title="阅读次数">
+            <span id="/2021/08/25/MySql-%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 关于索引的一些特殊情况" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -1232,8 +1160,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/20/Spring-%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96%E5%8F%8A%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/20/Spring-%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96%E5%8F%8A%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98/" itemprop="commentCount"></span>
+    <a title="valine" href="/2021/08/25/MySql-%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E5%85%B3%E4%BA%8E%E7%B4%A2%E5%BC%95%E7%9A%84%E4%B8%80%E4%BA%9B%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -1248,23 +1176,14 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h3 id="Spring-循环依赖及三级缓存"><a href="#Spring-循环依赖及三级缓存" class="headerlink" title="Spring 循环依赖及三级缓存"></a>Spring 循环依赖及三级缓存</h3><ul>
-<li><p>Spring 在启动过程中，使用到了三个map，称为三级缓存。<br><img src="/images/img-19.png" alt="三级缓存"></p>
-</li>
-<li><p>Spring启动过程大致如下：</p>
-<blockquote>
-<p>1.加载配置文件<br>2.解析配置文件转化beanDefination，获取到bean的所有属性、依赖及初始化用到的各类处理器等<br>3.创建beanFactory并初始化所有单例bean<br>4.注册所有的单例bean并返回可用的容器，一般为扩展的applicationContext</p>
-</blockquote>
-</li>
+          <h1 id="范围查询数据量过大导致索引失效"><a href="#范围查询数据量过大导致索引失效" class="headerlink" title="范围查询数据量过大导致索引失效"></a>范围查询数据量过大导致索引失效</h1><p>存在索引idx_fk_customer_id(customer_id)，表中数据16000条。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> rental <span class="keyword">WHERE</span> customer_id<span class="operator">&lt;</span><span class="number">102</span>; # 使用索引</span><br><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> rental <span class="keyword">WHERE</span> customer_id<span class="operator">&lt;</span><span class="number">103</span>; # 全表扫描</span><br></pre></td></tr></table></figure>
+<p>当范围查询时，如果符合条件的数据过多时，因为建立索引的字段虽然在索引树上有序，但是这一部分数据还要回源到聚簇索引中再次查询，并且得到的数据在磁盘上并不是连续的，这样会产生大量的随机IO，而随机IO是非常慢的，与其这样还不如全表扫描。全表扫描最起码是顺序IO。</p>
+<h1 id="Semi-join半连接"><a href="#Semi-join半连接" class="headerlink" title="Semi join半连接"></a>Semi join半连接</h1><ul>
+<li>explain列中filtered为什么有时候不准</li>
+<li>Extra列中Using index condition都是索引下推吗？</li>
 </ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/08/20/Spring-%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96%E5%8F%8A%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
+
       
     </div>
 
@@ -1285,7 +1204,7 @@
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1353,20 +1272,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-count">41</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -1391,7 +1310,7 @@
     <h3 class="widget-title">标签云</h3>
     <div id="myCanvasContainer" class="widget tagcloud">
         <canvas width="250" height="250" id="resCanvas" style="width=100%">
-            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8B%E5%8A%A1/" rel="tag">事务</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6/" rel="tag">自定义插件</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li></ul>
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SpringBoot/" rel="tag">SpringBoot</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8B%E5%8A%A1/" rel="tag">事务</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E5%A0%86/" rel="tag">二叉堆</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E6%A0%91/" rel="tag">二叉树</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BD%8D%E8%BF%90%E7%AE%97/" rel="tag">位运算</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%88%9B%E5%BB%BA%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">创建型设计模式</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8E%92%E5%BA%8F/" rel="tag">排序</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E7%BB%84/" rel="tag">数组</a><span class="tag-list-count">8</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6/" rel="tag">自定义插件</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%93%BE%E8%A1%A8/" rel="tag">链表</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%98%9F%E5%88%97/" rel="tag">队列</a><span class="tag-list-count">1</span></li></ul>
         </canvas>
     </div>
 </div>
@@ -1421,7 +1340,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
