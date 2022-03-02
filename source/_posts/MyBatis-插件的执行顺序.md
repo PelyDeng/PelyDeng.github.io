@@ -2,7 +2,8 @@ title: MyBatis 插件的执行顺序
 author: Peilin Deng
 tags:
   - MyBatis
-  - 自定义插件
+  - 插件
+  - ''
 categories:
   - 摘抄笔记
 date: 2021-08-20 18:58:00
