@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<!-- 樱花特效 -->
+  
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+  <link rel="mask-icon" href="/images/favicon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="目录结构MyBatis作为一个强大的持久层框架，缓存是其必不可少的功能之一，Mybatis中的缓存分为一级缓存和二级缓存。但本质上是一样的，都是使用Cache接口实现的。缓存位于 org.apache.ibatis.cache包下。  通过结构我们能够发现Cache其实使用到了装饰器模式来实现缓存的处理。首先来看看Cache中的基础类的API  &#x2F;&#x2F; 煎饼加鸡蛋加香肠 “装饰者模式（Decorat">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MyBatis 缓存模块">
+<meta property="og:url" content="https://pdyun.cc/2021/08/10/MyBatis-%E7%BC%93%E5%AD%98/index.html">
+<meta property="og:site_name" content="牧场小站">
+<meta property="og:description" content="目录结构MyBatis作为一个强大的持久层框架，缓存是其必不可少的功能之一，Mybatis中的缓存分为一级缓存和二级缓存。但本质上是一样的，都是使用Cache接口实现的。缓存位于 org.apache.ibatis.cache包下。  通过结构我们能够发现Cache其实使用到了装饰器模式来实现缓存的处理。首先来看看Cache中的基础类的API  &#x2F;&#x2F; 煎饼加鸡蛋加香肠 “装饰者模式（Decorat">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pdyun.cc/images/img-90.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-91.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-92.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-102.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-103.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-104.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-105.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-106.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-107.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-108.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-110.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-111.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-112.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-113.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-114.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-115.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-116.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-117.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-118.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-119.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-120.png">
+<meta property="article:published_time" content="2021-08-10T11:35:00.000Z">
+<meta property="article:modified_time" content="2022-03-02T12:52:22.582Z">
+<meta property="article:author" content="Peilin Deng">
+<meta property="article:tag" content="MyBatis">
+<meta property="article:tag" content="缓存">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pdyun.cc/images/img-90.png">
+
+<link rel="canonical" href="https://pdyun.cc/2021/08/10/MyBatis-%E7%BC%93%E5%AD%98/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  
+  
+
+
+  <title>MyBatis 缓存模块 | 牧场小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">牧场小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2021/08/10/MyBatis-%E7%BC%93%E5%AD%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MyBatis 缓存模块
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-10 19:35:00" itemprop="dateCreated datePublished" datetime="2021-08-10T19:35:00+08:00">2021-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-02 20:52:22" itemprop="dateModified" datetime="2022-03-02T20:52:22+08:00">2022-03-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/10/MyBatis-%E7%BC%93%E5%AD%98/" class="post-meta-item leancloud_visitors" data-flag-title="MyBatis 缓存模块" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/10/MyBatis-%E7%BC%93%E5%AD%98/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/10/MyBatis-%E7%BC%93%E5%AD%98/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="目录结构"><a href="#目录结构" class="headerlink" title="目录结构"></a>目录结构</h1><p><strong>MyBatis作为一个强大的持久层框架，缓存是其必不可少的功能之一，Mybatis中的缓存分为一级缓存<br>和二级缓存。但本质上是一样的，都是使用Cache接口实现的。缓存位于 org.apache.ibatis.cache包<br>下。</strong></p>
+<p><img src="/images/img-90.png" alt="目录结构"></p>
+<p><strong>通过结构我们能够发现Cache其实使用到了装饰器模式来实现缓存的处理。首先来看看Cache中的基础类的API</strong></p>
+<blockquote>
+<p>// 煎饼加鸡蛋加香肠 “装饰者模式（Decorator Pattern）是指在不改变原有对象的基础之上，将功能附加到对象上，提供了比 继承更有弹性的替代方案（扩展原有对象的功能）。”</p>
+</blockquote>
+<p><img src="/images/img-91.png"></p>
+<h1 id="1-Cache-接口"><a href="#1-Cache-接口" class="headerlink" title="1. Cache 接口"></a>1. Cache 接口</h1><p>Cache接口是缓存模块中最核心的接口，它定义了所有缓存的基本行为，Cache接口的定义如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Cache</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * 缓存对象的 ID</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span> The identifier of this cache */</span></span><br><span class="line">	<span class="function">String <span class="title">getId</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * 向缓存中添加数据，一般情况下 key是CacheKey  value是查询结果</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@param</span> key Can be any object but usually it is a &#123;<span class="doctag">@link</span> CacheKey&#125;</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@param</span> value The result of a select. */</span></span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object key, Object value)</span></span>;</span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * 根据指定的key，在缓存中查找对应的结果对象</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@param</span> key The key</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span> The object stored in the cache. */</span></span><br><span class="line">	<span class="function">Object <span class="title">getObject</span><span class="params">(Object key)</span></span>;</span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * As of 3.3.0 this method is only called during a rollback</span></span><br><span class="line"><span class="comment">	 * for any previous value that was missing in the cache.</span></span><br><span class="line"><span class="comment">	 * This lets any blocking cache to release the lock that</span></span><br><span class="line"><span class="comment">	 * may have previously put on the key.</span></span><br><span class="line"><span class="comment">	 * A blocking cache puts a lock when a value is null</span></span><br><span class="line"><span class="comment">	 * and releases it when the value is back again.</span></span><br><span class="line"><span class="comment">	 * This way other threads will wait</span></span><br><span class="line"><span class="comment">	 * available instead of hitting the</span></span><br><span class="line"><span class="comment">	 *   删除key对应的缓存数据 *</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@param</span> key The key</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span> Not used</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function">Object <span class="title">removeObject</span><span class="params">(Object key)</span></span>;</span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * Clears this cache instance.</span></span><br><span class="line"><span class="comment">	 * 清空缓存</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">clear</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * Optional. This method</span></span><br><span class="line"><span class="comment">	 * 缓存的个数。</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span> The number of */</span></span><br><span class="line">	<span class="function"><span class="keyword">int</span> <span class="title">getSize</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">* Optional. As of 3.2.6</span></span><br><span class="line"><span class="comment">* &lt;p&gt;</span></span><br><span class="line"><span class="comment">* Any locking needed by</span></span><br><span class="line"><span class="comment">provider.</span></span><br><span class="line"><span class="comment">*  获取读写锁</span></span><br><span class="line"><span class="comment">* <span class="doctag">@return</span> A ReadWriteLock */</span></span><br><span class="line">	<span class="function"><span class="keyword">default</span> ReadWriteLock <span class="title">getReadWriteLock</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Cache接口的实现类很多，但是大部分都是装饰器，只有PerpetualCache提供了Cache接口的基本实现。</p>
+<p><img src="/images/img-92.png"></p>
+<h1 id="2-PerpetualCache"><a href="#2-PerpetualCache" class="headerlink" title="2. PerpetualCache"></a>2. PerpetualCache</h1><p>PerpetualCache在缓存模块中扮演了ConcreteComponent的角色，其实现比较简单，底层使用 HashMap记录缓存项，具体的实现如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 在装饰器模式用 用来被装饰的对象</span></span><br><span class="line"><span class="comment"> * 缓存中的  基本缓存处理的实现</span></span><br><span class="line"><span class="comment"> * 其实就是一个 HashMap 的基本操作</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PerpetualCache</span> <span class="keyword">implements</span> <span class="title">Cache</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> String id; <span class="comment">// Cache 对象的唯一标识</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 用于记录缓存的Map对象</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> Map &lt; Object, Object &gt; cache = <span class="keyword">new</span> HashMap &lt; &gt; ();</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">PerpetualCache</span><span class="params">(String id)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">this</span>.id = id;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> String <span class="title">getId</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> id;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getSize</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> cache.size();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object key, Object value)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		cache.put(key, value);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> Object <span class="title">getObject</span><span class="params">(Object key)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> cache.get(key);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> Object <span class="title">removeObject</span><span class="params">(Object key)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> cache.remove(key);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">clear</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		cache.clear();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">equals</span><span class="params">(Object o)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">if</span>(getId() == <span class="keyword">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;Cache instances require an ID.&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span>(<span class="keyword">this</span> == o)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span>(!(o <span class="keyword">instanceof</span> Cache))</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Cache otherCache = (Cache) o;</span><br><span class="line">		<span class="comment">// 只关心ID</span></span><br><span class="line">		<span class="keyword">return</span> getId().equals(otherCache.getId());</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">hashCode</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">if</span>(getId() == <span class="keyword">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;Cache instances require an ID.&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// 只关心ID</span></span><br><span class="line">		<span class="keyword">return</span> getId().hashCode();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后我们可以来看看cache.decorators包下提供的装饰器。他们都实现了Cache接口。这些装饰器 都在PerpetualCache的基础上提供了一些额外的功能，通过多个组合实现一些特殊的需求。</p>
+<h1 id="3-BlockingCache"><a href="#3-BlockingCache" class="headerlink" title="3. BlockingCache"></a>3. BlockingCache</h1><p>通过名称我们能看出来是一个阻塞同步的缓存，它保证只有一个线程到缓存中查找指定的key对应的 数据。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BlockingCache</span> <span class="keyword">implements</span> <span class="title">Cache</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">long</span> timeout; <span class="comment">// 阻塞超时时长</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> Cache delegate; <span class="comment">// 被装饰的底层 Cache 对象 // 每个key 都有对象的 ReentrantLock 对象</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> ConcurrentHashMap &lt; Object, ReentrantLock &gt; locks;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">BlockingCache</span><span class="params">(Cache delegate)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="comment">// 被装饰的 Cache 对象</span></span><br><span class="line">		<span class="keyword">this</span>.delegate = delegate;</span><br><span class="line">		<span class="keyword">this</span>.locks = <span class="keyword">new</span> ConcurrentHashMap &lt; &gt; ();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> String <span class="title">getId</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> delegate.getId();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getSize</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> delegate.getSize();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object key, Object value)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">try</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// 执行 被装饰的 Cache 中的方法</span></span><br><span class="line">			delegate.putObject(key, value);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">finally</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// 释放锁</span></span><br><span class="line">			releaseLock(key);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> Object <span class="title">getObject</span><span class="params">(Object key)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		acquireLock(key); <span class="comment">// 获取锁</span></span><br><span class="line">		Object value = delegate.getObject(key); <span class="comment">// 获取缓存数据</span></span><br><span class="line">		<span class="keyword">if</span>(value != <span class="keyword">null</span>)</span><br><span class="line">		&#123; <span class="comment">// 有数据就释放掉锁，否则继续持有锁</span></span><br><span class="line">			releaseLock(key);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> value;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> Object <span class="title">removeObject</span><span class="params">(Object key)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="comment">// despite of its name, this method is called only to release locks</span></span><br><span class="line">		releaseLock(key);</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">clear</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		delegate.clear();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">private</span> ReentrantLock <span class="title">getLockForKey</span><span class="params">(Object key)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> locks.computeIfAbsent(key, k - &gt; <span class="keyword">new</span> ReentrantLock());</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">acquireLock</span><span class="params">(Object key)</span></span></span><br><span class="line"><span class="function">		</span>&#123;</span><br><span class="line">			Lock lock = getLockForKey(key);</span><br><span class="line">			<span class="keyword">if</span>(timeout &gt; <span class="number">0</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">try</span></span><br><span class="line">				&#123;</span><br><span class="line">					<span class="keyword">boolean</span> acquired = lock.tryLock(timeout, TimeUnit.MILLISECONDS);</span><br><span class="line">					<span class="keyword">if</span>(!acquired)</span><br><span class="line">					&#123;</span><br><span class="line">						<span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;Couldn&#x27;t get a lock in &quot;</span> + timeout + <span class="string">&quot; for</span></span><br><span class="line"><span class="string">							the key &quot;</span> +  key + <span class="string">&quot;</span></span><br><span class="line"><span class="string">							at the cache &quot;</span> + delegate.getId());</span><br><span class="line">						&#125;</span><br><span class="line">					&#125;</span><br><span class="line">					<span class="keyword">catch</span>(InterruptedException e)</span><br><span class="line">					&#123;</span><br><span class="line">						<span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;Got interrupted while trying to acquire lock</span></span><br><span class="line"><span class="string">							for key &quot;</span> + key, e);</span><br><span class="line">						&#125;</span><br><span class="line">					&#125;</span><br><span class="line">					<span class="keyword">else</span></span><br><span class="line">					&#123;</span><br><span class="line">						lock.lock();</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">releaseLock</span><span class="params">(Object key)</span></span></span><br><span class="line"><span class="function">				</span>&#123;</span><br><span class="line">					ReentrantLock lock = locks.get(key);</span><br><span class="line">					<span class="keyword">if</span>(lock.isHeldByCurrentThread())</span><br><span class="line">					&#123;</span><br><span class="line">						lock.unlock();</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				<span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">getTimeout</span><span class="params">()</span></span></span><br><span class="line"><span class="function">				</span>&#123;</span><br><span class="line">					<span class="keyword">return</span> timeout;</span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setTimeout</span><span class="params">(<span class="keyword">long</span> timeout)</span></span></span><br><span class="line"><span class="function">				</span>&#123;</span><br><span class="line">					<span class="keyword">this</span>.timeout = timeout;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BlockingCache</span> <span class="keyword">implements</span> <span class="title">Cache</span></span></span><br><span class="line"><span class="class">			</span>&#123;</span><br><span class="line">				<span class="keyword">private</span> <span class="keyword">long</span> timeout; <span class="comment">// 阻塞超时时长</span></span><br><span class="line">				<span class="keyword">private</span> <span class="keyword">final</span> Cache delegate; <span class="comment">// 被装饰的底层 Cache 对象 // 每个key 都有对象的 ReentrantLock 对象</span></span><br><span class="line">				<span class="keyword">private</span> <span class="keyword">final</span> ConcurrentHashMap &lt; Object, ReentrantLock &gt; locks;</span><br><span class="line">				<span class="function"><span class="keyword">public</span> <span class="title">BlockingCache</span><span class="params">(Cache delegate)</span></span></span><br><span class="line"><span class="function">				</span>&#123;</span><br><span class="line">					<span class="comment">// 被装饰的 Cache 对象</span></span><br><span class="line">					<span class="keyword">this</span>.delegate = delegate;</span><br><span class="line">					<span class="keyword">this</span>.locks = <span class="keyword">new</span> ConcurrentHashMap &lt; &gt; ();</span><br><span class="line">				&#125;</span><br><span class="line">                </span><br><span class="line">				<span class="meta">@Override</span></span><br><span class="line">				<span class="function"><span class="keyword">public</span> String <span class="title">getId</span><span class="params">()</span></span></span><br><span class="line"><span class="function">				</span>&#123;</span><br><span class="line">					<span class="keyword">return</span> delegate.getId();</span><br><span class="line">				&#125;</span><br><span class="line">                </span><br><span class="line">				<span class="meta">@Override</span></span><br><span class="line">				<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getSize</span><span class="params">()</span></span></span><br><span class="line"><span class="function">				</span>&#123;</span><br><span class="line">					<span class="keyword">return</span> delegate.getSize();</span><br><span class="line">				&#125;</span><br><span class="line">                </span><br><span class="line">				<span class="meta">@Override</span></span><br><span class="line">				<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putObject</span><span class="params">(Object key, Object value)</span></span></span><br><span class="line"><span class="function">				</span>&#123;</span><br><span class="line">					<span class="keyword">try</span></span><br><span class="line">					&#123;</span><br><span class="line">						<span class="comment">// 执行 被装饰的 Cache 中的方法</span></span><br><span class="line">						delegate.putObject(key, value);</span><br><span class="line">					&#125;</span><br><span class="line">					<span class="keyword">finally</span></span><br><span class="line">					&#123;</span><br><span class="line">						<span class="comment">// 释放锁</span></span><br><span class="line">						releaseLock(key);</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br><span class="line">                </span><br><span class="line">				<span class="meta">@Override</span></span><br><span class="line">				<span class="function"><span class="keyword">public</span> Object <span class="title">getObject</span><span class="params">(Object key)</span></span></span><br><span class="line"><span class="function">				</span>&#123;</span><br><span class="line">					acquireLock(key); <span class="comment">// 获取锁</span></span><br><span class="line">					Object value = delegate.getObject(key); <span class="comment">// 获取缓存数据</span></span><br><span class="line">					<span class="keyword">if</span>(value != <span class="keyword">null</span>)</span><br><span class="line">					&#123; <span class="comment">// 有数据就释放掉锁，否则继续持有锁</span></span><br><span class="line">						releaseLock(key);</span><br><span class="line">					&#125;</span><br><span class="line">					<span class="keyword">return</span> value;</span><br><span class="line">				&#125;</span><br><span class="line">                </span><br><span class="line">				<span class="meta">@Override</span></span><br><span class="line">				<span class="function"><span class="keyword">public</span> Object <span class="title">removeObject</span><span class="params">(Object key)</span></span></span><br><span class="line"><span class="function">				</span>&#123;</span><br><span class="line">					<span class="comment">// despite of its name, this method is called only to release locks</span></span><br><span class="line">					releaseLock(key);</span><br><span class="line">					<span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">				&#125;</span><br><span class="line">                </span><br><span class="line">				<span class="meta">@Override</span></span><br><span class="line">				<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">clear</span><span class="params">()</span></span></span><br><span class="line"><span class="function">				</span>&#123;</span><br><span class="line">					delegate.clear();</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="function"><span class="keyword">private</span> ReentrantLock <span class="title">getLockForKey</span><span class="params">(Object key)</span></span></span><br><span class="line"><span class="function">				</span>&#123;</span><br><span class="line">					<span class="keyword">return</span> locks.computeIfAbsent(key, k - &gt; <span class="keyword">new</span> ReentrantLock());</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">acquireLock</span><span class="params">(Object key)</span></span></span><br><span class="line"><span class="function">					</span>&#123;</span><br><span class="line">						Lock lock = getLockForKey(key);</span><br><span class="line">						<span class="keyword">if</span>(timeout &gt; <span class="number">0</span>)</span><br><span class="line">						&#123;</span><br><span class="line">							<span class="keyword">try</span></span><br><span class="line">							&#123;</span><br><span class="line">								<span class="keyword">boolean</span> acquired = lock.tryLock(timeout, TimeUnit.MILLISECONDS);</span><br><span class="line">								<span class="keyword">if</span>(!acquired)</span><br><span class="line">								&#123;</span><br><span class="line">									<span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;Couldn&#x27;t get a lock in &quot;</span> + timeout + <span class="string">&quot; for</span></span><br><span class="line"><span class="string">										the key &quot;</span> +  key + <span class="string">&quot;</span></span><br><span class="line"><span class="string">										at the cache &quot;</span> + delegate.getId());</span><br><span class="line">									&#125;</span><br><span class="line">								&#125;</span><br><span class="line">								<span class="keyword">catch</span>(InterruptedException e)</span><br><span class="line">								&#123;</span><br><span class="line">									<span class="keyword">throw</span> <span class="keyword">new</span> CacheException(<span class="string">&quot;Got interrupted while trying to acquire lock</span></span><br><span class="line"><span class="string">										for key &quot;</span> + key, e);</span><br><span class="line">									&#125;</span><br><span class="line">								&#125;</span><br><span class="line">								<span class="keyword">else</span></span><br><span class="line">								&#123;</span><br><span class="line">									lock.lock();</span><br><span class="line">								&#125;</span><br><span class="line">							&#125;</span><br><span class="line">							<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">releaseLock</span><span class="params">(Object key)</span></span></span><br><span class="line"><span class="function">							</span>&#123;</span><br><span class="line">								ReentrantLock lock = locks.get(key);</span><br><span class="line">								<span class="keyword">if</span>(lock.isHeldByCurrentThread())</span><br><span class="line">								&#123;</span><br><span class="line">									lock.unlock();</span><br><span class="line">								&#125;</span><br><span class="line">							&#125;</span><br><span class="line">							<span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">getTimeout</span><span class="params">()</span></span></span><br><span class="line"><span class="function">							</span>&#123;</span><br><span class="line">								<span class="keyword">return</span> timeout;</span><br><span class="line">							&#125;</span><br><span class="line">							<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setTimeout</span><span class="params">(<span class="keyword">long</span> timeout)</span></span></span><br><span class="line"><span class="function">							</span>&#123;</span><br><span class="line">								<span class="keyword">this</span>.timeout = timeout;</span><br><span class="line">							&#125;</span><br><span class="line">						&#125;</span><br></pre></td></tr></table></figure>
+<p>通过源码我们能够发现，  BlockingCache本质上就是在我们操作缓存数据的前后通过ReentrantLock对象来实现了加锁和解锁操作。其他的具体实现类，大家可以自行查阅</p>
+<table>
+<thead>
+<tr>
+<th>缓存实现类</th>
+<th>描述</th>
+<th>作用</th>
+<th>装饰条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>基本缓存</td>
+<td>缓存基本实现类</td>
+<td>默认是PerpetualCache ， 也可以 自定义比如RedisCache、EhCache等 ，具备基本功能的缓存类</td>
+<td>无</td>
+</tr>
+<tr>
+<td>LruCache</td>
+<td>LRU策略的缓存</td>
+<td>当缓存到达上限时候 ， 删除最近最少使用的缓存 （ Least Recently Use）</td>
+<td>eviction=”LRU” （默认）</td>
+</tr>
+<tr>
+<td>FifoCache</td>
+<td>FIFO策略的缓存</td>
+<td>当缓存到达上限时候 ，删除最先入队的缓存</td>
+<td>eviction=”FIFO”</td>
+</tr>
+<tr>
+<td>SoftCacheWeakCache</td>
+<td>带清理策略的缓存</td>
+<td>通过JVM的软引用和弱引用来实现 缓存，当JVM内存不足时，会自动清理掉这些缓存，基于SoftReference和WeakReference</td>
+<td>eviction=”SOFT”eviction=”WEAK”</td>
+</tr>
+<tr>
+<td>LoggingCache</td>
+<td>带日志功能的缓存</td>
+<td>比如：输出缓存命中率</td>
+<td>基本</td>
+</tr>
+<tr>
+<td>SynchronizedCache</td>
+<td>同步缓存</td>
+<td>基于synchronized关键字实现，解决并发问题</td>
+<td>基本</td>
+</tr>
+<tr>
+<td>BlockingCache</td>
+<td>阻塞缓存</td>
+<td>通过在get/put方式中加锁，保证只有一个线程操作缓存，基于Java重入锁实现</td>
+<td>blocking=true</td>
+</tr>
+<tr>
+<td>SerializedCache</td>
+<td>支持序列化的缓存</td>
+<td>将对象序列化以后存到缓存中，取出时反序列化</td>
+<td>readOnly=false （默认）</td>
+</tr>
+<tr>
+<td>ScheduledCache</td>
+<td>定时调度的缓存</td>
+<td>在进行 get/put/remove/getSize    等操作前，判断缓存时间是否超过了设置的最长缓存时间（默认是一小时），如果是则清空缓存– 即每隔一段时间清空一次缓存</td>
+<td>flush nterval不为空</td>
+</tr>
+<tr>
+<td>TransactionalCache</td>
+<td>事务缓存</td>
+<td>在二级缓存中使用，可一次存入多个缓存，移除多个缓存</td>
+<td>在TransactionalCacheManager 中用Map维护对应关系</td>
+</tr>
+</tbody></table>
+<h1 id="4-缓存的应用"><a href="#4-缓存的应用" class="headerlink" title="4. 缓存的应用"></a>4. 缓存的应用</h1><h2 id="4-1-缓存对应的初始化"><a href="#4-1-缓存对应的初始化" class="headerlink" title="4.1 缓存对应的初始化"></a>4.1 缓存对应的初始化</h2><p>在Configuration初始化的时候会为我们的各种Cache实现注册对应的别名</p>
+<p><img src="/images/img-102.png"></p>
+<p>在解析settings标签的时候，设置的默认值有如下</p>
+<p><img src="/images/img-103.png"></p>
+<p>cacheEnabled默认为true，localCacheScope默认为 SESSION</p>
+<p>在解析映射文件的时候会解析我们相关的cache标签</p>
+<p><img src="/images/img-104.png"></p>
+<p>然后解析映射文件的cache标签后会在Configuration对象中添加对应的数据在</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">cacheElement</span><span class="params">(XNode context)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">// 只有 cache 标签不为空才解析</span></span><br><span class="line">	<span class="keyword">if</span>(context != <span class="keyword">null</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		String type = context.getStringAttribute(<span class="string">&quot;type&quot;</span>, <span class="string">&quot;PERPETUAL&quot;</span>);</span><br><span class="line">		Class &lt;? extends Cache &gt; typeClass = typeAliasRegistry.resolveAlias(type);</span><br><span class="line">		String eviction = context.getStringAttribute(<span class="string">&quot;eviction&quot;</span>, <span class="string">&quot;LRU&quot;</span>);</span><br><span class="line">		Class &lt;? extends Cache &gt; evictionClass =</span><br><span class="line">			typeAliasRegistry.resolveAlias(eviction);</span><br><span class="line">		Long flushInterval = context.getLongAttribute(<span class="string">&quot;flushInterval&quot;</span>);</span><br><span class="line">		Integer size = context.getIntAttribute(<span class="string">&quot;size&quot;</span>);</span><br><span class="line">		<span class="keyword">boolean</span> readWrite = !context.getBooleanAttribute(<span class="string">&quot;readOnly&quot;</span>, <span class="keyword">false</span>);</span><br><span class="line">		<span class="keyword">boolean</span> blocking = context.getBooleanAttribute(<span class="string">&quot;blocking&quot;</span>, <span class="keyword">false</span>);</span><br><span class="line">		Properties props = context.getChildrenAsProperties();</span><br><span class="line">		builderAssistant.useNewCache(typeClass, evictionClass, flushInterval,</span><br><span class="line">			size, readWrite, blocking, props);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>继续</p>
+<p><img src="/images/img-105.png"></p>
+<p>然后我们可以发现 如果存储 cache 标签，那么对应的 Cache对象会被保存在 currentCache 属性中。</p>
+<p><img src="/images/img-106.png"></p>
+<p>进而在 Cache 对象 保存在了 MapperStatement 对象的 cache 属性中。</p>
+<p>然后我们再看看openSession的时候又做了哪些操作，在创建对应的执行器的时候会有缓存的操作</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Executor <span class="title">newExecutor</span><span class="params">(Transaction transaction, ExecutorType executorType)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	executorType = executorType == <span class="keyword">null</span> ? defaultExecutorType : executorType;</span><br><span class="line">	executorType = executorType == <span class="keyword">null</span> ? ExecutorType.SIMPLE : executorType;</span><br><span class="line">	Executor executor;</span><br><span class="line">	<span class="keyword">if</span>(ExecutorType.BATCH == executorType)</span><br><span class="line">	&#123;</span><br><span class="line">		executor = <span class="keyword">new</span> BatchExecutor(<span class="keyword">this</span>, transaction);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span> <span class="keyword">if</span>(ExecutorType.REUSE == executorType)</span><br><span class="line">	&#123;</span><br><span class="line">		executor = <span class="keyword">new</span> ReuseExecutor(<span class="keyword">this</span>, transaction);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// 默认 SimpleExecutor</span></span><br><span class="line">		executor = <span class="keyword">new</span> SimpleExecutor(<span class="keyword">this</span>, transaction);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 二级缓存开关，settings 中的 cacheEnabled 默认是 true</span></span><br><span class="line">	<span class="keyword">if</span>(cacheEnabled)</span><br><span class="line">	&#123;</span><br><span class="line">		executor = <span class="keyword">new</span> CachingExecutor(executor);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 植入插件的逻辑，至此，四大对象已经全部拦截完毕</span></span><br><span class="line">	executor = (Executor) interceptorChain.pluginAll(executor);</span><br><span class="line">	<span class="keyword">return</span> executor;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>也就是如果 cacheEnabled 为 true 就会通过 CachingExecutor 来装饰executor 对象，然后就是在 执行SQL操作的时候会涉及到缓存的具体使用。这个就分为一级缓存和二级缓存，这个我们来分别介绍</p>
+<h2 id="4-2-一级缓存"><a href="#4-2-一级缓存" class="headerlink" title="4.2 一级缓存"></a>4.2 一级缓存</h2><p>一级缓存也叫本地缓存（Local Cache）， MyBatis的一级缓存是在会话（SqlSession）层面进行缓 存的。  MyBatis的一级缓存是默认开启的，不需要任何的配置（如果要关闭，  localCacheScope设置为   STATEMENT）。在BaseExecutor对象的query方法中有关闭一级缓存的逻辑</p>
+<p><img src="/images/img-107.png"></p>
+<p>然后我们需要考虑下在一级缓存中的 PerpetualCache 对象在哪创建的，因为一级缓存是Session级  别的缓存，肯定需要在Session范围呢创建，其实PerpetualCache的实例化是在BaseExecutor的构造方法中创建的</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="title">BaseExecutor</span><span class="params">(Configuration configuration, Transaction transaction)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.transaction = transaction;</span><br><span class="line">  <span class="keyword">this</span>.deferredLoads = <span class="keyword">new</span> ConcurrentLinkedQueue &lt; &gt; ();</span><br><span class="line">  <span class="keyword">this</span>.localCache = <span class="keyword">new</span> PerpetualCache(<span class="string">&quot;LocalCache&quot;</span>);</span><br><span class="line">  <span class="keyword">this</span>.localOutputParameterCache = <span class="keyword">new</span> PerpetualCache(<span class="string">&quot;LocalOutputParameterCache&quot;</span>);</span><br><span class="line">  <span class="keyword">this</span>.closed = <span class="keyword">false</span>;</span><br><span class="line">  <span class="keyword">this</span>.configuration = configuration;</span><br><span class="line">  <span class="keyword">this</span>.wrapper = <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/img-108.png"></p>
+<p>一级缓存的具体实现也是在BaseExecutor的query方法中来实现的</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt; E &gt; List &lt; E &gt; query(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql) <span class="keyword">throws</span> SQLException</span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// 异常体系之 ErrorContext</span></span><br><span class="line">  ErrorContext.instance().resource(ms.getResource()).activity(<span class="string">&quot;executing a query&quot;</span>).object(ms.getId());</span><br><span class="line">  <span class="keyword">if</span>(closed)</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> ExecutorException(<span class="string">&quot;Executor was closed.&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span>(queryStack == <span class="number">0</span> &amp;&amp; ms.isFlushCacheRequired())</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="comment">// flushCache=&quot;true&quot;时，即使是查询，也清空一级缓存</span></span><br><span class="line">    clearLocalCache();</span><br><span class="line">  &#125;</span><br><span class="line">  List &lt; E &gt; list;</span><br><span class="line">  <span class="keyword">try</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="comment">// 防止递归查询重复处理缓存</span></span><br><span class="line">    queryStack++;</span><br><span class="line">    <span class="comment">// 查询一级缓存</span></span><br><span class="line">    <span class="comment">// ResultHandler 和 ResultSetHandler的区别</span></span><br><span class="line">    list = resultHandler == <span class="keyword">null</span> ? (List &lt; E &gt; ) localCache.getObject(key) : <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">if</span>(list != <span class="keyword">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">      handleLocallyCachedOutputParameters(ms, key, parameter, boundSql);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      <span class="comment">// 真正的查询流程</span></span><br><span class="line">      list = queryFromDatabase(ms, parameter, rowBounds, resultHandler, key, boundSql);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">finally</span></span><br><span class="line">  &#123;</span><br><span class="line">    queryStack--;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span>(queryStack == <span class="number">0</span>)</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">for</span>(DeferredLoad deferredLoad: deferredLoads)</span><br><span class="line">    &#123;</span><br><span class="line">      deferredLoad.load();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// issue #601</span></span><br><span class="line">    deferredLoads.clear();</span><br><span class="line">    <span class="keyword">if</span>(configuration.getLocalCacheScope() == LocalCacheScope.STATEMENT)</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="comment">// issue #482</span></span><br><span class="line">      clearLocalCache();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>一级缓存的验证：</p>
+<p>同一个Session中的多个相同操作</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test1</span><span class="params">()</span> <span class="keyword">throws</span> Exception</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="comment">// 1.获取配置文件</span></span><br><span class="line">  InputStream in = Resources.getResourceAsStream(<span class="string">&quot;mybatis-config.xml&quot;</span>);</span><br><span class="line">  <span class="comment">// 2.加载解析配置文件并获取SqlSessionFactory对象</span></span><br><span class="line">  SqlSessionFactory factory = <span class="keyword">new</span> SqlSessionFactoryBuilder().build( in );</span><br><span class="line">  <span class="comment">// 3.根据SqlSessionFactory对象获取SqlSession对象</span></span><br><span class="line">  SqlSession sqlSession = factory.openSession();</span><br><span class="line">  <span class="comment">// 4.通过SqlSession中提供的 API方法来操作数据库</span></span><br><span class="line">  List &lt; User &gt; list =</span><br><span class="line">    sqlSession.selectList(<span class="string">&quot;com.gupaoedu.mapper.UserMapper.selectUserList&quot;</span>);</span><br><span class="line">  System.out.println(list.size());</span><br><span class="line">  <span class="comment">// 一级缓存测试</span></span><br><span class="line">  System.out.println(<span class="string">&quot;---------&quot;</span>);</span><br><span class="line">  list =</span><br><span class="line">    sqlSession.selectList(<span class="string">&quot;com.gupaoedu.mapper.UserMapper.selectUserList&quot;</span>);</span><br><span class="line">  System.out.println(list.size());</span><br><span class="line">  <span class="comment">// 5.关闭会话</span></span><br><span class="line">  sqlSession.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>输出日志</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">Setting autocommit to false on JDBC Connection</span><br><span class="line">[com.mysql.cj.jdbc.ConnectionImpl@477b4cdf]</span><br><span class="line">==&gt;  Preparing: select * from t_user                           ==&gt; Parameters:                                                &lt;==    Columns: id, user_name, real_name, password, age, d_id</span><br><span class="line">&lt;==        Row: 1, zhangsan, 张三 , 123456, 18, null</span><br><span class="line">&lt;==        Row: 2, lisi, 李四 , 11111, 19, null</span><br><span class="line">&lt;==        Row: 3, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==        Row: 4, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==        Row: 5, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==        Row: 6, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==        Row: 7, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==        Row: 8, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==        Row: 9, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==        Row: 10, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==        Row: 11, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==        Row: 12, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==        Row: 666, hibernate, 持久层框架 , null, null, null</span><br><span class="line">&lt;==      Total: 13</span><br><span class="line">13</span><br><span class="line">---------</span><br><span class="line">13</span><br></pre></td></tr></table></figure>
+<p>可以看到第二次查询没有经过数据库操作</p>
+<p>不同Session的相同操作</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line">Setting autocommit to false on JDBC Connection</span><br><span class="line">[com.mysql.cj.jdbc.ConnectionImpl@477b4cdf]</span><br><span class="line">==&gt;  Preparing: select * from t_user                           ==&gt; Parameters:                                                &lt;==    Columns: id, user_name, real_name, password, age, d_id</span><br><span class="line">&lt;==        Row: 1, zhangsan, 张三 , 123456, 18, null</span><br><span class="line">&lt;==        Row: 2, lisi, 李四 , 11111, 19, null</span><br><span class="line">&lt;==        Row: 3, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==        Row: 4, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==        Row: 5, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==        Row: 6, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==        Row: 7, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==        Row: 8, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==        Row: 9, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==        Row: 10, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==        Row: 11, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==        Row: 12, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==        Row: 666, hibernate, 持久层框架 , null, null, null</span><br><span class="line">&lt;==      Total: 13</span><br><span class="line">13</span><br><span class="line">Resetting autocommit to true on JDBC Connection</span><br><span class="line">[com.mysql.cj.jdbc.ConnectionImpl@477b4cdf]</span><br><span class="line">Closing JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@477b4cdf] Returned connection 1199262943 to pool.</span><br><span class="line">---------</span><br><span class="line">Opening JDBC Connection</span><br><span class="line">Checked out connection 1199262943 from pool.</span><br><span class="line">Setting autocommit to false on JDBC Connection</span><br><span class="line">[com.mysql.cj.jdbc.ConnectionImpl@477b4cdf]</span><br><span class="line">==&gt;  Preparing: select * from t_user</span><br><span class="line">==&gt; Parameters:</span><br><span class="line">&lt;==	Columns: id, user_name, real_name, password, age, d_id</span><br><span class="line">&lt;==	Row: 1, zhangsan, 张三 , 123456, 18, null</span><br><span class="line">&lt;==	Row: 2, lisi, 李四 , 11111, 19, null</span><br><span class="line">&lt;==	Row: 3, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==	Row: 4, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==	Row: 5, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==	Row: 6, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==	Row: 7, wangwu, 王五 , 111, 22, 1001</span><br><span class="line">&lt;==	Row: 8, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==	Row: 9, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==	Row: 10, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==	Row: 11, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==	Row: 12, aaa, bbbb, null, null, null</span><br><span class="line">&lt;==	Row: 666, hibernate, 持久层框架 , null, null, null </span><br><span class="line">&lt;==	Total: 13</span><br><span class="line">Resetting autocommit to true on JDBC Connection [com.mysql.cj.jdbc.ConnectionImpl@477b4cdf] </span><br><span class="line">Closing JDBC Connection </span><br><span class="line">[com.mysql.cj.jdbc.ConnectionImpl@477b4cdf] Returned connection 1199262943 to pool.</span><br><span class="line">--------- </span><br><span class="line">Opening JDBC Connection Checked out connection 1199262943 from pool.</span><br><span class="line">Setting autocommit to false on JDBC Connection </span><br><span class="line">[com.mysql.cj.jdbc.ConnectionImpl@477b4cdf] </span><br><span class="line">==&gt; Preparing: select * from t_user </span><br><span class="line">==&gt; Parameters:</span><br><span class="line">&lt;== Columns: id, user_name, real_name, password, age, d_id </span><br><span class="line">&lt;== Row: 1, zhangsan, 张三, 123456, 18, null </span><br><span class="line">&lt;== Row: 2, lisi, 李四, 11111, 19, null </span><br><span class="line">&lt;== Row: 3, wangwu, 王五, 111, 22, 1001 </span><br><span class="line">&lt;== Row: 4, wangwu, 王五, 111, 22, 1001 </span><br><span class="line">&lt;== Row: 5, wangwu, 王五, 111, 22, 1001 </span><br><span class="line">&lt;== Row: 6, wangwu, 王五, 111, 22, 1001 </span><br><span class="line">&lt;== Row: 7, wangwu, 王五, 111, 22, 1001 </span><br><span class="line">&lt;== Row: 8, aaa, bbbb, null, null, null </span><br><span class="line">&lt;== Row: 9, aaa, bbbb, null, null, null </span><br><span class="line">&lt;== Row: 10, aaa, bbbb, null, null, null </span><br><span class="line">&lt;== Row: 11, aaa, bbbb, null, null, null </span><br><span class="line">&lt;== Row: 12, aaa, bbbb, null, null, null </span><br><span class="line">&lt;== Row: 666, hibernate, 持久层框架, null, null, null </span><br><span class="line">&lt;== Total: 13 </span><br><span class="line">13</span><br><span class="line">Resetting autocommit to true on JDBC Connection </span><br><span class="line">[com.mysql.cj.jdbc.ConnectionImpl@477b4cdf] </span><br><span class="line">Closing JDBC Connection </span><br><span class="line">[com.mysql.cj.jdbc.ConnectionImpl@477b4cdf] </span><br><span class="line">Returned connection 1199262943 to pool.</span><br></pre></td></tr></table></figure>
+<p>通过输出我们能够发现，不同的Session中的相同操作，一级缓存是没有起作用的。</p>
+<h2 id="4-3-二级缓存"><a href="#4-3-二级缓存" class="headerlink" title="4.3 二级缓存"></a>4.3 二级缓存</h2><p>二级缓存是用来解决一级缓存不能跨会话共享的问题的，范围是namespace级别的，可以被多个SqlSession共享（只要是同一个接口里面的相同方法，都可以共享），生命周期和应用同步。</p>
+<p>二级缓存的设置，首先是settings中的cacheEnabled要设置为true，当然默认的就是为true，这个步骤决定了在创建Executor对象的时候是否通过CachingExecutor来装饰。</p>
+<p><img src="/images/img-110.png"></p>
+<p>那么设置了cacheEnabled标签为true是否就意味着 二级缓存是否一定可用呢？当然不是，我们还需要在 对应的映射文件中添加 cache 标签才行。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 声明这个namespace使用二级缓存 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">cache</span> <span class="attr">type</span>=<span class="string">&quot;org.apache.ibatis.cache.impl.PerpetualCache&quot;</span></span></span><br><span class="line"><span class="tag">	<span class="attr">size</span>=<span class="string">&quot;1024&quot;</span>  &lt;!—最多缓存对象个数，默认<span class="attr">1024--</span>&gt;</span></span><br><span class="line">	eviction=&quot;LRU&quot; &lt;!— 回收策略--&gt;</span><br><span class="line">	flushInterval=&quot;120000&quot; &lt;!— 自动刷新时间 ms，未配置时只有调用时刷新--&gt;</span><br><span class="line">	readOnly=&quot;false&quot;/&gt; &lt;!—默认是false（安全） ，改为true可读写时，对象必须支持序列化 --&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>cache属性详解：</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>含义</th>
+<th>取值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>type</td>
+<td>缓存实现类</td>
+<td>需要实现Cache接口，默认是PerpetualCache，可以使用第三方缓存</td>
+</tr>
+<tr>
+<td>size</td>
+<td>最多缓存对象个数</td>
+<td>默认1024</td>
+</tr>
+<tr>
+<td>eviction</td>
+<td>回收策略（缓存淘汰算法）</td>
+<td>LRU – 最近最少使用的：移除最长时间不被使用的对象（默认）。FIFO– 先进先出：按对象进入缓存的顺序来移除它们。SOFT – 软引用：移除基于垃圾回收器状态和软引用规则的对象。WEAK – 弱引用：更积极地移除基于垃圾收集器状态和弱引用规则的对象。</td>
+</tr>
+<tr>
+<td>flushInterval</td>
+<td>定时自动清空缓存间隔</td>
+<td>自动刷新时间，单位 ms，未配置时只有调用时刷新</td>
+</tr>
+<tr>
+<td>readOnly</td>
+<td>是否只读</td>
+<td>true：只读缓存；会给所有调用者返回缓存对象的相同实例。因此这些对象不能被修改。这提供了很重要的性能优势。false：读写缓存；会返回缓存对象的拷贝（通过序列化），不会共享。这会慢一些，但是安全，因此默认是 false。改为false可读写时，对象必须支持序列化。</td>
+</tr>
+<tr>
+<td>blocking</td>
+<td>启用阻塞缓存</td>
+<td>通过在get/put方式中加锁，保证只有一个线程操作缓存，基于Java重入锁实现</td>
+</tr>
+</tbody></table>
+<p><strong>再来看下cache标签在源码中的体现，创建cacheKey</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> &lt;E&gt; <span class="function">List&lt;E&gt; <span class="title">query</span><span class="params">(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">  <span class="comment">// 获取SQL</span></span><br><span class="line">  BoundSql boundSql = ms.getBoundSql(parameterObject);</span><br><span class="line">  <span class="comment">// 创建CacheKey：什么样的SQL是同一条SQL？ &gt;&gt;</span></span><br><span class="line">  CacheKey key = createCacheKey(ms, parameterObject, rowBounds, boundSql);</span><br><span class="line">  <span class="keyword">return</span> query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>createCacheKey自行进去查看</p>
+<p><img src="/images/img-111.png"></p>
+<p><img src="/images/img-112.png"></p>
+<p>而这看到的和我们前面在缓存初始化时看到的 cache 标签解析操作是对应上的。所以我们要开启二级缓<br>存两个条件都要满足</p>
+<p><img src="/images/img-113.png"></p>
+<p><img src="/images/img-114.png"></p>
+<p><strong>这样的设置表示当前的映射文件中的相关查询操作都会触发二级缓存，但如果某些个别方法我们不希望走二级缓存怎么办呢？</strong></p>
+<p><strong>我们可以在标签中添加一个 useCache=false 来实现的设置不使用二级缓存</strong></p>
+<p><img src="/images/img-115.png"></p>
+<p>还有就是当我们执行的对应的DML操作，在MyBatis中会清空对应的二级缓存和一级缓存。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">flushCacheIfRequired</span><span class="params">(MappedStatement ms)</span> </span>&#123;</span><br><span class="line">  Cache cache = ms.getCache();</span><br><span class="line">  <span class="comment">// 增删改查的标签上有属性： flushCache=&quot;true&quot; （select语句默认是false）</span></span><br><span class="line">  <span class="comment">// 一级二级缓存都会被清理</span></span><br><span class="line">  <span class="keyword">if</span> (cache != <span class="keyword">null</span> &amp;&amp; ms.isFlushCacheRequired()) &#123;</span><br><span class="line">    tcm.clear(cache);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在解析映射文件的时候DML操作flushCacheRequired为true</p>
+<p><img src="/images/img-116.png"></p>
+<h2 id="4-4-第三方缓存"><a href="#4-4-第三方缓存" class="headerlink" title="4.4 第三方缓存"></a>4.4 第三方缓存</h2><p>在实际开发的时候我们一般也很少使用MyBatis自带的二级缓存，这时我们会使用第三方的缓存工具Ehcache获取Redis来实现,那么他们是如何来实现的呢？</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/mybatis/redis-cache">https://github.com/mybatis/redis-cache</a></p>
+<p>添加依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.mybatis.caches<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>mybatis-redis<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.0.0-beta2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>然后加上Cache标签的配置</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">cache</span> <span class="attr">type</span>=<span class="string">&quot;org.mybatis.caches.redis.RedisCache&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">eviction</span>=<span class="string">&quot;FIFO&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">flushInterval</span>=<span class="string">&quot;60000&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">size</span>=<span class="string">&quot;512&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">readOnly</span>=<span class="string">&quot;true&quot;</span>/&gt;</span></span><br></pre></td></tr></table></figure>
+<p>然后添加redis的属性文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">host=192.168.100.120</span><br><span class="line">port=6379</span><br><span class="line">connectionTimeout=5000</span><br><span class="line">soTimeout=5000</span><br><span class="line">database=0</span><br></pre></td></tr></table></figure>
+<p>测试效果</p>
+<p><img src="/images/img-117.png"></p>
+<p>数据存储到了Redis中</p>
+<p><img src="/images/img-118.png"></p>
+<p>然后大家也可以自行分析下第三方的Cache是如何替换掉PerpetualCache的，因为PerpetualCache是基于HashMap处理的，而RedisCache是基于Redis来存储缓存数据的。</p>
+<p>提示</p>
+<p><img src="/images/img-119.png"></p>
+<p><img src="/images/img-120.png"></p>
+<p>缓存模块大概就介绍到此。</p>
+
+    </div>
+
+    
+    
+    
+<div>
+  
+    <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+  
+</div>
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Peilin Deng
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pdyun.cc/2021/08/10/MyBatis-%E7%BC%93%E5%AD%98/" title="MyBatis 缓存模块">https://pdyun.cc/2021/08/10/MyBatis-缓存/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/MyBatis/" rel="tag"><i class="fa fa-tag"></i> MyBatis</a>
+              <a href="/tags/%E7%BC%93%E5%AD%98/" rel="tag"><i class="fa fa-tag"></i> 缓存</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/06/newpapername/" rel="prev" title="Hello World">
+      <i class="fa fa-chevron-left"></i> Hello World
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/08/14/%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E7%BD%91%E7%BB%9C%E5%B0%8F%E8%AE%B0/" rel="next" title="外网访问家庭网络小记">
+      外网访问家庭网络小记 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84"><span class="nav-text">目录结构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-Cache-%E6%8E%A5%E5%8F%A3"><span class="nav-text">1. Cache 接口</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-PerpetualCache"><span class="nav-text">2. PerpetualCache</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-BlockingCache"><span class="nav-text">3. BlockingCache</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E7%BC%93%E5%AD%98%E7%9A%84%E5%BA%94%E7%94%A8"><span class="nav-text">4. 缓存的应用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-%E7%BC%93%E5%AD%98%E5%AF%B9%E5%BA%94%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-text">4.1 缓存对应的初始化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2-%E4%B8%80%E7%BA%A7%E7%BC%93%E5%AD%98"><span class="nav-text">4.2 一级缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-3-%E4%BA%8C%E7%BA%A7%E7%BC%93%E5%AD%98"><span class="nav-text">4.3 二级缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-4-%E7%AC%AC%E4%B8%89%E6%96%B9%E7%BC%93%E5%AD%98"><span class="nav-text">4.4 第三方缓存</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Peilin Deng"
+      src="/images/VX.png">
+  <p class="site-author-name" itemprop="name">Peilin Deng</p>
+  <div class="site-description" itemprop="description">IT 小站， 记录美好码园生活</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">51</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://www.cnblogs.com/dpl9963" title="博客园 → https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dpl9963" rel="noopener" target="_blank"><i class=" fa-fw"></i>博客园</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/PelyDeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;PelyDeng" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:544010165@qq.com" title="E-Mail → mailto:544010165@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+<script type="text/javascript" charset="utf-8" src="/js/tagcloud.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/tagcanvas.js"></script>
+<div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div id="myCanvasContainer" class="widget tagcloud">
+        <canvas width="250" height="250" id="resCanvas" style="width=100%">
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SpringBoot/" rel="tag">SpringBoot</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8B%E5%8A%A1/" rel="tag">事务</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E5%A0%86/" rel="tag">二叉堆</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E6%A0%91/" rel="tag">二叉树</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BD%8D%E8%BF%90%E7%AE%97/" rel="tag">位运算</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%88%9B%E5%BB%BA%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">创建型设计模式</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag">并发编程</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8E%92%E5%BA%8F/" rel="tag">排序</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%92%E4%BB%B6/" rel="tag">插件</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E7%BB%84/" rel="tag">数组</a><span class="tag-list-count">8</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BB%93%E6%9E%84%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">结构型设计模式</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BC%93%E5%AD%98/" rel="tag">缓存</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%A1%8C%E4%B8%BA%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">行为型设计模式</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%93%BE%E8%A1%A8/" rel="tag">链表</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%98%9F%E5%88%97/" rel="tag">队列</a><span class="tag-list-count">1</span></li></ul>
+        </canvas>
+    </div>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peilin Deng</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : true,
+      notify     : true,
+      appId      : 'HnJ9Yibfx60VyyJ8xucUkOS5-gzGzoHsz',
+      appKey     : 'tMGT7R2fSxRbTrOkaf3DfEg2',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+<script src="/live2d_models/packages/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2d_models/packages/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2d_models/packages/assets/assets/koharu.model.json"},"display":{"position":"left","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body>
+</html>

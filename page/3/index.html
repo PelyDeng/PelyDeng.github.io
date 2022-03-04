@@ -28,14 +28,14 @@
   <meta name="description" content="IT 小站， 记录美好码园生活">
 <meta property="og:type" content="website">
 <meta property="og:title" content="牧场小站">
-<meta property="og:url" content="http://pdyun.cc/page/3/index.html">
+<meta property="og:url" content="https://pdyun.cc/page/3/index.html">
 <meta property="og:site_name" content="牧场小站">
 <meta property="og:description" content="IT 小站， 记录美好码园生活">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:author" content="Peilin Deng">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://pdyun.cc/page/3/">
+<link rel="canonical" href="https://pdyun.cc/page/3/">
 
 
 <script id="page-configurations">
@@ -196,7 +196,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/01/15/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -210,7 +210,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/" class="post-title-link" itemprop="url">MySql 索引机制</a>
+            <a href="/2022/01/15/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97/" class="post-title-link" itemprop="url">优先队列</a>
         </h2>
 
         <div class="post-meta">
@@ -221,7 +221,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-08-25 21:55:00 / 修改时间：21:55:41" itemprop="dateCreated datePublished" datetime="2021-08-25T21:55:00+08:00">2021-08-25</time>
+              <time title="创建时间：2022-01-15 11:38:00 / 修改时间：12:09:26" itemprop="dateCreated datePublished" datetime="2022-01-15T11:38:00+08:00">2022-01-15</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -229,12 +229,12 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/" itemprop="url" rel="index"><span itemprop="name">算法小抄</span></a>
                 </span>
             </span>
 
           
-            <span id="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 索引机制" title="阅读次数">
+            <span id="/2022/01/15/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97/" class="post-meta-item leancloud_visitors" data-flag-title="优先队列" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -249,8 +249,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/" itemprop="commentCount"></span>
+    <a title="valine" href="/2022/01/15/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/15/%E4%BC%98%E5%85%88%E9%98%9F%E5%88%97/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -265,331 +265,15 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="主键索引的设计"><a href="#主键索引的设计" class="headerlink" title="主键索引的设计"></a>主键索引的设计</h1><p>每个数据页中都有一个页目录，可以方便在当前数据页中进行数据的查询。但是如果有多个数据页的情况下，对于一个主键的查询，得知数据在哪个数据页显得尤为重要。<br>因此针对主键设计了一个主键目录，就是把每个数据页的页号以及数据页中最小的主键放在一起，组成一个索引的目录，如下图：<br><img src="/images/img-54.png"><br>基于主键目录，先通过主键目录可以对比得到查询的数据可能在哪个数据页，然后到对应的数据页中基于二分法查找。</p>
-<h1 id="索引页"><a href="#索引页" class="headerlink" title="索引页"></a>索引页</h1>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E6%9C%BA%E5%88%B6/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-<div>
-  
-</div>
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E5%BC%95%E5%85%A5%E7%9A%84%E5%89%8D%E6%8F%90/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/VX.png">
-      <meta itemprop="name" content="Peilin Deng">
-      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="牧场小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E5%BC%95%E5%85%A5%E7%9A%84%E5%89%8D%E6%8F%90/" class="post-title-link" itemprop="url">MySql 索引引入的前提</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2021-08-25 21:53:00 / 修改时间：21:54:55" itemprop="dateCreated datePublished" datetime="2021-08-25T21:53:00+08:00">2021-08-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
-                </span>
-            </span>
-
-          
-            <span id="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E5%BC%95%E5%85%A5%E7%9A%84%E5%89%8D%E6%8F%90/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 索引引入的前提" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E5%BC%95%E5%85%A5%E7%9A%84%E5%89%8D%E6%8F%90/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E7%B4%A2%E5%BC%95%E5%BC%95%E5%85%A5%E7%9A%84%E5%89%8D%E6%8F%90/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="磁盘数据页的存储结构"><a href="#磁盘数据页的存储结构" class="headerlink" title="磁盘数据页的存储结构"></a>磁盘数据页的存储结构</h1><h2 id="特性"><a href="#特性" class="headerlink" title="特性"></a>特性</h2><ul>
-<li>数据页是按顺序一页一页的存放的，两两相邻的数据页之间会采用双向链表的格式相互引用。</li>
-<li>数据页内部多个数据行通过主键顺序形成单向链表</li>
-<li>每个数据页都有一个页目录，根据数据行的主键存放了一个目录，同时数据行是被分散存储到不同的槽位里去的。所以每个数据页的目录里，就是这个页里没个主键跟所在槽位的映射关系。</li>
-</ul>
-<h2 id="主键查询"><a href="#主键查询" class="headerlink" title="主键查询"></a>主键查询</h2><p>通过传入的主键到页目录中根据主键进行二分查找，通过二分查找在目录中定位到数据的槽位，到对应的槽位遍历每一行数据进行对比</p>
-<h2 id="非主键查询"><a href="#非主键查询" class="headerlink" title="非主键查询"></a>非主键查询</h2><p>进入数据页里，根据单向链表依次遍历查找数据，性能很差</p>
-<h1 id="全表扫描"><a href="#全表扫描" class="headerlink" title="全表扫描"></a>全表扫描</h1><p>在没有任何索引数据结构的时候，无论如何查询数据，都是一个全表扫描的过程。根据双向链表依次把磁盘上的数据页加载到缓存页里去，然后在缓存页内部来查找那条数据。</p>
-<h1 id="页分裂"><a href="#页分裂" class="headerlink" title="页分裂"></a>页分裂</h1><p><img src="/images/img-61.png"><br>数据页中包含了一个起始行，行类型是2；包含了一个行类型为3的结束行（具体可以看03.数据在磁盘上的存储，里面有提到行格式）。其他行都是普通行，类型为0；<br>当不停的插入数据时，最开始在第一个数据页。当第一个数据页满了，就创建了第二个数据页。但是有时候主键不一定是自增长的，所以会出现第二页中的数据的主键大于第一页中的数据的主键；<br><strong>为了避免这种情况，在新增一个数据页的时候，会把前一个数据页中主键值较大的，挪动到新的数据页中来。然后把新插入的主键较小的数据挪到上一个数据页中，保证新数据页中的主键值一定比上一个数据页里的主键值大（索引的一个核心基础），这就是页分裂</strong></p>
-
-      
-    </div>
-
-    
-    
-    
-<div>
-  
-</div>
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E9%94%81/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/VX.png">
-      <meta itemprop="name" content="Peilin Deng">
-      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="牧场小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/08/25/MySql-%E9%94%81/" class="post-title-link" itemprop="url">MySql 锁机制</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2021-08-25 21:32:00 / 修改时间：21:42:26" itemprop="dateCreated datePublished" datetime="2021-08-25T21:32:00+08:00">2021-08-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
-                </span>
-            </span>
-
-          
-            <span id="/2021/08/25/MySql-%E9%94%81/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 锁机制" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/08/25/MySql-%E9%94%81/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E9%94%81/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><p>当多个事务同时更新一条数据的时候，如何防止脏写的问题</p>
-<h1 id="锁机制的引入"><a href="#锁机制的引入" class="headerlink" title="锁机制的引入"></a>锁机制的引入</h1><p>依靠锁机制让多个事务更新同一行数据的时候串行化，避免同时更新。</p>
-<h1 id="锁机制下的更新步骤"><a href="#锁机制下的更新步骤" class="headerlink" title="锁机制下的更新步骤"></a>锁机制下的更新步骤</h1><ol>
-<li>事务A要更新一条数据，先判断当前数据是否有锁。没锁则当前事务创建一个锁，其中包含了自己的trx_id和等待状态，然后把锁和数据关联起来。</li>
-<li>此时数据和锁都是在内存中。</li>
-<li>事务B也要更新这条数据，检查数据是否有锁时发现存在着事务A创建的锁。则创建了属于自己的一个锁，其中等待状态为true。表示正在等待</li>
-<li>事务A更新完后，释放锁，然后寻找到事务B对这条数据加锁了。此时就会把事务B的锁中的等待状态修改为false，然后唤醒事务B。</li>
-</ol>
-<h1 id="行锁"><a href="#行锁" class="headerlink" title="行锁"></a>行锁</h1><h2 id="独占锁"><a href="#独占锁" class="headerlink" title="独占锁"></a>独占锁</h2>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/08/25/MySql-%E9%94%81/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-<div>
-  
-</div>
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/VX.png">
-      <meta itemprop="name" content="Peilin Deng">
-      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="牧场小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/" class="post-title-link" itemprop="url">MySql MVCC机制</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2021-08-25 21:21:00 / 修改时间：21:31:39" itemprop="dateCreated datePublished" datetime="2021-08-25T21:21:00+08:00">2021-08-25</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
-                </span>
-            </span>
-
-          
-            <span id="/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/" class="post-meta-item leancloud_visitors" data-flag-title="MySql MVCC机制" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>MVCC：Multi-Version Concurrent Control，多版本并发控制。</p>
+          <p><strong>以下代码基于最小堆实现的最小优先队列</strong></p>
+<blockquote>
+<p>二叉堆实现参见 –&gt; <a href="https://pdyun.cc/2022/01/15/%E6%8E%92%E5%BA%8F-%E5%A0%86%E6%8E%92%E5%BA%8F/">二叉堆、堆排序</a></p>
 </blockquote>
-<h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><ol>
-<li>当多个线程执行事务的时候，对同一个缓存页里的一行数据进行更新。这个冲突如何处理</li>
-<li>当一个事务更新一条数据时，另一个事务在查询这条数据。</li>
-</ol>
-<h1 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h1><h2 id="脏写-amp-脏读"><a href="#脏写-amp-脏读" class="headerlink" title="脏写&amp;脏读"></a>脏写&amp;脏读</h2><p>因为一个事务去更新或者查询了另一个没有提交的事务更新过去的数据。因为另一个事务还没提交，所以随时可能回滚。导致自己更新的数据或者查询的数据没了。</p>
-<h2 id="不可重复读"><a href="#不可重复读" class="headerlink" title="不可重复读"></a>不可重复读</h2><p>在一个事务开始之后，多次读取同一条数据的结果因为其他事务修改的提交，显示为多次读取到不同的值。</p>
-<h2 id="幻读"><a href="#幻读" class="headerlink" title="幻读"></a>幻读</h2>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/08/25/MySql-MVCC%E6%9C%BA%E5%88%B6/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
+<h3 id="自定义实现优先队列"><a href="#自定义实现优先队列" class="headerlink" title="自定义实现优先队列"></a>自定义实现优先队列</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@ClassName</span> 最小优先队列</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@Description</span> 基于最小堆堆实现的优先队列</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@Author</span> Deng PeiLin</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@Date</span> 2022/1/13 15:47</span></span><br><span class="line"><span class="comment"> **/</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> 优先队列 </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span>[] arr;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> size;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> 优先队列 () &#123;</span><br><span class="line">        <span class="keyword">this</span>.arr = <span class="keyword">new</span> <span class="keyword">int</span>[<span class="number">1</span>];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 入队</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> 优先队列 add(<span class="keyword">int</span> data)&#123;</span><br><span class="line">        <span class="keyword">if</span> (size &gt;= arr.length) &#123;</span><br><span class="line">            resize();</span><br><span class="line">        &#125;</span><br><span class="line">        arr[size ++] = data;</span><br><span class="line">        upAdjust();</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 出队</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">out</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (size &lt;= <span class="number">0</span>)&#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">&quot;队列中无数据&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">int</span> firstData = arr[<span class="number">0</span>];</span><br><span class="line">        arr[<span class="number">0</span>] = arr[--size];</span><br><span class="line">        downAdjust();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> firstData;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 上浮调整</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">upAdjust</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> childIndex = size - <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">int</span> parentIndex = (childIndex - <span class="number">1</span>) / <span class="number">2</span>;</span><br><span class="line">        <span class="comment">// temp 用于保存插入的叶子节点值, 用于最后的赋值</span></span><br><span class="line">        <span class="keyword">int</span> temp = arr[childIndex];</span><br><span class="line">        <span class="keyword">while</span> (childIndex &gt; <span class="number">0</span> &amp;&amp; temp &lt; arr[parentIndex]) &#123;</span><br><span class="line">            <span class="comment">// 无需真正交换, 单项赋值即可</span></span><br><span class="line">            arr[childIndex] = arr[parentIndex];</span><br><span class="line">            childIndex = parentIndex;</span><br><span class="line">            parentIndex = (parentIndex - <span class="number">1</span>) / <span class="number">2</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        arr[childIndex] = temp;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 下沉调整</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">downAdjust</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> parentIndex = <span class="number">0</span>;</span><br><span class="line">        <span class="comment">// temp 用于保存插入的叶子节点值, 用于最后的赋值</span></span><br><span class="line">        <span class="keyword">int</span> temp = arr[parentIndex];</span><br><span class="line">        <span class="keyword">int</span> childIndex = parentIndex * <span class="number">2</span> + <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">while</span> (childIndex &lt; size) &#123;</span><br><span class="line">            <span class="comment">// 如果有右节点, 且右节点小于左节点的值, 则定位到右节点</span></span><br><span class="line">            <span class="keyword">if</span> (childIndex + <span class="number">1</span> &lt; size &amp;&amp; arr[childIndex + <span class="number">1</span>] &lt; arr[childIndex]) &#123;</span><br><span class="line">                childIndex++;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 如果父节点小于子节点的值则跳出, 不需要调整</span></span><br><span class="line">            <span class="keyword">if</span> (temp &lt; arr[childIndex]) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            arr[parentIndex] = arr[childIndex];</span><br><span class="line">            parentIndex = childIndex;</span><br><span class="line">            childIndex = childIndex * <span class="number">2</span> + <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        arr[parentIndex] = temp;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">resize</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        arr = Arrays.copyOf(arr, size * <span class="number">2</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getSize</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> size;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> Arrays.toString(Arrays.copyOfRange(arr, <span class="number">0</span>, size));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="测试代码"><a href="#测试代码" class="headerlink" title="测试代码"></a>测试代码</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span></span>&#123;</span><br><span class="line"></span><br><span class="line">        优先队列 queue = <span class="keyword">new</span> 优先队列();</span><br><span class="line"></span><br><span class="line">        queue.add(<span class="number">5</span>).add(<span class="number">8</span>).add(<span class="number">9</span>).add(<span class="number">11</span>).add(<span class="number">999</span>).add(<span class="number">1</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;队列数据: &quot;</span> + queue);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> out = queue.out();</span><br><span class="line">        System.out.println(<span class="string">&quot;出队元素: &quot;</span> + out);</span><br><span class="line">        System.out.println(<span class="string">&quot;队列数据: &quot;</span> + queue);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> out2 = queue.out();</span><br><span class="line">        System.out.println(<span class="string">&quot;出队元素: &quot;</span> + out2);</span><br><span class="line">        System.out.println(<span class="string">&quot;队列数据: &quot;</span> + queue);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>测试结果 &gt;&gt;&gt; <strong>以最小堆实现的最小优先队列, 队列头部皆为最小数据</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">队列数据: [<span class="number">1</span>, <span class="number">8</span>, <span class="number">5</span>, <span class="number">11</span>, <span class="number">999</span>, <span class="number">9</span>]</span><br><span class="line">出队元素: <span class="number">1</span></span><br><span class="line">队列数据: [<span class="number">5</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">999</span>]</span><br><span class="line">出队元素: <span class="number">5</span></span><br><span class="line">队列数据: [<span class="number">8</span>, <span class="number">11</span>, <span class="number">9</span>, <span class="number">999</span>]</span><br><span class="line"></span><br><span class="line">Process finished with exit code <span class="number">0</span></span><br></pre></td></tr></table></figure>
       
     </div>
 
@@ -611,7 +295,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/01/15/%E6%8E%92%E5%BA%8F-%E5%A0%86%E6%8E%92%E5%BA%8F/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -625,7 +309,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/" class="post-title-link" itemprop="url">MySql Undolog（回滚日志）</a>
+            <a href="/2022/01/15/%E6%8E%92%E5%BA%8F-%E5%A0%86%E6%8E%92%E5%BA%8F/" class="post-title-link" itemprop="url">二叉堆、堆排序</a>
         </h2>
 
         <div class="post-meta">
@@ -636,7 +320,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-08-25 21:18:00 / 修改时间：21:20:09" itemprop="dateCreated datePublished" datetime="2021-08-25T21:18:00+08:00">2021-08-25</time>
+              <time title="创建时间：2022-01-15 11:14:00 / 修改时间：12:13:04" itemprop="dateCreated datePublished" datetime="2022-01-15T11:14:00+08:00">2022-01-15</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -644,12 +328,16 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/" itemprop="url" rel="index"><span itemprop="name">算法小抄</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" itemprop="url" rel="index"><span itemprop="name">数据结构</span></a>
                 </span>
             </span>
 
           
-            <span id="/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/" class="post-meta-item leancloud_visitors" data-flag-title="MySql Undolog（回滚日志）" title="阅读次数">
+            <span id="/2022/01/15/%E6%8E%92%E5%BA%8F-%E5%A0%86%E6%8E%92%E5%BA%8F/" class="post-meta-item leancloud_visitors" data-flag-title="二叉堆、堆排序" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -664,8 +352,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/" itemprop="commentCount"></span>
+    <a title="valine" href="/2022/01/15/%E6%8E%92%E5%BA%8F-%E5%A0%86%E6%8E%92%E5%BA%8F/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/15/%E6%8E%92%E5%BA%8F-%E5%A0%86%E6%8E%92%E5%BA%8F/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -680,25 +368,13 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><p>为了在事务提交前，随时能够回滚缓存页中已经修改的数据，就需要用undolog来记录之前的改动情况。新增操作就对应着一个删除操作来回滚，删除操作也有对应的一个新增操作。更新操作也有对应的更新操作。</p>
-<h1 id="回滚类型"><a href="#回滚类型" class="headerlink" title="回滚类型"></a>回滚类型</h1><p>undolog根据操作类型分为3种类型。</p>
-<h2 id="新增"><a href="#新增" class="headerlink" title="新增"></a>新增</h2><p>类型：TRX_UNDO_INSERT_REC<br>内容：</p>
-<ul>
-<li>日志开始位置</li>
-<li>主键的各列长度和值（可能是联合主键）</li>
-<li>表id</li>
-<li>undolog日志编号</li>
-<li>undolog日志类型</li>
-<li>日志结束位置<br>操作：<br>在回滚时，通过获取主键的值以及表id可以直接定位到对应的缓存页，从里面删除之前插入的数据 </li>
-</ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/08/25/MySql-Undolog%EF%BC%88%E5%9B%9E%E6%BB%9A%E6%97%A5%E5%BF%97%EF%BC%89/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
+          <h1 id="二叉堆实现"><a href="#二叉堆实现" class="headerlink" title="二叉堆实现"></a>二叉堆实现</h1><p>以下为最小堆代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 用例适用于  &#x27;最小堆&#x27;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> 二叉堆 </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span>[] arr = <span class="keyword">new</span> <span class="keyword">int</span>[]&#123;<span class="number">1</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">0</span>&#125;;</span><br><span class="line">        upAdjust(arr);</span><br><span class="line">        System.out.println(Arrays.toString(arr));</span><br><span class="line"></span><br><span class="line">        arr = <span class="keyword">new</span> <span class="keyword">int</span>[]&#123;<span class="number">9</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">11</span>, <span class="number">66</span>, <span class="number">5</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">1</span>, <span class="number">0</span>&#125;;</span><br><span class="line">        build(arr);</span><br><span class="line">        System.out.println(Arrays.toString(arr));</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    ------------------------------------------------------------</span><br><span class="line">    打印结果</span><br><span class="line">    [<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">3</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">5</span>]</span><br><span class="line">    [<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">66</span>]</span><br><span class="line">    ------------------------------------------------------------</span><br><span class="line">    </span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 上浮调整</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">upAdjust</span><span class="params">(<span class="keyword">int</span>[] arr)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> childIndex = arr.length - <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">int</span> parentIndex = (childIndex - <span class="number">1</span>) / <span class="number">2</span>;</span><br><span class="line">        <span class="comment">// temp 用于保存插入的叶子节点值, 用于最后的赋值</span></span><br><span class="line">        <span class="keyword">int</span> temp = arr[childIndex];</span><br><span class="line">        <span class="keyword">while</span> (childIndex &gt; <span class="number">0</span> &amp;&amp; temp &lt; arr[parentIndex]) &#123;</span><br><span class="line">            <span class="comment">// 无需真正交换, 单项赋值即可</span></span><br><span class="line">            arr[childIndex] = arr[parentIndex];</span><br><span class="line">            childIndex = parentIndex;</span><br><span class="line">            parentIndex = (parentIndex - <span class="number">1</span>) / <span class="number">2</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        arr[childIndex] = temp;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 下沉调整</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> arr         要调整的堆</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> parentIndex 要 &#x27;下沉&#x27; 的父节点</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> length      堆的有效大小</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">downAdjust</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> parentIndex, <span class="keyword">int</span> length)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// temp 用于保存插入的叶子节点值, 用于最后的赋值</span></span><br><span class="line">        <span class="keyword">int</span> temp = arr[parentIndex];</span><br><span class="line">        <span class="keyword">int</span> childIndex = parentIndex * <span class="number">2</span> + <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">while</span> (childIndex &lt; length) &#123;</span><br><span class="line">            <span class="comment">// 如果有右节点, 且右节点小于左节点的值, 则定位到右节点</span></span><br><span class="line">            <span class="keyword">if</span> (childIndex + <span class="number">1</span> &lt; length &amp;&amp; arr[childIndex + <span class="number">1</span>] &lt; arr[childIndex]) &#123;</span><br><span class="line">                childIndex++;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 如果父节点小于子节点的值则跳出, 不需要调整</span></span><br><span class="line">            <span class="keyword">if</span> (temp &lt; arr[childIndex]) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            arr[parentIndex] = arr[childIndex];</span><br><span class="line">            parentIndex = childIndex;</span><br><span class="line">            childIndex = childIndex * <span class="number">2</span> + <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">        arr[parentIndex] = temp;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 构建二叉堆</span></span><br><span class="line"><span class="comment">     * &lt;p&gt;</span></span><br><span class="line"><span class="comment">     * 二叉堆本质上是完全二叉树, 但是存储方式不是链式存储, 而是顺序存储, 所用数据结构为数组</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">build</span><span class="params">(<span class="keyword">int</span>[] arr)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 从最后一个非叶子节点开始, 依次做&#x27;下沉&#x27;调整</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = (arr.length - <span class="number">2</span>) / <span class="number">2</span>; i &gt;= <span class="number">0</span>; i--) &#123;</span><br><span class="line">            downAdjust(arr, i, arr.length);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h1 id="堆排序"><a href="#堆排序" class="headerlink" title="堆排序"></a>堆排序</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> 堆排序 </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span>[] arr = <span class="keyword">new</span> <span class="keyword">int</span>[]&#123;<span class="number">1</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">0</span>&#125;;</span><br><span class="line"></span><br><span class="line">        sort(arr);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">sort</span><span class="params">(<span class="keyword">int</span>[] arr)</span> </span>&#123;</span><br><span class="line">        二叉堆.build(arr);</span><br><span class="line">        System.out.println(Arrays.toString(arr));</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = arr.length - <span class="number">1</span>; i &gt;= <span class="number">0</span>; i--) &#123;</span><br><span class="line">            <span class="comment">// 最后一个元素和第一个元素交换</span></span><br><span class="line">            <span class="keyword">int</span> temp = arr[<span class="number">0</span>];</span><br><span class="line">            arr[<span class="number">0</span>] = arr[i];</span><br><span class="line">            arr[i] = temp;</span><br><span class="line"></span><br><span class="line">            二叉堆.downAdjust(arr,<span class="number">0</span>,i);</span><br><span class="line">            System.out.println(Arrays.toString(arr));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>排序结果</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">3</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">5</span>]</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">2</span>, <span class="number">3</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">10</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">8</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">6</span>, <span class="number">8</span>, <span class="number">7</span>, <span class="number">10</span>, <span class="number">9</span>, <span class="number">5</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">8</span>, <span class="number">10</span>, <span class="number">9</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">9</span>, <span class="number">10</span>, <span class="number">8</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">10</span>, <span class="number">9</span>, <span class="number">8</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line">[<span class="number">10</span>, <span class="number">9</span>, <span class="number">8</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br></pre></td></tr></table></figure>
       
     </div>
 
@@ -720,7 +396,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/01/14/%E6%95%B0%E7%BB%84-%E7%A7%BB%E5%8A%A8%E9%9B%B6/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -734,7 +410,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/" class="post-title-link" itemprop="url">MySql Redolog（重做日志）</a>
+            <a href="/2022/01/14/%E6%95%B0%E7%BB%84-%E7%A7%BB%E5%8A%A8%E9%9B%B6/" class="post-title-link" itemprop="url">数组 - 移动零</a>
         </h2>
 
         <div class="post-meta">
@@ -745,7 +421,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-08-25 21:11:00 / 修改时间：21:14:30" itemprop="dateCreated datePublished" datetime="2021-08-25T21:11:00+08:00">2021-08-25</time>
+              <time title="创建时间：2022-01-14 11:01:00 / 修改时间：11:05:28" itemprop="dateCreated datePublished" datetime="2022-01-14T11:01:00+08:00">2022-01-14</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -753,12 +429,12 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/" itemprop="url" rel="index"><span itemprop="name">算法小抄</span></a>
                 </span>
             </span>
 
           
-            <span id="/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/" class="post-meta-item leancloud_visitors" data-flag-title="MySql Redolog（重做日志）" title="阅读次数">
+            <span id="/2022/01/14/%E6%95%B0%E7%BB%84-%E7%A7%BB%E5%8A%A8%E9%9B%B6/" class="post-meta-item leancloud_visitors" data-flag-title="数组 - 移动零" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -773,8 +449,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/" itemprop="commentCount"></span>
+    <a title="valine" href="/2022/01/14/%E6%95%B0%E7%BB%84-%E7%A7%BB%E5%8A%A8%E9%9B%B6/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/14/%E6%95%B0%E7%BB%84-%E7%A7%BB%E5%8A%A8%E9%9B%B6/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -789,20 +465,12 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="前情提要"><a href="#前情提要" class="headerlink" title="前情提要"></a>前情提要</h1><p>在执行增删改操作的时候，是基于Buffer Pool中的缓存页中的数据的。更新了缓存页中的数据后，会写入一条数据到Redo Log中。在提交事务的时候，会立马把Redo Log刷入磁盘（推荐方式），然后在RedoLog中写入binlog信息和一个commit标记，事务至此提交完毕。</p>
-<h1 id="FAQ"><a href="#FAQ" class="headerlink" title="FAQ"></a>FAQ</h1><h2 id="RedoLog保障了什么"><a href="#RedoLog保障了什么" class="headerlink" title="RedoLog保障了什么"></a>RedoLog保障了什么</h2><p>当更新了缓存中的数据页后，缓存页还没有刷到磁盘上。MYSQL宕机，那么MYSQL重启后，会直接读取RedoLog中的内容，重做到Buffer Pool中，然后在刷到磁盘。因为RedoLog是顺序读写，所以效率很高。并且为了保证数据的不丢失，RedoLog也要设置成不经过OS Cache。</p>
-<h2 id="为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？"><a href="#为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？" class="headerlink" title="为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？"></a>为什么要写入RedoLog，直接刷到磁盘的缺点在哪里？</h2><ol>
-<li>一个缓存页是16KB，刷盘比较耗时。而且你可能只修改了几个字节的数据。</li>
-<li>缓存页刷入磁盘是随机读写。效率很低。而RedoLog是顺序读写，效率高</li>
-</ol>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/08/25/MySql-Redolog%EF%BC%88%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97%EF%BC%89/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
+          <h1 id="移动零"><a href="#移动零" class="headerlink" title="移动零"></a>移动零</h1><p>给定一个数组 nums，编写一个函数将所有 0 移动到数组的末尾，同时保持非零元素的相对顺序。</p>
+<p>示例:</p>
+<p>输入: [0,1,0,3,12]<br>输出: [1,3,12,0,0]</p>
+<p>说明:</p>
+<p>必须在原数组上操作，不能拷贝额外的数组。<br>尽量减少操作次数。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">moveZeroes</span><span class="params">(<span class="keyword">int</span>[] nums)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (nums == <span class="keyword">null</span> || nums.length &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> index = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nums.length; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span> (nums[i] != <span class="number">0</span>) &#123;</span><br><span class="line">                nums[index++] = nums[i];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">while</span> (index &lt; nums.length)&#123;</span><br><span class="line">            nums[index++] = <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
       
     </div>
 
@@ -824,7 +492,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/01/14/%E6%95%B0%E7%BB%84-%E4%B8%A4%E4%B8%AA%E6%95%B0%E7%BB%84%E7%9A%84%E4%BA%A4%E9%9B%86-II/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -838,7 +506,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/" class="post-title-link" itemprop="url">MySql 数据在磁盘上的存储</a>
+            <a href="/2022/01/14/%E6%95%B0%E7%BB%84-%E4%B8%A4%E4%B8%AA%E6%95%B0%E7%BB%84%E7%9A%84%E4%BA%A4%E9%9B%86-II/" class="post-title-link" itemprop="url">数组 - 两个数组的交集 II</a>
         </h2>
 
         <div class="post-meta">
@@ -849,7 +517,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-08-25 21:09:00 / 修改时间：21:16:03" itemprop="dateCreated datePublished" datetime="2021-08-25T21:09:00+08:00">2021-08-25</time>
+              <time title="创建时间：2022-01-14 10:58:00 / 修改时间：11:00:52" itemprop="dateCreated datePublished" datetime="2022-01-14T10:58:00+08:00">2022-01-14</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -857,12 +525,12 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/" itemprop="url" rel="index"><span itemprop="name">算法小抄</span></a>
                 </span>
             </span>
 
           
-            <span id="/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 数据在磁盘上的存储" title="阅读次数">
+            <span id="/2022/01/14/%E6%95%B0%E7%BB%84-%E4%B8%A4%E4%B8%AA%E6%95%B0%E7%BB%84%E7%9A%84%E4%BA%A4%E9%9B%86-II/" class="post-meta-item leancloud_visitors" data-flag-title="数组 - 两个数组的交集 II" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -877,8 +545,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/" itemprop="commentCount"></span>
+    <a title="valine" href="/2022/01/14/%E6%95%B0%E7%BB%84-%E4%B8%A4%E4%B8%AA%E6%95%B0%E7%BB%84%E7%9A%84%E4%BA%A4%E9%9B%86-II/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/14/%E6%95%B0%E7%BB%84-%E4%B8%A4%E4%B8%AA%E6%95%B0%E7%BB%84%E7%9A%84%E4%BA%A4%E9%9B%86-II/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -893,19 +561,18 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="物理数据存储格式"><a href="#物理数据存储格式" class="headerlink" title="物理数据存储格式"></a>物理数据存储格式</h1><h2 id="行格式"><a href="#行格式" class="headerlink" title="行格式"></a>行格式</h2><ul>
-<li>COMPACT格式<br>  大致格式：变长字段的长度列表，null值列表（长度为8n），数据头[隐藏字段]，col1的值，col2的值。。。    </li>
-<li>xxx格式</li>
-</ul>
-<h2 id="变长字段的存储"><a href="#变长字段的存储" class="headerlink" title="变长字段的存储"></a>变长字段的存储</h2><p>因为变长字段的内容不固定，所以无法判断数据要从何处截断，因此在数据的头部保存了变长字段的长度列表。多个变长字段按照字段顺序<font color="red"><strong>逆序</strong></font>放入变长字段的长度列表中。不考虑为null的列。    </p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/08/25/MySql-%E6%95%B0%E6%8D%AE%E5%9C%A8%E7%A3%81%E7%9B%98%E4%B8%8A%E7%9A%84%E5%AD%98%E5%82%A8/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
+          <h1 id="两个数组的交集-II"><a href="#两个数组的交集-II" class="headerlink" title="两个数组的交集 II"></a>两个数组的交集 II</h1><p>给你两个整数数组 nums1 和 nums2 ，请你以数组形式返回两数组的交集。返回结果中每个元素出现的次数，应与元素在两个数组中都出现的次数一致（如果出现次数不一致，则考虑取较小值）。可以不考虑输出结果的顺序。</p>
+<p>示例 1：</p>
+<p>输入：nums1 = [1,2,2,1], nums2 = [2,2]<br>输出：[2,2]<br>示例 2:</p>
+<p>输入：nums1 = [4,9,5], nums2 = [9,4,9,8,4]<br>输出：[4,9]
+ </p>
+<p>提示：</p>
+<p>1 &lt;= nums1.length, nums2.length &lt;= 1000<br>0 &lt;= nums1[i], nums2[i] &lt;= 1000
+ </p>
+<p>进阶：</p>
+<p>如果给定的数组已经排好序呢？你将如何优化你的算法？<br>如果 nums1 的大小比 nums2 小，哪种方法更优？<br>如果 nums2 的元素存储在磁盘上，内存是有限的，并且你不能一次加载所有的元素到内存中，你该怎么办？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span>[] intersect(<span class="keyword">int</span>[] arr1, <span class="keyword">int</span>[] arr2) &#123;</span><br><span class="line">        Arrays.sort(arr1);</span><br><span class="line">        Arrays.sort(arr2);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> arr1Len = arr1.length, arr2Len = arr2.length;</span><br><span class="line">        <span class="keyword">int</span> len = Math.min(arr1Len, arr2Len);</span><br><span class="line">        <span class="keyword">int</span>[] newInt = <span class="keyword">new</span> <span class="keyword">int</span>[len];</span><br><span class="line">        <span class="keyword">int</span> i = <span class="number">0</span>, j = <span class="number">0</span>, k = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">while</span> (i &lt; arr1Len &amp;&amp; j &lt; arr2Len) &#123;</span><br><span class="line">            <span class="keyword">if</span> (arr1[i] == arr2[j]) &#123;</span><br><span class="line">                newInt[k++] = arr1[i];</span><br><span class="line">                i++;</span><br><span class="line">                j++;</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (arr1[i] &lt; arr2[j]) &#123;</span><br><span class="line">                i++;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                j++;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> Arrays.copyOfRange(newInt, <span class="number">0</span>, k);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
       
     </div>
 
@@ -927,7 +594,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/01/14/%E6%95%B0%E7%BB%84-%E5%8F%AA%E5%87%BA%E7%8E%B0%E4%B8%80%E6%AC%A1%E7%9A%84%E6%95%B0%E5%AD%97/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -941,7 +608,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/" class="post-title-link" itemprop="url">MySql Buffer Pool 与数据页</a>
+            <a href="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%8F%AA%E5%87%BA%E7%8E%B0%E4%B8%80%E6%AC%A1%E7%9A%84%E6%95%B0%E5%AD%97/" class="post-title-link" itemprop="url">数组 - 只出现一次的数字</a>
         </h2>
 
         <div class="post-meta">
@@ -952,7 +619,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-08-25 21:03:00 / 修改时间：21:17:03" itemprop="dateCreated datePublished" datetime="2021-08-25T21:03:00+08:00">2021-08-25</time>
+              <time title="创建时间：2022-01-14 10:49:00 / 修改时间：10:51:16" itemprop="dateCreated datePublished" datetime="2022-01-14T10:49:00+08:00">2022-01-14</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -960,12 +627,12 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/" itemprop="url" rel="index"><span itemprop="name">算法小抄</span></a>
                 </span>
             </span>
 
           
-            <span id="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/" class="post-meta-item leancloud_visitors" data-flag-title="MySql Buffer Pool 与数据页" title="阅读次数">
+            <span id="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%8F%AA%E5%87%BA%E7%8E%B0%E4%B8%80%E6%AC%A1%E7%9A%84%E6%95%B0%E5%AD%97/" class="post-meta-item leancloud_visitors" data-flag-title="数组 - 只出现一次的数字" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -980,8 +647,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/" itemprop="commentCount"></span>
+    <a title="valine" href="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%8F%AA%E5%87%BA%E7%8E%B0%E4%B8%80%E6%AC%A1%E7%9A%84%E6%95%B0%E5%AD%97/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%8F%AA%E5%87%BA%E7%8E%B0%E4%B8%80%E6%AC%A1%E7%9A%84%E6%95%B0%E5%AD%97/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -996,17 +663,14 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Buffer-Pool"><a href="#Buffer-Pool" class="headerlink" title="Buffer Pool"></a>Buffer Pool</h1><p>在对数据库执行增删改查操作的时候，因为对磁盘的随机读写操作速度非常慢。所以通过Buffer Pool缓存磁盘的真实数据。</p>
-<h1 id="数据页"><a href="#数据页" class="headerlink" title="数据页"></a>数据页</h1><p>MYSQL中抽象出来的数据单位，MYSQL把很多行数据放在一个数据页里。实际上我们更新一行数据的时候，是通过数据库找到这行数据所在的数据页，然后加载到Buffer Pool中。<br>默认情况下，一个数据页是16KB</p>
-<h1 id="缓存页"><a href="#缓存页" class="headerlink" title="缓存页"></a>缓存页</h1><p>因为在Buffer Pool中存放的也是一个一个的数据页，也叫作缓存页。在默认情况下，是和磁盘上的数据页一一对应的，所以也是16KB。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/08/25/ySql-Buffer-Pool-%E4%B8%8E%E6%95%B0%E6%8D%AE%E9%A1%B5/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
+          <h1 id="只出现一次的数字"><a href="#只出现一次的数字" class="headerlink" title="只出现一次的数字"></a>只出现一次的数字</h1><p>给定一个非空整数数组，除了某个元素只出现一次以外，其余每个元素均出现两次。找出那个只出现了一次的元素。</p>
+<p>说明：</p>
+<p>你的算法应该具有线性时间复杂度。 你可以不使用额外空间来实现吗？</p>
+<p>示例 1:</p>
+<p>输入: [2,2,1]<br>输出: 1<br>示例 2:</p>
+<p>输入: [4,1,2,1,2]<br>输出: 4</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">singleNumber</span><span class="params">(<span class="keyword">int</span>[] nums)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> a = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> num: nums)&#123;</span><br><span class="line">            a = num ^ a;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> a;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
       
     </div>
 
@@ -1028,7 +692,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/01/14/%E6%95%B0%E7%BB%84-%E6%98%AF%E5%90%A6%E5%AD%98%E5%9C%A8%E9%87%8D%E5%A4%8D%E5%85%83%E7%B4%A0/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -1042,7 +706,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/" class="post-title-link" itemprop="url">MySql 基础</a>
+            <a href="/2022/01/14/%E6%95%B0%E7%BB%84-%E6%98%AF%E5%90%A6%E5%AD%98%E5%9C%A8%E9%87%8D%E5%A4%8D%E5%85%83%E7%B4%A0/" class="post-title-link" itemprop="url">数组 - 是否存在重复元素</a>
         </h2>
 
         <div class="post-meta">
@@ -1053,7 +717,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-08-25 20:58:00 / 修改时间：21:17:44" itemprop="dateCreated datePublished" datetime="2021-08-25T20:58:00+08:00">2021-08-25</time>
+              <time title="创建时间：2022-01-14 10:46:00 / 修改时间：10:54:17" itemprop="dateCreated datePublished" datetime="2022-01-14T10:46:00+08:00">2022-01-14</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1061,12 +725,12 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/" itemprop="url" rel="index"><span itemprop="name">算法小抄</span></a>
                 </span>
             </span>
 
           
-            <span id="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 基础" title="阅读次数">
+            <span id="/2022/01/14/%E6%95%B0%E7%BB%84-%E6%98%AF%E5%90%A6%E5%AD%98%E5%9C%A8%E9%87%8D%E5%A4%8D%E5%85%83%E7%B4%A0/" class="post-meta-item leancloud_visitors" data-flag-title="数组 - 是否存在重复元素" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -1081,8 +745,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/" itemprop="commentCount"></span>
+    <a title="valine" href="/2022/01/14/%E6%95%B0%E7%BB%84-%E6%98%AF%E5%90%A6%E5%AD%98%E5%9C%A8%E9%87%8D%E5%A4%8D%E5%85%83%E7%B4%A0/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/14/%E6%95%B0%E7%BB%84-%E6%98%AF%E5%90%A6%E5%AD%98%E5%9C%A8%E9%87%8D%E5%A4%8D%E5%85%83%E7%B4%A0/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -1097,13 +761,201 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="名词说明"><a href="#名词说明" class="headerlink" title="名词说明"></a>名词说明</h1><h2 id="MYSQL驱动"><a href="#MYSQL驱动" class="headerlink" title="MYSQL驱动"></a>MYSQL驱动</h2><p>在底层跟数据库建立网络连接</p>
-<h2 id="系统连接池"><a href="#系统连接池" class="headerlink" title="系统连接池"></a>系统连接池</h2><p>建立数据库连接是一个非常耗时的操作，而实际业务中往往会有很多请求去访问数据库，所以要使用一个数据库连接池来维护多个数据库连接。线程使用完连接后不用销毁，直接放回连接池以便后续使用。</p>
-<h2 id="MYSQL连接池"><a href="#MYSQL连接池" class="headerlink" title="MYSQL连接池"></a>MYSQL连接池</h2><p>维护了与系统之间的多个数据库连接。除此之外，系统每次与MYSQL建立连接的时候，还会进行账户信息验证，库表权限验证。</p>
-<h2 id="SQL接口"><a href="#SQL接口" class="headerlink" title="SQL接口"></a>SQL接口</h2><p>MYSQL内部提供的一个组件，负责执行线程传递过来的SQL语句</p>
+          <h1 id="存在重复元素"><a href="#存在重复元素" class="headerlink" title="存在重复元素"></a>存在重复元素</h1><p>给定一个整数数组，判断是否存在重复元素。</p>
+<p>如果存在一值在数组中出现至少两次，函数返回 true 。如果数组中每个元素都不相同，则返回 false 。</p>
+<p>示例 1:</p>
+<p>输入: [1,2,3,1]<br>输出: true<br>示例 2:</p>
+<p>输入: [1,2,3,4]<br>输出: false<br>示例 3:</p>
+<p>输入: [1,1,1,3,3,4,3,2,4,2]<br>输出: true</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">containsDuplicate</span><span class="params">(<span class="keyword">int</span>[] nums)</span> </span>&#123;</span><br><span class="line">        Set&lt;Integer&gt; set = <span class="keyword">new</span> HashSet&lt;&gt;();</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> num : nums) &#123;</span><br><span class="line">            <span class="comment">//因为集合set中不能有重复的元素，如果有重复的</span></span><br><span class="line">            <span class="comment">//元素添加，就会添加失败</span></span><br><span class="line">            <span class="keyword">if</span> (!set.add(num))</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/01/14/%E6%95%B0%E7%BB%84-%E5%88%A0%E9%99%A4%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%88%A0%E9%99%A4%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9/" class="post-title-link" itemprop="url">数组 - 删除排序数组中的重复项</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-01-14 10:36:00 / 修改时间：10:54:53" itemprop="dateCreated datePublished" datetime="2022-01-14T10:36:00+08:00">2022-01-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%B0%8F%E6%8A%84/" itemprop="url" rel="index"><span itemprop="name">算法小抄</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%88%A0%E9%99%A4%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9/" class="post-meta-item leancloud_visitors" data-flag-title="数组 - 删除排序数组中的重复项" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%88%A0%E9%99%A4%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/01/14/%E6%95%B0%E7%BB%84-%E5%88%A0%E9%99%A4%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="删除排序数组中的重复项"><a href="#删除排序数组中的重复项" class="headerlink" title="删除排序数组中的重复项"></a>删除排序数组中的重复项</h1><p>给你一个有序数组 nums ，请你 原地 删除重复出现的元素，使每个元素 只出现一次 ，返回删除后数组的新长度。</p>
+<p>不要使用额外的数组空间，你必须在 原地 修改输入数组 并在使用 O(1) 额外空间的条件下完成。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">removeDuplicates</span><span class="params">(<span class="keyword">int</span>[] nums)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (nums.length == <span class="number">0</span>) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">int</span> index = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; nums.length; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span> (nums[index6] != nums[i]) &#123;</span><br><span class="line">                index ++;</span><br><span class="line">                nums[index] = nums[i];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> index +<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2021/09/30/Spring-Boot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/09/30/Spring-Boot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D/" class="post-title-link" itemprop="url">Spring Boot自动装配</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-09-30 10:07:00 / 修改时间：14:31:30" itemprop="dateCreated datePublished" datetime="2021-09-30T10:07:00+08:00">2021-09-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/09/30/Spring-Boot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D/" class="post-meta-item leancloud_visitors" data-flag-title="Spring Boot自动装配" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/09/30/Spring-Boot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/09/30/Spring-Boot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>转载自: <a target="_blank" rel="noopener" href="https://mrbird.cc/deepin-springboot-autoconfig.html">https://mrbird.cc/deepin-springboot-autoconfig.html</a></p>
+<h2 id="模式注解"><a href="#模式注解" class="headerlink" title="模式注解"></a>模式注解</h2><p>Stereotype Annotation俗称为模式注解，Spring中常见的模式注解有@Service，@Repository，@Controller等，它们都“派生”自@Component注解。我们都知道，凡是被@Component标注的类都会被Spring扫描并纳入到IOC容器中，那么由@Component派生的注解所标注的类也会被扫描到IOC容器中。下面我们主要通过自定义模式注解来了解@Component的“派生性”和“层次性”。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/08/25/MySql-%E5%9F%BA%E7%A1%80/#more" rel="contents">
+              <a class="btn" href="/2021/09/30/Spring-Boot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -1130,7 +982,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pdyun.cc/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/VX.png">
@@ -1144,7 +996,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/" class="post-title-link" itemprop="url">MySql 8.0新特性</a>
+            <a href="/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/" class="post-title-link" itemprop="url">Mysql 数据库事务隔离级别</a>
         </h2>
 
         <div class="post-meta">
@@ -1154,14 +1006,14 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2021-08-23 11:56:00" itemprop="dateCreated datePublished" datetime="2021-08-23T11:56:00+08:00">2021-08-23</time>
+              <time title="创建时间：2021-08-27 11:03:00" itemprop="dateCreated datePublished" datetime="2021-08-27T11:03:00+08:00">2021-08-27</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-08-27 11:10:59" itemprop="dateModified" datetime="2021-08-27T11:10:59+08:00">2021-08-27</time>
+                <time title="修改时间：2021-08-30 10:46:09" itemprop="dateModified" datetime="2021-08-30T10:46:09+08:00">2021-08-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1174,7 +1026,7 @@
             </span>
 
           
-            <span id="/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 8.0新特性" title="阅读次数">
+            <span id="/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/" class="post-meta-item leancloud_visitors" data-flag-title="Mysql 数据库事务隔离级别" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -1189,8 +1041,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/" itemprop="commentCount"></span>
+    <a title="valine" href="/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -1205,16 +1057,129 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="MySql-8-0新特性"><a href="#MySql-8-0新特性" class="headerlink" title="MySql 8.0新特性"></a><strong>MySql 8.0新特性</strong></h1><p>MySQL从5.7一跃直接到8.0，这其中的缘由，咱就不关心那么多了，有兴趣的朋友自行百度，本次的版本更新，在功能上主要有以下6点：</p>
-<p>　　<strong>账户与安全</strong></p>
-<p>　　<strong>优化器索引</strong></p>
-<p>　　<strong>通用表表达式</strong></p>
-<p>　　<strong>窗口函数</strong></p>
-<p>　　<strong>InnoDB 增强</strong></p>
-<p>　　<strong>JSON 增强</strong></p>
+          <h2 id="Mysql-——-通过例子理解事务的4种隔离级别"><a href="#Mysql-——-通过例子理解事务的4种隔离级别" class="headerlink" title="[Mysql] —— 通过例子理解事务的4种隔离级别"></a>[Mysql] —— 通过例子理解事务的4种隔离级别</h2><blockquote>
+<p>第1级别：Read Uncommitted(读取未提交内容)</p>
+</blockquote>
+<blockquote>
+<p>第2级别：Read Committed(读取提交内容)</p>
+</blockquote>
+<blockquote>
+<p>第3级别：Repeatable Read(可重读)</p>
+</blockquote>
+<blockquote>
+<p>第4级别：Serializable(可串行化)</p>
+</blockquote>
+<p><strong>SQL标准定义了4种隔离级别，包括了一些具体规则，用来限定事务内外的哪些改变是可见的，哪些是不可见的。</strong></p>
+<p><strong>低级别的隔离级一般支持更高的并发处理，并拥有更低的系统开销。</strong></p>
+<p><strong>首先，我们使用 test 数据库，新建 tx 表，并且如图所示打开两个窗口来操作同一个数据库：</strong></p>
+<h2 id=""><a href="#" class="headerlink" title=""></a><img src="/images/img-68.png"></h2><h4 id="第1级别：Read-Uncommitted-读取未提交内容"><a href="#第1级别：Read-Uncommitted-读取未提交内容" class="headerlink" title="第1级别：Read Uncommitted(读取未提交内容)"></a>第1级别：Read Uncommitted(读取未提交内容)</h4><p>(1)所有事务都可以看到其他未提交事务的执行结果</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/08/23/MySQL8-0%E6%96%B0%E7%89%B9%E6%80%A7/#more" rel="contents">
+              <a class="btn" href="/2021/08/27/Mysql-%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/" class="post-title-link" itemprop="url">MySql 执行计划</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-25 22:00:18" itemprop="dateCreated datePublished" datetime="2021-08-25T22:00:18+08:00">2021-08-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-08-26 13:53:46" itemprop="dateModified" datetime="2021-08-26T13:53:46+08:00">2021-08-26</time>
+              </span>
+
+          
+            <span id="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/" class="post-meta-item leancloud_visitors" data-flag-title="MySql 执行计划" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="执行计划类型"><a href="#执行计划类型" class="headerlink" title="执行计划类型"></a>执行计划类型</h1><h2 id="const"><a href="#const" class="headerlink" title="const"></a>const</h2><p>直接通过聚簇索引或者二级索引+聚簇索引回源，查询到想要的数据。这种根据索引可以直接快速查询到数据的过程，在执行计划里称之为<strong>const</strong>。<br><font color="red">二级索引必须是unique，才是const。否则就是ref</font></p>
+<h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><p>一般走索引都是ref，如果是组合索引，则要求查询条件必须是从索引最左侧开始连续多列都是等值比较。    </p>
+<h2 id="range"><a href="#range" class="headerlink" title="range"></a>range</h2><p>对索引列使用范围查询。</p>
+<h2 id="index"><a href="#index" class="headerlink" title="index"></a>index</h2><p>只需要遍历二级索引就可以拿到想要的数据，而不需要回源到聚簇索引的访问方式。</p>
+<ul>
+<li>索引：  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">idx(S21,S22,S23,S24)</span><br></pre></td></tr></table></figure>
+SQL：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT S21,S22,S23 FROM TABLE WHERE S22 = &#x27;X&#x27; AND S23 = &#x27;Z&#x27;; </span><br></pre></td></tr></table></figure>
+  第一反应：这个SQL无法直接从联合索引树的根节点进行二分查找。    基于上面的索引以及SQL，可以直接遍历联合索引树的叶子节点，找到所需要的数据，不需要再回源到聚簇索引进行二次查询，这种方式就是使用的index访问。    虽然遍历了叶子节点，但是叶子节点内容少。也比回表查询快。</li>
+</ul>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/08/25/MySql-%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -1240,7 +1205,7 @@
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/4/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/4/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1308,20 +1273,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-count">51</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-count">5</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-count">20</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -1346,7 +1311,7 @@
     <h3 class="widget-title">标签云</h3>
     <div id="myCanvasContainer" class="widget tagcloud">
         <canvas width="250" height="250" id="resCanvas" style="width=100%">
-            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">5</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SpringBoot/" rel="tag">SpringBoot</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8B%E5%8A%A1/" rel="tag">事务</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E5%A0%86/" rel="tag">二叉堆</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E6%A0%91/" rel="tag">二叉树</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BD%8D%E8%BF%90%E7%AE%97/" rel="tag">位运算</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%88%9B%E5%BB%BA%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">创建型设计模式</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8E%92%E5%BA%8F/" rel="tag">排序</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E7%BB%84/" rel="tag">数组</a><span class="tag-list-count">8</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6/" rel="tag">自定义插件</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%93%BE%E8%A1%A8/" rel="tag">链表</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%98%9F%E5%88%97/" rel="tag">队列</a><span class="tag-list-count">1</span></li></ul>
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SpringBoot/" rel="tag">SpringBoot</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8B%E5%8A%A1/" rel="tag">事务</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E5%A0%86/" rel="tag">二叉堆</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E6%A0%91/" rel="tag">二叉树</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BD%8D%E8%BF%90%E7%AE%97/" rel="tag">位运算</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%88%9B%E5%BB%BA%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">创建型设计模式</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag">并发编程</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8E%92%E5%BA%8F/" rel="tag">排序</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%92%E4%BB%B6/" rel="tag">插件</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E7%BB%84/" rel="tag">数组</a><span class="tag-list-count">8</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BB%93%E6%9E%84%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">结构型设计模式</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BC%93%E5%AD%98/" rel="tag">缓存</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%A1%8C%E4%B8%BA%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">行为型设计模式</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%93%BE%E8%A1%A8/" rel="tag">链表</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%98%9F%E5%88%97/" rel="tag">队列</a><span class="tag-list-count">1</span></li></ul>
         </canvas>
     </div>
 </div>

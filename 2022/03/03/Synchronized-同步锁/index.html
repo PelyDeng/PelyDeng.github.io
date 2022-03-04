@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<!-- 樱花特效 -->
+  
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+  <link rel="mask-icon" href="/images/favicon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="一、并发编程带来的安全性挑战之同步锁如果多个线程在做同一件事情的时候。  原子性 Synchronized ， AtomicXXX、 Lock、 可见性 Synchronized ， volatile 有序性 Synchronized ， volatile  原子性问题在下面的案例中，演示了两个线程分别去去调用 demo.incr方法来对 i 这个变量进行叠加，预期结果 应该是20000，但是实际">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Synchronized 同步锁">
+<meta property="og:url" content="https://pdyun.cc/2022/03/03/Synchronized-%E5%90%8C%E6%AD%A5%E9%94%81/index.html">
+<meta property="og:site_name" content="牧场小站">
+<meta property="og:description" content="一、并发编程带来的安全性挑战之同步锁如果多个线程在做同一件事情的时候。  原子性 Synchronized ， AtomicXXX、 Lock、 可见性 Synchronized ， volatile 有序性 Synchronized ， volatile  原子性问题在下面的案例中，演示了两个线程分别去去调用 demo.incr方法来对 i 这个变量进行叠加，预期结果 应该是20000，但是实际">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pdyun.cc/images/img-131.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-132.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-133.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-143.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-134.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-135.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-136.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-137.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-138.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-139.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-140.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-141.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-142.png">
+<meta property="article:published_time" content="2022-03-03T15:38:00.000Z">
+<meta property="article:modified_time" content="2022-03-03T16:16:51.391Z">
+<meta property="article:author" content="Peilin Deng">
+<meta property="article:tag" content="并发编程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pdyun.cc/images/img-131.png">
+
+<link rel="canonical" href="https://pdyun.cc/2022/03/03/Synchronized-%E5%90%8C%E6%AD%A5%E9%94%81/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  
+  
+
+
+  <title>Synchronized 同步锁 | 牧场小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">牧场小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/03/03/Synchronized-%E5%90%8C%E6%AD%A5%E9%94%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Synchronized 同步锁
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-03-03 23:38:00" itemprop="dateCreated datePublished" datetime="2022-03-03T23:38:00+08:00">2022-03-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-04 00:16:51" itemprop="dateModified" datetime="2022-03-04T00:16:51+08:00">2022-03-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2022/03/03/Synchronized-%E5%90%8C%E6%AD%A5%E9%94%81/" class="post-meta-item leancloud_visitors" data-flag-title="Synchronized 同步锁" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2022/03/03/Synchronized-%E5%90%8C%E6%AD%A5%E9%94%81/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/03/03/Synchronized-%E5%90%8C%E6%AD%A5%E9%94%81/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="一、并发编程带来的安全性挑战之同步锁"><a href="#一、并发编程带来的安全性挑战之同步锁" class="headerlink" title="一、并发编程带来的安全性挑战之同步锁"></a>一、并发编程带来的安全性挑战之同步锁</h1><p>如果多个线程在做同一件事情的时候。</p>
+<ul>
+<li>原子性 Synchronized ， AtomicXXX、 Lock、</li>
+<li>可见性 Synchronized ， volatile</li>
+<li>有序性 Synchronized ， volatile</li>
+</ul>
+<h2 id="原子性问题"><a href="#原子性问题" class="headerlink" title="原子性问题"></a>原子性问题</h2><p>在下面的案例中，演示了两个线程分别去去调用 demo.incr方法来对 i 这个变量进行叠加，预期结果 应该是20000，但是实际结果却是小于等于20000的值。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Demo</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i = <span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">incr</span><span class="params">()</span></span>&#123;</span><br><span class="line">        i++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Demo demo = <span class="keyword">new</span> Demo();</span><br><span class="line">        Thread[] threads=<span class="keyword">new</span> Thread[<span class="number">2</span>];</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>;j&lt;<span class="number">2</span>;j++) &#123;</span><br><span class="line">            threads[j]=<span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">                <span class="comment">// 创建两个线程</span></span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> k=<span class="number">0</span>;k&lt;<span class="number">10000</span>;k++) &#123;</span><br><span class="line">                    <span class="comment">// 每个线程跑10000次</span></span><br><span class="line">                    demo.incr();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            );</span><br><span class="line">            threads[j].start();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            threads[<span class="number">0</span>].join();</span><br><span class="line">            threads[<span class="number">1</span>].join();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        System.out.println(demo.i);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="问题的原因"><a href="#问题的原因" class="headerlink" title="问题的原因"></a>问题的原因</h2><p>这个就是典型的线程安全问题中原子性问题的体现。那什么是原子性呢？<br>在上面这段代码中，count++是属于Java高级语言中的编程指令，而这些指令最终可能会有多条CPU指 令来组成，而count++最终会生成3条指令，通过 javap -v xxx.class 查看字节码指令如下。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">incr</span><span class="params">()</span>V</span></span><br><span class="line"><span class="function">L0</span></span><br><span class="line"><span class="function">LINENUMBER 13 L0</span></span><br><span class="line"><span class="function">ALOAD 0</span></span><br><span class="line"><span class="function">DUP</span></span><br><span class="line"><span class="function"><span class="comment">// 访问变量i</span></span></span><br><span class="line"><span class="function"><span class="comment">// 将整形常量1放入操作数栈</span></span></span><br><span class="line"><span class="function"><span class="comment">// 把操作数栈中的常量1出栈并相加，将相加的结</span></span></span><br><span class="line"><span class="function">果放入操作数栈</span></span><br><span class="line"><span class="function">PUTFIELD com/gupaoedu/pb/Demo.i : I   <span class="comment">// 访问类字段（类变量） ，复制给Demo.i这个变</span></span></span><br><span class="line"><span class="function">量</span></span><br></pre></td></tr></table></figure>
+
+<p>这三个操作，如果要满足原子性，那么就需要保证某个线程在执行这个指令时，不允许其他线程干扰，然后实际上，确实会存在这个问题。</p>
+<h2 id="图解问题本质"><a href="#图解问题本质" class="headerlink" title="图解问题本质"></a>图解问题本质</h2><p>前面我们说过，一个CPU核心在同一时刻只能执行一个线程，如果线程数量远远大于CPU核心数，就会 发生线程的切换，这个切换动作可以发生在任何一条CPU指令执行完之前。</p>
+<p>对于 i++这三个cpu指令来说，如果线程A在执行指令1之后，做了线程切换，假设切换到线程B，线程B 同样执行CPU指令，执行的顺序如下图所示。就会导致最终的结果是1，而不是2.</p>
+<p><img src="/images/img-131.png"></p>
+<p>这就是在多线程环境下，存在的原子性问题，那么，怎么解决这个问题呢？</p>
+<p>大家认真观察上面这个图，表面上是多个线程对于同一个变量的操作，实际上是count++这行代码，它 不是原子的。所以才导致在多线程环境下出现这样一个问题。</p>
+<p>也就是说，我们只需要保证，count++这个指令在运行期间，在同一时刻只能由一个线程来访问，就可以解决问题。这就需要引出到今天的课程内容，同步锁Synchronized</p>
+<h2 id="Synchronized的基本应用"><a href="#Synchronized的基本应用" class="headerlink" title="Synchronized的基本应用"></a>Synchronized的基本应用</h2><p>synchronized有三种方式来加锁，不同的修饰类型，代表锁的控制粒度：</p>
+<ol>
+<li>修饰实例方法，作用于当前实例加锁，进入同步代码前要获得当前实例的锁</li>
+<li>静态方法，作用于当前类对象加锁，进入同步代码前要获得当前类对象的锁</li>
+<li>修饰代码块，指定加锁对象，对给定对象加锁，进入同步代码库前要获得给定对象的锁。</li>
+</ol>
+<h2 id="锁的实现模型理解"><a href="#锁的实现模型理解" class="headerlink" title="锁的实现模型理解"></a>锁的实现模型理解</h2><p>Synchronized到底帮我们做了什么，为什么能够解决原子性呢？</p>
+<p>在没有加锁之前，多个线程去调用incr()方法时，没有任何限制，都是可以同时拿到这个i的值进行++操 作，但是当加了Synchronized锁之后，线程A和B就由并行执行变成了串行执行。</p>
+<p><img src="/images/img-132.png"></p>
+<h1 id="二、Synchronized的原理"><a href="#二、Synchronized的原理" class="headerlink" title="二、Synchronized的原理"></a>二、Synchronized的原理</h1><p>Synchronized 是如何实现锁的，以及锁的信息是存储在哪里？ 就拿上面分析的图来说，线程A抢到锁了，线程B怎么知道当前锁被抢占了，这个地方一定会有一个标记来实现，而且这个标记一定是存储在某个地方。</p>
+<h2 id="Markword对象头"><a href="#Markword对象头" class="headerlink" title="Markword对象头"></a>Markword对象头</h2><p>这就要引出Markword对象头这个概念了，它是对象头的意思，简单理解，就是一个对象，在JVM内存中的布局或者存储的形式。</p>
+<p><strong>jdk8u: markOop.hpp</strong></p>
+<p>在Hotspot虚拟机中，对象在内存中的存储布局，可以分为三个区域: **对象头(Header)、实例数据(Instance Data)、对齐填充(Padding)**。</p>
+<p><img src="/images/img-133.png"></p>
+<ul>
+<li><p>mark-word：对象标记字段占4个字节，用于存储一些列的标记位，比如：哈希值、轻量级锁的标 记位，偏向锁标记位、分代年龄等。</p>
+</li>
+<li><p>Klass Pointer： Class对象的类型指针，Jdk1.8默认开启指针压缩后为4字节，关闭指针压缩（ -XX:-UseCompressedOops ）后，长度为8字节。其指向的位置是对象对应的Class对象（其对应的 元数据对象）的内存地址。</p>
+</li>
+<li><p>对象实际数据：包括对象的所有成员变量，大小由各个成员变量决定，比如：  byte占1个字节8比特位、int占4个字节32比特位。</p>
+</li>
+<li><p>对齐：最后这段空间补全并非必须，仅仅为了起到占位符的作用。由于HotSpot虚拟机的内存管理 系统要求对象起始地址必须是8字节的整数倍，所以对象头正好是8字节的倍数。因此当对象实例   数据部分没有对齐的话，就需要通过对齐填充来补全。</p>
+</li>
+</ul>
+<p><img src="/images/img-143.png"></p>
+<h2 id="通过ClassLayout打印对象头"><a href="#通过ClassLayout打印对象头" class="headerlink" title="通过ClassLayout打印对象头"></a>通过ClassLayout打印对象头</h2><p>为了让大家更加直观的看到对象的存储和实现，我们可以使用JOL查看对象的内存布局。</p>
+<ul>
+<li><p>添加Jol依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.openjdk.jol<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>jol-core<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">version</span>&gt;</span>0.9<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure></li>
+<li><p>编写测试代码，在不加锁的情况下，对象头的信息打印</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Demo</span> </span>&#123;</span><br><span class="line">    Object o=<span class="keyword">new</span> Object();</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Demo demo=<span class="keyword">new</span> Demo();</span><br><span class="line">        <span class="comment">//o这个对象，在内存中是如何存储和布局的。</span></span><br><span class="line">        System.out.println(ClassLayout.parseInstance(demo).toPrintable());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><p>输出内容如下</p>
+<p>  <img src="/images/img-134.png"></p>
+</li>
+</ul>
+<h1 id="三、关于Synchronized锁的升级"><a href="#三、关于Synchronized锁的升级" class="headerlink" title="三、关于Synchronized锁的升级"></a>三、关于Synchronized锁的升级</h1><p>Jdk1.6对锁的实现引入了大量的优化，如自旋锁、适应性自旋锁、锁消除、锁粗化、偏向锁、轻量级锁等技术来减少锁操作的开销。</p>
+<p>锁主要存在四中状态，依次是：无锁状态、偏向锁状态、轻量级锁状态、重量级锁状态，他们会随着竞争的激烈而逐渐升级。</p>
+<p>这么设计的目的，其实是为了减少重量级锁带来的性能开销，尽可能的在无锁状态下解决线程并发问题，其中偏向锁和轻量级锁的底层实现是基于自旋锁，它相对于重量级锁来说，算是一种无锁的实现。</p>
+<p><img src="/images/img-135.png"></p>
+<ul>
+<li>默认情况下是偏向锁是开启状态，偏向的线程ID是0，偏向一个Anonymous BiasedLock</li>
+<li>如果有线程去抢占锁，那么这个时候线程会先去抢占偏向锁，也就是把markword的线程ID改为当 前抢占锁的线程ID的过程</li>
+<li>如果有线程竞争，这个时候会撤销偏向锁，升级到轻量级锁，线程在自己的线程栈帧中会创建一个 LockRecord ，用CAS操作把markword设置为指向自己这个线程的LR的指针，设置成功后表示抢    占到锁。</li>
+<li>如果竞争加剧，比如有线程超过10次自旋（-XX:PreBlockSpin参数配置），或者自旋线程数超过   CPU核心数的一般，在1.6之后，加入了自适应自旋Adapative Self Spinning. JVM会根据上次竞争 的情况来自动控制自旋的时间。</li>
+</ul>
+<p>  升级到重量级锁，向操作系统申请资源，   Linux Mutex ，然后线程被挂起进入到等待队列。</p>
+<h2 id="轻量级锁的获取及原理"><a href="#轻量级锁的获取及原理" class="headerlink" title="轻量级锁的获取及原理"></a>轻量级锁的获取及原理</h2><p>接下来，我们通过下面的例子来演示一下，通过加锁之后继续打印对象布局信息，来关注对象头里面的变化。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Demo</span> </span>&#123;</span><br><span class="line">    Object o=<span class="keyword">new</span> Object();</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Demo demo=<span class="keyword">new</span> Demo();</span><br><span class="line">        <span class="comment">//o这个对象，在内存中是如何存储和布局的。</span></span><br><span class="line">        System.out.println(ClassLayout.parseInstance(demo).toPrintable());</span><br><span class="line">        <span class="keyword">synchronized</span> (demo)&#123;</span><br><span class="line">            System.out.println(ClassLayout.parseInstance(demo).toPrintable());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>得到的对象布局信息如下</p>
+<p><img src="/images/img-136.png"><br><img src="/images/img-137.png"></p>
+<p>这里很多同学会有疑惑，不是说锁的升级是基于线程竞争情况，来实现从偏向锁到轻量级锁再 到重量级锁的升级的吗？可是为什么这里明明没有竞争，它的锁的标记是轻量级锁呢？</p>
+<h2 id="偏向锁的获取及原理"><a href="#偏向锁的获取及原理" class="headerlink" title="偏向锁的获取及原理"></a>偏向锁的获取及原理</h2><p>默认情况下，偏向锁的开启是有个延迟，默认是4秒。为什么这么设计呢？</p>
+<p>因为JVM虚拟机自己有一些默认启动的线程，这些线程里面有很多的Synchronized代码，这些 Synchronized 代码启动的时候就会触发竞争，如果使用偏向锁，就会造成偏向锁不断的进行锁的升级和撤销，效率较低。</p>
+<p>通过下面这个JVM参数可以讲延迟设置为0.</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:BiasedLockingStartupDelay=0</span><br></pre></td></tr></table></figure>
+
+<p>再次运行下面的代码。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Demo</span> </span>&#123;</span><br><span class="line">    Object o=<span class="keyword">new</span> Object();</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Demo demo=<span class="keyword">new</span> Demo();</span><br><span class="line">        <span class="comment">//o这个对象，在内存中是如何存储和布局的。</span></span><br><span class="line">        System.out.println(ClassLayout.parseInstance(demo).toPrintable());</span><br><span class="line">        <span class="keyword">synchronized</span> (demo)&#123;</span><br><span class="line">            System.out.println(ClassLayout.parseInstance(demo).toPrintable());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>得到如下的对象布局，可以看到对象头中的的高位第一个字节最后三位数为**[101]**，表示当前为偏向锁状态。</p>
+<blockquote>
+<p>这里的第一个对象和第二个对象的锁状态都是101，是因为偏向锁打开状态下，默认会有配置匿名的对象获得偏向锁。</p>
+</blockquote>
+<p><img src="/images/img-138.png"><br><img src="/images/img-139.png"></p>
+<h2 id="重量级锁的获取"><a href="#重量级锁的获取" class="headerlink" title="重量级锁的获取"></a>重量级锁的获取</h2><p>在竞争比较激烈的情况下，线程一直无法获得锁的时候，就会升级到重量级锁。</p>
+<p>仔细观察下面的案例，通过两个线程来模拟竞争的场景。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    Demo testDemo = <span class="keyword">new</span> Demo();</span><br><span class="line">    Thread t1 = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">        <span class="keyword">synchronized</span> (testDemo)&#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;t1 lock ing&quot;</span>);</span><br><span class="line">            System.out.println(ClassLayout.parseInstance(testDemo).toPrintable());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    );</span><br><span class="line">    t1.start();</span><br><span class="line">    <span class="keyword">synchronized</span> (testDemo)&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;main lock ing&quot;</span>);</span><br><span class="line">        System.out.println(ClassLayout.parseInstance(testDemo).toPrintable());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/img-140.png"><br><img src="/images/img-141.png"></p>
+<h1 id="四、CAS"><a href="#四、CAS" class="headerlink" title="四、CAS"></a>四、CAS</h1><p>CAS这个在Synchronized底层用得非常多，它的全称有两种</p>
+<ul>
+<li>Compare and swap</li>
+<li>Compare and exchange</li>
+</ul>
+<p>就是比较并交换的意思。它可以保证在多线程环境下对于一个变量修改的原子性。<br>CAS的原理很简单，包含三个值 <strong>当前内存值(V)、预期原来的值(E)以及期待更新的值(N)。</strong></p>
+<p><img src="/images/img-142.png"></p>
+
+    </div>
+
+    
+    
+    
+<div>
+  
+    <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+  
+</div>
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Peilin Deng
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pdyun.cc/2022/03/03/Synchronized-%E5%90%8C%E6%AD%A5%E9%94%81/" title="Synchronized 同步锁">https://pdyun.cc/2022/03/03/Synchronized-同步锁/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag"><i class="fa fa-tag"></i> 并发编程</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/03/03/%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86/" rel="prev" title="多线程基本原理">
+      <i class="fa fa-chevron-left"></i> 多线程基本原理
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E5%B8%A6%E6%9D%A5%E7%9A%84%E5%AE%89%E5%85%A8%E6%80%A7%E6%8C%91%E6%88%98%E4%B9%8B%E5%90%8C%E6%AD%A5%E9%94%81"><span class="nav-text">一、并发编程带来的安全性挑战之同步锁</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E5%AD%90%E6%80%A7%E9%97%AE%E9%A2%98"><span class="nav-text">原子性问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="nav-text">问题的原因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%BE%E8%A7%A3%E9%97%AE%E9%A2%98%E6%9C%AC%E8%B4%A8"><span class="nav-text">图解问题本质</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Synchronized%E7%9A%84%E5%9F%BA%E6%9C%AC%E5%BA%94%E7%94%A8"><span class="nav-text">Synchronized的基本应用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%94%81%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%A8%A1%E5%9E%8B%E7%90%86%E8%A7%A3"><span class="nav-text">锁的实现模型理解</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Synchronized%E7%9A%84%E5%8E%9F%E7%90%86"><span class="nav-text">二、Synchronized的原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Markword%E5%AF%B9%E8%B1%A1%E5%A4%B4"><span class="nav-text">Markword对象头</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9A%E8%BF%87ClassLayout%E6%89%93%E5%8D%B0%E5%AF%B9%E8%B1%A1%E5%A4%B4"><span class="nav-text">通过ClassLayout打印对象头</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E5%85%B3%E4%BA%8ESynchronized%E9%94%81%E7%9A%84%E5%8D%87%E7%BA%A7"><span class="nav-text">三、关于Synchronized锁的升级</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BD%BB%E9%87%8F%E7%BA%A7%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96%E5%8F%8A%E5%8E%9F%E7%90%86"><span class="nav-text">轻量级锁的获取及原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%81%8F%E5%90%91%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96%E5%8F%8A%E5%8E%9F%E7%90%86"><span class="nav-text">偏向锁的获取及原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%87%8D%E9%87%8F%E7%BA%A7%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96"><span class="nav-text">重量级锁的获取</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%9B%E3%80%81CAS"><span class="nav-text">四、CAS</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Peilin Deng"
+      src="/images/VX.png">
+  <p class="site-author-name" itemprop="name">Peilin Deng</p>
+  <div class="site-description" itemprop="description">IT 小站， 记录美好码园生活</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">51</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://www.cnblogs.com/dpl9963" title="博客园 → https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dpl9963" rel="noopener" target="_blank"><i class=" fa-fw"></i>博客园</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/PelyDeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;PelyDeng" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:544010165@qq.com" title="E-Mail → mailto:544010165@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+<script type="text/javascript" charset="utf-8" src="/js/tagcloud.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/tagcanvas.js"></script>
+<div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div id="myCanvasContainer" class="widget tagcloud">
+        <canvas width="250" height="250" id="resCanvas" style="width=100%">
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SpringBoot/" rel="tag">SpringBoot</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8B%E5%8A%A1/" rel="tag">事务</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E5%A0%86/" rel="tag">二叉堆</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E6%A0%91/" rel="tag">二叉树</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BD%8D%E8%BF%90%E7%AE%97/" rel="tag">位运算</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%88%9B%E5%BB%BA%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">创建型设计模式</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag">并发编程</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8E%92%E5%BA%8F/" rel="tag">排序</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%92%E4%BB%B6/" rel="tag">插件</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E7%BB%84/" rel="tag">数组</a><span class="tag-list-count">8</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BB%93%E6%9E%84%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">结构型设计模式</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BC%93%E5%AD%98/" rel="tag">缓存</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%A1%8C%E4%B8%BA%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">行为型设计模式</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%93%BE%E8%A1%A8/" rel="tag">链表</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%98%9F%E5%88%97/" rel="tag">队列</a><span class="tag-list-count">1</span></li></ul>
+        </canvas>
+    </div>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peilin Deng</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : true,
+      notify     : true,
+      appId      : 'HnJ9Yibfx60VyyJ8xucUkOS5-gzGzoHsz',
+      appKey     : 'tMGT7R2fSxRbTrOkaf3DfEg2',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+<script src="/live2d_models/packages/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2d_models/packages/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2d_models/packages/assets/assets/koharu.model.json"},"display":{"position":"left","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body>
+</html>
