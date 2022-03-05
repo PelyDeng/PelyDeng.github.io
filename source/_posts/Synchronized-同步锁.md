@@ -1,9 +1,12 @@
 title: Synchronized 同步锁
 author: Peilin Deng
 tags:
+  - 线程安全
+  - 锁
   - 并发编程
 categories:
   - 摘抄笔记
+  - ''
 date: 2022-03-03 23:38:00
 ---
 # 一、并发编程带来的安全性挑战之同步锁
