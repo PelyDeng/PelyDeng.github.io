@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<!-- 樱花特效 -->
+  
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+  <link rel="mask-icon" href="/images/favicon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="下图所示，在不同的CPU架构中，为了避免因为指令重排序、或者缓存一致性问题，都提供了不同的内存屏障指令。同时，在不同的操作系统中，也都会实现封装一个内存屏障的实现。 那么，我们写的Java线程，如何能够在不同的硬件、不同操作系统下，仍然能够保证线程安全性呢？这就要引出JMM（Java 内存模型），它就是为了屏蔽操作系统和硬件的差异，让一套代码在不同平台下都能达到线程安全的访问目的。  一、什么是J">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Lock 锁及原理分析">
+<meta property="og:url" content="https://pdyun.cc/2022/03/04/Lock-%E9%94%81%E5%8F%8A%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="牧场小站">
+<meta property="og:description" content="下图所示，在不同的CPU架构中，为了避免因为指令重排序、或者缓存一致性问题，都提供了不同的内存屏障指令。同时，在不同的操作系统中，也都会实现封装一个内存屏障的实现。 那么，我们写的Java线程，如何能够在不同的硬件、不同操作系统下，仍然能够保证线程安全性呢？这就要引出JMM（Java 内存模型），它就是为了屏蔽操作系统和硬件的差异，让一套代码在不同平台下都能达到线程安全的访问目的。  一、什么是J">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pdyun.cc/images/img-150.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-151.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-152.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-153.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-154.png">
+<meta property="article:published_time" content="2022-03-04T08:58:00.000Z">
+<meta property="article:modified_time" content="2022-03-05T03:26:58.696Z">
+<meta property="article:author" content="Peilin Deng">
+<meta property="article:tag" content="并发编程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pdyun.cc/images/img-150.png">
+
+<link rel="canonical" href="https://pdyun.cc/2022/03/04/Lock-%E9%94%81%E5%8F%8A%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  
+  
+
+
+  <title>Lock 锁及原理分析 | 牧场小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">牧场小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/03/04/Lock-%E9%94%81%E5%8F%8A%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Lock 锁及原理分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-03-04 16:58:00" itemprop="dateCreated datePublished" datetime="2022-03-04T16:58:00+08:00">2022-03-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-05 11:26:58" itemprop="dateModified" datetime="2022-03-05T11:26:58+08:00">2022-03-05</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2022/03/04/Lock-%E9%94%81%E5%8F%8A%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" class="post-meta-item leancloud_visitors" data-flag-title="Lock 锁及原理分析" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2022/03/04/Lock-%E9%94%81%E5%8F%8A%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/03/04/Lock-%E9%94%81%E5%8F%8A%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>下图所示，在不同的CPU架构中，为了避免因为指令重排序、或者缓存一致性问题，都提供了不同的内存屏障指令。同时，在不同的操作系统中，也都会实现封装一个内存屏障的实现。</p>
+<p>那么，我们写的Java线程，如何能够在不同的硬件、不同操作系统下，仍然能够保证线程安全性呢？这就要引出JMM（Java 内存模型），它就是为了屏蔽操作系统和硬件的差异，让一套代码在不同平台下都能达到线程安全的访问目的。</p>
+<p><img src="/images/img-150.png"></p>
+<h1 id="一、什么是JMM"><a href="#一、什么是JMM" class="headerlink" title="一、什么是JMM"></a>一、什么是JMM</h1><p>那什么是JMM呢？</p>
+<p>首先，我们都知道Java程序是运行在Java虚拟机上的，同时我们也知道，  JVM是一个跨语言跨平台的实 现，也就是Write Once、 Run Anywhere。</p>
+<p>那么JVM如何实现在不同平台上都能达到线程安全的目的呢？所以这个时候JMM出来了， <strong>Java内存模型 （Java Memory Model ,JMM）就是一种符合内存模型规范的，屏蔽了各种硬件和操作系统的访问差异的，保证了Java程序在各种平台下对内存的访问都能保证效果一致的机制及规范</strong></p>
+<p>Java内存模型规定了所有的变量都存储在主内存中，每条线程还有自己的工作内存，线程的工作内存中 保存了这个线程中用到的变量的主内存副本拷贝，线程对变量的所有操作都必须在工作内存中进行，而 不能直接读写主内存。</p>
+<p>不同的线程之间也无法直接访问对方工作内存中的变量，线程间变量的传递均需要自己的工作内存和主存之间进行数据同步进行，流程图如下：</p>
+<p><img src="/images/img-151.png"></p>
+<p>再总结一下： JMM定义了共享内存中多线程程序读写操作的行为规范：在虚拟机中把共享变量存储到内存以及从内存中取出共享变量的底层实现细节。</p>
+<p>目的是解决由于多线程通过共享内存进行通信时，存在的本地内存数据不一致、编译器会对代码指令重排序、处理器会对代码乱序执行等带来的问题</p>
+<blockquote>
+<p>本地内存是JMM的一个抽象概念，并不真实存在。它涵盖了缓存，写缓冲区，寄存器以及其他的硬件和编译器优化。</p>
+</blockquote>
+<p>实际上，如果大家认真听了前面的内容，不难发现JMM的整个模型实际上和CPU高速缓存和内存交互的模型是一致的，因为不管软件怎么设计，最终还是由硬件来执行。而这个抽象模型的意义就在于，它可以针对不同平台来保证并发场景下的可见性问题。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">OrderAccess::loadload</span><span class="params">()</span>   </span>&#123; <span class="built_in">acquire</span>(); &#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">OrderAccess::storestore</span><span class="params">()</span> </span>&#123; <span class="built_in">release</span>(); &#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">OrderAccess::loadstore</span><span class="params">()</span>  </span>&#123; <span class="built_in">acquire</span>(); &#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">OrderAccess::storeload</span><span class="params">()</span>  </span>&#123; <span class="built_in">fence</span>(); &#125;</span><br></pre></td></tr></table></figure>
+<p><strong>orderAccess_linux_x86.inline</strong></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">OrderAccess::fence</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (os::<span class="built_in">is_MP</span>()) &#123;</span><br><span class="line">		<span class="comment">// always use locked addl since mfence is sometimes expensive</span></span><br><span class="line">		<span class="meta">#<span class="meta-keyword">ifdef</span> AMD64</span></span><br><span class="line">		<span class="function">__asm__ <span class="title">volatile</span> <span class="params">(<span class="string">&quot;lock; addl $0,0(%%rsp)&quot;</span> : : : <span class="string">&quot;cc&quot;</span>, <span class="string">&quot;memory&quot;</span>)</span></span>;</span><br><span class="line">		<span class="meta"># <span class="meta-keyword">else</span></span></span><br><span class="line">		<span class="function">__asm__ <span class="title">volatile</span> <span class="params">(<span class="string">&quot;lock; addl $0,0(%%esp)&quot;</span> : : : <span class="string">&quot;cc&quot;</span>, <span class="string">&quot;memory&quot;</span>)</span></span>;</span><br><span class="line">		<span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>orderAccess_linux_sparc.inline</strong></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">OrderAccess::fence</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="function">__asm__ <span class="title">volatile</span> <span class="params">(<span class="string">&quot;membar  #StoreLoad&quot;</span> : : :)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>OrderAccess::storeload();</strong></p>
+<p><strong>ACC_VOLATILE</strong></p>
+<p><strong>bool is_volatile () const { return (_flags &amp; JVM_ACC_VOLATILE ) != 0; }</strong></p>
+<h1 id="二、总结"><a href="#二、总结" class="headerlink" title="二、总结"></a>二、总结</h1><h2 id="可见性导致的原因"><a href="#可见性导致的原因" class="headerlink" title="可见性导致的原因"></a>可见性导致的原因</h2><ol>
+<li><p>CPU的高速缓存</p>
+</li>
+<li><p>指令重排序</p>
+</li>
+</ol>
+<blockquote>
+<p>并不是所有的程序指令都会存在可见性或者指令重排序问题。</p>
+</blockquote>
+<h1 id="三、Happens-Before模型"><a href="#三、Happens-Before模型" class="headerlink" title="三、Happens-Before模型"></a>三、Happens-Before模型</h1><p>前面说了这么多，都是为了讲解清楚，到底是什么原因导致了在多线程环境下的可见性和有序性问题。</p>
+<p>并且也了解了volatile解决可见性问题的本质。</p>
+<p>那么有没有哪些情况是，不需要通过增加volatile关键字，也能保证在多线程环境下的可见性和有序性的呢？</p>
+<p>从JDK1.5开始，引入了一个happens-before的概念来阐述多个线程操作共享变量的可见性问题。所以我们可以认为在JMM中，如果一个操作执行的结果需要对另一个操作课件，那么这两个操作必须要存在happens-before关系。这两个操作可以是同一个线程，也可以是不同的线程。</p>
+<h2 id="程序顺序规则"><a href="#程序顺序规则" class="headerlink" title="程序顺序规则"></a>程序顺序规则</h2><p>一个线程中的每个操作，happens-before这个线程中的任意后续操作，可以简单认为是as-if-serial。</p>
+<p>as-if-serial的意思是，不管怎么重排序，单线程的程序的执行结果不能改变。</p>
+<ul>
+<li>处理器不能对存在依赖关系的操作进行重排序，因为重排序会改变程序的执行结果。</li>
+<li>对于没有依赖关系的指令，即便是重排序，也不会改变在单线程环境下的执行结果。</li>
+</ul>
+<p>具体来看下面这段代码，A和B允许重排序，但是C是不允许重排，因为存在依赖关系。根据as-if-serial语义，在单线程环境下， 不管怎么重排序，最终执行的结果都不会发生变化</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> a=<span class="number">2</span>; <span class="comment">//A </span></span><br><span class="line"><span class="keyword">int</span> b=<span class="number">2</span>; <span class="comment">//B </span></span><br><span class="line"><span class="keyword">int</span> c=a*b; <span class="comment">//C</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="传递性规则"><a href="#传递性规则" class="headerlink" title="传递性规则"></a>传递性规则</h2><p>仍然看下面这段代码，根据程序顺序规则可以知道，这三者之间存在一个happens-before关系。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> a=<span class="number">2</span>; <span class="comment">//A </span></span><br><span class="line"><span class="keyword">int</span> b=<span class="number">2</span>; <span class="comment">//B </span></span><br><span class="line"><span class="keyword">int</span> c=a*b; <span class="comment">//C</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>A happens-before B。</li>
+<li>B happens-before C。</li>
+<li>A happens-before C。</li>
+</ul>
+<p>这三个happens-before关系，就是根据happens-before的传递性推导出来的。很多同学这个时候又有疑惑了，不是说，A和B之间允许重排序吗？那是不是A happens-before B不一定存在，也可能是B可以重排序在A之前执行呢？</p>
+<p>没错，确实是这样，JMM不要求A一定要在B之前执行，但是他要求的是前一个操作的执行结果对后一个操作可见。这里操作A的执行结果不需要对操作B可见，并且重排序操作A和操作B后的执行结果与A happens-before B顺序执行的结果一直，这种情况下，是允许重排序的。</p>
+<h2 id="volatile变量规则"><a href="#volatile变量规则" class="headerlink" title="volatile变量规则"></a>volatile变量规则</h2><p>对于volatile修饰的变量的写操作，一定happens-before后续对于volatile变量的读操作，这个是因为volatile底层通过内存屏障机制防止了指令重排，这个规则前面已经分析得很透彻了，所以没什么问题，我们再来观察如下代码，基于前面两种规则再结合volatile规则来分析下面这个代码的执行顺序，</p>
+<p>假设两个线程A和B，分别访问writer方法和reader方法，那么它将会出现以下可见性规则。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">VolatileExample</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> a=<span class="number">0</span>;</span><br><span class="line">    <span class="keyword">volatile</span> Boolean flag=<span class="keyword">false</span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">writer</span><span class="params">()</span></span>&#123;</span><br><span class="line">        a=<span class="number">1</span>;		<span class="comment">//1</span></span><br><span class="line">        flag=<span class="keyword">true</span>;	<span class="comment">//2</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">reader</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(flag)&#123; 		<span class="comment">//3</span></span><br><span class="line">            <span class="keyword">int</span> i=a;	<span class="comment">//4</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>1 happens before 2、 3 happens before 4， 这个是程序顺序规则</li>
+<li>2 happens before 3、 是由volatile规则产生的，对一个volatile变量的读，总能看到任意线程对这个volatile变量的写入。</li>
+<li>1 happens before 4， 基于传递性规则以及volatile的内存屏障策略共同保证</li>
+</ul>
+<p>那么最终结论是，如果在线程B执行reader方法时，如果flag为true，那么意味着 i=1成立。</p>
+<p><img src="/images/img-152.png"></p>
+<blockquote>
+<p>这里有同学可能会有疑问说，你前面讲的程序顺序规则中，在单线程中，如果两个指令之间不存在依赖关系，是允许重排序的，也就是1 和 2的顺序可以重排，那么是不是意味着最终4输出的结果是0呢?</p>
+</blockquote>
+<p>这里也是因为volatile修饰的重排序规则的存在，导致1和2是不允许重排序的，在volatile重排序规则表中，如果第一操作是普通变量的读/写，第二个操作是volatile的写，那么这两个操作之间不允许重排序</p>
+<h3 id="volatile-重排序规则表"><a href="#volatile-重排序规则表" class="headerlink" title="volatile 重排序规则表"></a>volatile 重排序规则表</h3><p><img src="/images/img-153.png"></p>
+<h2 id="监视器锁规则"><a href="#监视器锁规则" class="headerlink" title="监视器锁规则"></a>监视器锁规则</h2><p>一个线程对于一个锁的释放锁操作，一定happens-before与后续线程对这个锁的加锁操作。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> x=<span class="number">10</span>;</span><br><span class="line"><span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">    <span class="comment">// 此处自动加锁</span></span><br><span class="line">    <span class="comment">// x 是共享变量 , 初始值 =10</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span>.x &lt; <span class="number">12</span>) &#123;</span><br><span class="line">        <span class="keyword">this</span>.x = <span class="number">12</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 此处自动解锁</span></span><br></pre></td></tr></table></figure>
+
+<p>假设x的初始值是10，线程A执行完代码块后，x的值会变成12，执行完成之后会释放锁。线程B进入代 码块时，能够看到线程A对x的写操作，也就是B线程能够看到x=12。</p>
+<h2 id="start规则"><a href="#start规则" class="headerlink" title="start规则"></a>start规则</h2><p>如果线程A执行操作ThreadB.start(),那么线程A的ThreadB.start()之前的操作happens-before线程B中的任意操作。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> StartDemo&#123;</span><br><span class="line">    <span class="keyword">int</span> x=<span class="number">0</span>;</span><br><span class="line">    Thread t1 = <span class="keyword">new</span> Thread(()-&gt;&#123;</span><br><span class="line">        <span class="comment">// 主线程调用 t1.start() 之前</span></span><br><span class="line">        <span class="comment">// 所有对共享变量的修改，此处皆可见</span></span><br><span class="line">        <span class="comment">// 此例中，x==10</span></span><br><span class="line">    &#125;</span><br><span class="line">    );</span><br><span class="line">    <span class="comment">// 此处对共享变量 x修改</span></span><br><span class="line">    x = <span class="number">10</span>;</span><br><span class="line">    <span class="comment">// 主线程启动子线程</span></span><br><span class="line">    t1.start();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="join规则"><a href="#join规则" class="headerlink" title="join规则"></a>join规则</h2><p>join规则，如果线程A执行操作ThreadB.join()并成功返回，那么线程B中的任意操作happens-before于 线程A从ThreadB.join()操作成功的返回。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Thread t1 = <span class="keyword">new</span> Thread(()-&gt;&#123;</span><br><span class="line">    <span class="comment">// 此处对共享变量 x 修改</span></span><br><span class="line">    x= <span class="number">100</span>;</span><br><span class="line">&#125;);</span><br><span class="line"><span class="comment">// 例如此处对共享变量修改，</span></span><br><span class="line"><span class="comment">// 则这个修改结果对线程 t1 可见</span></span><br><span class="line"><span class="comment">// 主线程启动子线程</span></span><br><span class="line">t1.start();</span><br><span class="line">t1.join()</span><br><span class="line"><span class="comment">// 子线程所有对共享变量的修改</span></span><br><span class="line"><span class="comment">// 在主线程调用 t1.join() 之后皆可见</span></span><br><span class="line"><span class="comment">// 此例中，x==100</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="四、DCL问题"><a href="#四、DCL问题" class="headerlink" title="四、DCL问题"></a>四、DCL问题</h1><p>//instance=new DCLExample();</p>
+<ul>
+<li>为对象分配内存</li>
+<li>初始化对象</li>
+<li>把内存空间的地址复制给对象的引用</li>
+</ul>
+<p>指令重排序后</p>
+<ul>
+<li>为对象分配内存</li>
+<li>把内存空间的地址复制给对象的引用</li>
+<li>初始化对象(还没有执行的时候。</li>
+</ul>
+<p>造成不完整对象</p>
+<h1 id="五、J-U-C"><a href="#五、J-U-C" class="headerlink" title="五、J.U.C"></a>五、J.U.C</h1><p>Java.util.Concurrent</p>
+<h1 id="六、Lock-gt-synchronized"><a href="#六、Lock-gt-synchronized" class="headerlink" title="六、Lock -&gt;synchronized"></a>六、Lock -&gt;synchronized</h1><p>锁是用来解决线程安全问题的</p>
+<h1 id="七、AbstractQueuedSynchronizer-AQS"><a href="#七、AbstractQueuedSynchronizer-AQS" class="headerlink" title="七、AbstractQueuedSynchronizer(AQS)"></a>七、AbstractQueuedSynchronizer(AQS)</h1><h2 id="什么是AQS"><a href="#什么是AQS" class="headerlink" title="什么是AQS"></a>什么是AQS</h2><ul>
+<li>共享锁</li>
+<li>互斥锁</li>
+</ul>
+<p>AQS 是一种抽象的队列同步器, 它是java除了synchroized之外自带的一种锁机制, 底层使用了大量的CAS进行互斥.</p>
+<h2 id="AQS原理"><a href="#AQS原理" class="headerlink" title="AQS原理"></a>AQS原理</h2><p>以ReentrantLock为例, 在我们执行lock()方法进行上锁的时候, 如果有多个线程同时访问上锁的资源, 其底层会对AQS中的共享变量state进行一个CAS操作, 该操作是具有原子性, 如果线程A通过CAS将state状态修改成功就会获取到锁, 并记录一个共享变量设为A线程独享,则线程B尝试获取锁时由于锁状态state已经发生改变不再为0, 则就会把线程B存入一个FIFO的双向链表中, 该链表主要存储的是没有获取到锁的线程, 然后将里面的线程阻塞, 等到线程A释放锁完毕之后, 再唤醒队列中等待的线程. </p>
+<p>由于AQS是自旋锁, 在等待唤醒的时候, 会不停的使用while(cas())的方式, 不停的尝试获取锁. </p>
+<h2 id="AQS中为什么采用双向链表，它和单向链表相比，有什么优势？"><a href="#AQS中为什么采用双向链表，它和单向链表相比，有什么优势？" class="headerlink" title="AQS中为什么采用双向链表，它和单向链表相比，有什么优势？"></a>AQS中为什么采用双向链表，它和单向链表相比，有什么优势？</h2><p>ASQ中使用双向链表更容易访问相邻的节点. </p>
+<h1 id="八、ReentrantLock"><a href="#八、ReentrantLock" class="headerlink" title="八、ReentrantLock"></a>八、ReentrantLock</h1><p><strong>重入锁</strong> -&gt; 互斥锁</p>
+<h2 id="ReentrantLock的实现原理"><a href="#ReentrantLock的实现原理" class="headerlink" title="ReentrantLock的实现原理"></a>ReentrantLock的实现原理</h2><p>满足线程的互斥特性</p>
+<p>意味着同一个时刻，只允许一个线程进入到加锁的代码中。 -&gt; 多线程环境下，线程的顺序访问。</p>
+<h3 id="锁的设计猜想（如果我们自己去实现）"><a href="#锁的设计猜想（如果我们自己去实现）" class="headerlink" title="锁的设计猜想（如果我们自己去实现）"></a>锁的设计猜想（如果我们自己去实现）</h3><ul>
+<li>一定会设计到锁的抢占 ， 需要有一个标记来实现互斥。 全局变量（0，1）</li>
+<li>抢占到了锁，怎么处理（不需要处理.）</li>
+<li>没抢占到锁，怎么处理<ul>
+<li>需要等待（让处于排队中的线程，如果没有抢占到锁，则直接先阻塞-&gt;释放CPU资源）。<ul>
+<li>如何让线程等待？</li>
+<li>wait/notify(线程通信的机制，无法指定唤醒某个线程)</li>
+<li>LockSupport.park/unpark（阻塞一个指定的线程，唤醒一个指定的线程）</li>
+<li>Condition</li>
+</ul>
+</li>
+<li>需要排队（允许有N个线程被阻塞，此时线程处于活跃状态）。<ul>
+<li>通过一个数据结构，把这N个排队的线程存储起来。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>抢占到锁的释放过程，如何处理<ul>
+<li>LockSupport.unpark() -&gt; 唤醒处于队列中的指定线程.\</li>
+</ul>
+</li>
+<li>锁抢占的公平性（是否允许插队）<ul>
+<li>公平</li>
+<li>非公平</li>
+</ul>
+</li>
+</ul>
+<h3 id="ReentrantLock的实现原理分析"><a href="#ReentrantLock的实现原理分析" class="headerlink" title="ReentrantLock的实现原理分析"></a>ReentrantLock的实现原理分析</h3><p><img src="/images/img-154.png"></p>
+
+    </div>
+
+    
+    
+    
+<div>
+  
+    <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+  
+</div>
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Peilin Deng
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pdyun.cc/2022/03/04/Lock-%E9%94%81%E5%8F%8A%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" title="Lock 锁及原理分析">https://pdyun.cc/2022/03/04/Lock-锁及原理分析/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag"><i class="fa fa-tag"></i> 并发编程</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/03/04/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%8F%AF%E8%A7%81%E6%80%A7%E9%97%AE%E9%A2%98/" rel="prev" title="线程安全可见性问题">
+      <i class="fa fa-chevron-left"></i> 线程安全可见性问题
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E4%BB%80%E4%B9%88%E6%98%AFJMM"><span class="nav-text">一、什么是JMM</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-text">二、总结</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%AF%E8%A7%81%E6%80%A7%E5%AF%BC%E8%87%B4%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="nav-text">可见性导致的原因</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%89%E3%80%81Happens-Before%E6%A8%A1%E5%9E%8B"><span class="nav-text">三、Happens-Before模型</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A8%8B%E5%BA%8F%E9%A1%BA%E5%BA%8F%E8%A7%84%E5%88%99"><span class="nav-text">程序顺序规则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%A0%E9%80%92%E6%80%A7%E8%A7%84%E5%88%99"><span class="nav-text">传递性规则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#volatile%E5%8F%98%E9%87%8F%E8%A7%84%E5%88%99"><span class="nav-text">volatile变量规则</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#volatile-%E9%87%8D%E6%8E%92%E5%BA%8F%E8%A7%84%E5%88%99%E8%A1%A8"><span class="nav-text">volatile 重排序规则表</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%91%E8%A7%86%E5%99%A8%E9%94%81%E8%A7%84%E5%88%99"><span class="nav-text">监视器锁规则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#start%E8%A7%84%E5%88%99"><span class="nav-text">start规则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#join%E8%A7%84%E5%88%99"><span class="nav-text">join规则</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%9B%E3%80%81DCL%E9%97%AE%E9%A2%98"><span class="nav-text">四、DCL问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%94%E3%80%81J-U-C"><span class="nav-text">五、J.U.C</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%AD%E3%80%81Lock-gt-synchronized"><span class="nav-text">六、Lock -&gt;synchronized</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%83%E3%80%81AbstractQueuedSynchronizer-AQS"><span class="nav-text">七、AbstractQueuedSynchronizer(AQS)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFAQS"><span class="nav-text">什么是AQS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AQS%E5%8E%9F%E7%90%86"><span class="nav-text">AQS原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AQS%E4%B8%AD%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%87%E7%94%A8%E5%8F%8C%E5%90%91%E9%93%BE%E8%A1%A8%EF%BC%8C%E5%AE%83%E5%92%8C%E5%8D%95%E5%90%91%E9%93%BE%E8%A1%A8%E7%9B%B8%E6%AF%94%EF%BC%8C%E6%9C%89%E4%BB%80%E4%B9%88%E4%BC%98%E5%8A%BF%EF%BC%9F"><span class="nav-text">AQS中为什么采用双向链表，它和单向链表相比，有什么优势？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%AB%E3%80%81ReentrantLock"><span class="nav-text">八、ReentrantLock</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ReentrantLock%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="nav-text">ReentrantLock的实现原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%81%E7%9A%84%E8%AE%BE%E8%AE%A1%E7%8C%9C%E6%83%B3%EF%BC%88%E5%A6%82%E6%9E%9C%E6%88%91%E4%BB%AC%E8%87%AA%E5%B7%B1%E5%8E%BB%E5%AE%9E%E7%8E%B0%EF%BC%89"><span class="nav-text">锁的设计猜想（如果我们自己去实现）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ReentrantLock%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90"><span class="nav-text">ReentrantLock的实现原理分析</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Peilin Deng"
+      src="/images/VX.png">
+  <p class="site-author-name" itemprop="name">Peilin Deng</p>
+  <div class="site-description" itemprop="description">IT 小站， 记录美好码园生活</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">53</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://www.cnblogs.com/dpl9963" title="博客园 → https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dpl9963" rel="noopener" target="_blank"><i class=" fa-fw"></i>博客园</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/PelyDeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;PelyDeng" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:544010165@qq.com" title="E-Mail → mailto:544010165@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+<script type="text/javascript" charset="utf-8" src="/js/tagcloud.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/tagcanvas.js"></script>
+<div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div id="myCanvasContainer" class="widget tagcloud">
+        <canvas width="250" height="250" id="resCanvas" style="width=100%">
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SpringBoot/" rel="tag">SpringBoot</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8B%E5%8A%A1/" rel="tag">事务</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E5%A0%86/" rel="tag">二叉堆</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E6%A0%91/" rel="tag">二叉树</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BD%8D%E8%BF%90%E7%AE%97/" rel="tag">位运算</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%88%9B%E5%BB%BA%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">创建型设计模式</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag">并发编程</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8E%92%E5%BA%8F/" rel="tag">排序</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%92%E4%BB%B6/" rel="tag">插件</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E7%BB%84/" rel="tag">数组</a><span class="tag-list-count">8</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BB%93%E6%9E%84%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">结构型设计模式</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BC%93%E5%AD%98/" rel="tag">缓存</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%A1%8C%E4%B8%BA%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">行为型设计模式</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%93%BE%E8%A1%A8/" rel="tag">链表</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%98%9F%E5%88%97/" rel="tag">队列</a><span class="tag-list-count">1</span></li></ul>
+        </canvas>
+    </div>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peilin Deng</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : true,
+      notify     : true,
+      appId      : 'HnJ9Yibfx60VyyJ8xucUkOS5-gzGzoHsz',
+      appKey     : 'tMGT7R2fSxRbTrOkaf3DfEg2',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+<script src="/live2d_models/packages/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2d_models/packages/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2d_models/packages/assets/assets/koharu.model.json"},"display":{"position":"left","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body>
+</html>

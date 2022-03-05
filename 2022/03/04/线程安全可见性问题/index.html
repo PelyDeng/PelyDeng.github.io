@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<!-- 樱花特效 -->
+  
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+  <link rel="mask-icon" href="/images/favicon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="一、线程安全 - 可见性、有序性这个案例比较简单，就是t1线程中用到了stop这个属性，接在在main线程中修改了 stop 这个属性的值来使得t1线程结束，但是t1线程并没有按照期望的结果执行。 12345678910111213141516public class VolatileDemo &amp;#123;    public static Boolean stop&#x3D;false;    publi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="线程安全可见性问题">
+<meta property="og:url" content="https://pdyun.cc/2022/03/04/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%8F%AF%E8%A7%81%E6%80%A7%E9%97%AE%E9%A2%98/index.html">
+<meta property="og:site_name" content="牧场小站">
+<meta property="og:description" content="一、线程安全 - 可见性、有序性这个案例比较简单，就是t1线程中用到了stop这个属性，接在在main线程中修改了 stop 这个属性的值来使得t1线程结束，但是t1线程并没有按照期望的结果执行。 12345678910111213141516public class VolatileDemo &amp;#123;    public static Boolean stop&#x3D;false;    publi">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pdyun.cc/images/img-144.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-145.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-146.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-147.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-148.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-149.png">
+<meta property="article:published_time" content="2022-03-04T08:42:00.000Z">
+<meta property="article:modified_time" content="2022-03-04T12:06:05.237Z">
+<meta property="article:author" content="Peilin Deng">
+<meta property="article:tag" content="并发编程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pdyun.cc/images/img-144.png">
+
+<link rel="canonical" href="https://pdyun.cc/2022/03/04/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%8F%AF%E8%A7%81%E6%80%A7%E9%97%AE%E9%A2%98/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  
+  
+
+
+  <title>线程安全可见性问题 | 牧场小站</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">牧场小站</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/03/04/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%8F%AF%E8%A7%81%E6%80%A7%E9%97%AE%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          线程安全可见性问题
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-03-04 16:42:00 / 修改时间：20:06:05" itemprop="dateCreated datePublished" datetime="2022-03-04T16:42:00+08:00">2022-03-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2022/03/04/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%8F%AF%E8%A7%81%E6%80%A7%E9%97%AE%E9%A2%98/" class="post-meta-item leancloud_visitors" data-flag-title="线程安全可见性问题" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2022/03/04/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%8F%AF%E8%A7%81%E6%80%A7%E9%97%AE%E9%A2%98/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/03/04/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%8F%AF%E8%A7%81%E6%80%A7%E9%97%AE%E9%A2%98/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="一、线程安全-可见性、有序性"><a href="#一、线程安全-可见性、有序性" class="headerlink" title="一、线程安全 - 可见性、有序性"></a>一、线程安全 - 可见性、有序性</h1><p>这个案例比较简单，就是t1线程中用到了stop这个属性，接在在main线程中修改了 stop 这个属性的值来使得t1线程结束，但是t1线程并没有按照期望的结果执行。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">VolatileDemo</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> Boolean stop=<span class="keyword">false</span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        Thread t1=<span class="keyword">new</span> Thread(()-&gt;&#123;</span><br><span class="line">            <span class="keyword">int</span> i=<span class="number">0</span>;</span><br><span class="line">            <span class="keyword">while</span>(!stop)&#123;</span><br><span class="line">                i++;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        );</span><br><span class="line">        t1.start();</span><br><span class="line">        System.out.println(<span class="string">&quot;begin start thread&quot;</span>);</span><br><span class="line">        Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">        stop=<span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="二、volatile解决可见性问题"><a href="#二、volatile解决可见性问题" class="headerlink" title="二、volatile解决可见性问题"></a>二、volatile解决可见性问题</h1><p><strong>有volatile变量修饰的共享变量进行写操作的时候会使用CPU提供的Lock前缀指令。在CPU级别的功能如下：</strong></p>
+<ol>
+<li><strong>将当前处理器缓存行的数据写回到系统内存</strong></li>
+<li><strong>这个写回内存的操作会告知在其他CPU你们拿到的变量是无效的下一次使用时候要重新共享内存拿。</strong></li>
+</ol>
+<p><strong>而volatile实现可见性问题的本质就是使用lock指令实现了内存屏障</strong></p>
+<p>在上面的程序中，可以增加 volatile这个关键字来解决，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">VolatileDemo</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">volatile</span> <span class="keyword">static</span> Boolean stop=<span class="keyword">false</span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        Thread t1=<span class="keyword">new</span> Thread(()-&gt;&#123;</span><br><span class="line">            <span class="keyword">int</span> i=<span class="number">0</span>;</span><br><span class="line">            <span class="keyword">while</span>(!stop)&#123;</span><br><span class="line">                i++;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        );</span><br><span class="line">        t1.start();</span><br><span class="line">        System.out.println(<span class="string">&quot;begin start thread&quot;</span>);</span><br><span class="line">        Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">        stop=<span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="三、为了提升处理性能所做的优化"><a href="#三、为了提升处理性能所做的优化" class="headerlink" title="三、为了提升处理性能所做的优化"></a>三、为了提升处理性能所做的优化</h1><p>在整个计算机的发展历程中，除了CPU、内存以及I/O设备不断迭代升级来提升计算机处理性能之外， 还有一个非常核心的矛盾点，就是这三者在处理速度的差异。  <strong>CPU的计算速度是非常快的，其次是内  存、最后是IO设备（比如磁盘），也就是CPU的计算速度远远高于内存以及磁盘设备的I/O速度</strong>。</p>
+<p>如下图所示，计算机是利用CPU进行数据运算的，但是CPU只能对内存中的数据进行运算，对于磁盘中 的数据，必须要先读取到内存，CPU才能进行运算，也就是CPU和内存之间无法避免的出现了IO操作。</p>
+<p>而cpu的运算速度远远高于内存的IO速度，比如在一台2.4GHz的cpu上，每秒能处理2.4x109次，每次 处理的数据量，如果是64位操作系统，那么意味着每次能处理64位数据量。</p>
+<p><img src="/images/img-144.png"></p>
+<p>虽然CPU从单核升级到多核甚至到超线程技术在最大化的提高CPU的处理性能，但是仅仅提升CPU性能 是不够的，如果内存和磁盘的处理性能没有跟上，就意味着整体的计算效率取决于最慢的设备，为了平 衡这三者之间的速度差异，最大化的利用CPU。</p>
+<p>所以在硬件层面、操作系统层面、编译器层面做出了很 多的优化</p>
+<ol>
+<li>CPU增加了高速缓存</li>
+<li>操作系统增加了进程、线程。通过CPU的时间片切换最大化的提升CPU的使用率</li>
+<li>编译器的指令优化，更合理的去利用好CPU的高速缓存</li>
+</ol>
+<p>每一种优化，都会带来相应的问题，而这些问题是导致线程安全性问题的根源，那接下来我们逐步去了 解这些优化的本质和带来的问题。</p>
+<h1 id="四、CPU层面的缓存"><a href="#四、CPU层面的缓存" class="headerlink" title="四、CPU层面的缓存"></a>四、CPU层面的缓存</h1><p>CPU在做计算时，和内存的IO操作是无法避免的，而这个IO过程相对于CPU的计算速度来说是非常耗时，基于这样一个问题，所以在CPU层面设计了高速缓存，这个缓存行可以缓存存储在内存中的数据，CPU每次会先从缓存行中读取需要运算的数据，如果缓存行中不存在该数据，才会从内存中加载，通过 这样一个机制可以减少CPU和内存的交互开销从而提升CPU的利用率。</p>
+<p><strong>对于主流的x86平台，cpu的缓存行（cache）分为L1、 L2、 L3总共3级。</strong></p>
+<p><img src="/images/img-145.png"></p>
+<h1 id="五、缓存一致性问题"><a href="#五、缓存一致性问题" class="headerlink" title="五、缓存一致性问题"></a>五、缓存一致性问题</h1><p>CPU高速缓存的出现，虽然提升了CPU的利用率，但是同时也带来了另外一个问题–缓存一致性问题，这个一致性问题体现在。</p>
+<p>在多线程环境中，当多个线程并行执行加载同一块内存数据时，由于每个CPU都有自己独立的L1、 L2缓存，所以每个CPU的这部分缓存空间都会缓存到相同的数据，并且每个CPU执行相关指令时，彼此之间不可见，就会导致缓存的一致性问题，据图流程如下图所示：</p>
+<p><img src="/images/img-146.png"></p>
+<h1 id="六、缓存一致性协议"><a href="#六、缓存一致性协议" class="headerlink" title="六、缓存一致性协议"></a>六、缓存一致性协议</h1><p>为了达到数据访问的一致，需要各个处理器在访问缓存时遵循一些协议，在读写时根据协议来操作，常见的协议有MSI，MESI，MOSI等。最常见的就是MESI协议。接下来给大家简单讲解一下MESI。</p>
+<p>MESI表示缓存行的四种状态，分别是</p>
+<ol>
+<li>M(Modify[ ˈ mɒdɪfaɪ]) 表示共享数据只缓存在当前CPU缓存中，并且是被修改状态，也就是缓存的 数据和主内存中的数据不一致\</li>
+<li>E(Exclusive[ɪkˈskluːsɪv]) 表示缓存的独占状态，数据只缓存在当前CPU缓存中，并且没有被修改</li>
+<li>S(Shared[ʃerd]) 表示数据可能被多个CPU缓存，并且各个缓存中的数据和主内存数据一致</li>
+<li>I(Invalid[ ˈɪnvəlɪd]) 表示缓存已经失效</li>
+</ol>
+<p>在CPU的缓存行中，每一个Cache一定会处于以下三种状态之一</p>
+<ul>
+<li>Shared</li>
+<li>Exclusive</li>
+<li>Invalid</li>
+</ul>
+<p><img src="/images/img-147.png"><br><img src="/images/img-148.png"><br><img src="/images/img-149.png"></p>
+<h1 id="七、指令重排序代码"><a href="#七、指令重排序代码" class="headerlink" title="七、指令重排序代码"></a>七、指令重排序代码</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SeqExample</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">static</span> <span class="keyword">int</span> x=<span class="number">0</span>,y=<span class="number">0</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">static</span> <span class="keyword">int</span> a=<span class="number">0</span>,b=<span class="number">0</span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> i=<span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (;;)&#123;</span><br><span class="line">            i++;</span><br><span class="line">            x=<span class="number">0</span>;</span><br><span class="line">            y=<span class="number">0</span>;</span><br><span class="line">            a=<span class="number">0</span>;</span><br><span class="line">            b=<span class="number">0</span>;</span><br><span class="line">            Thread t1=<span class="keyword">new</span> Thread(()-&gt;&#123;</span><br><span class="line">                a=<span class="number">1</span>;</span><br><span class="line">                x=b;</span><br><span class="line">                <span class="comment">//</span></span><br><span class="line">                x=b;</span><br><span class="line">                a=<span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            );</span><br><span class="line">            Thread t2=<span class="keyword">new</span> Thread(()-&gt;&#123;</span><br><span class="line">                b=<span class="number">1</span>;</span><br><span class="line">                y=a;</span><br><span class="line">                <span class="comment">//</span></span><br><span class="line">                y=a;</span><br><span class="line">                b=<span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            );</span><br><span class="line">            <span class="comment">/**</span></span><br><span class="line"><span class="comment">             * 可能的结果：</span></span><br><span class="line"><span class="comment">             *  1和1</span></span><br><span class="line"><span class="comment">             *  0和1</span></span><br><span class="line"><span class="comment">             *  1和0</span></span><br><span class="line"><span class="comment">             *  ----</span></span><br><span class="line"><span class="comment">             *  0和0 </span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            t1.start();</span><br><span class="line">            t2.start();</span><br><span class="line">            t1.join();</span><br><span class="line">            t2.join();</span><br><span class="line">            String result=<span class="string">&quot;第&quot;</span>+i+<span class="string">&quot;次(&quot;</span>+x+<span class="string">&quot;,&quot;</span>+y+<span class="string">&quot;)&quot;</span>;</span><br><span class="line">            <span class="keyword">if</span>(x==<span class="number">0</span>&amp;&amp;y==<span class="number">0</span>)&#123;</span><br><span class="line">                System.out.println(result);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span>&#123;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="八、伪共享代码"><a href="#八、伪共享代码" class="headerlink" title="八、伪共享代码"></a>八、伪共享代码</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CacheLineExample</span> <span class="keyword">implements</span> <span class="title">Runnable</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">static</span> <span class="keyword">long</span> ITERATIONS = <span class="number">500L</span> * <span class="number">1000L</span> * <span class="number">100L</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> arrayIndex = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> ValueNoPadding[] longs;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CacheLineExample</span><span class="params">(<span class="keyword">final</span> <span class="keyword">int</span> arrayIndex)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.arrayIndex = arrayIndex;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(<span class="keyword">final</span> String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; <span class="number">10</span>; i++)&#123;</span><br><span class="line">            System.gc();</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line">            runTest(i);</span><br><span class="line">            System.out.println(i + <span class="string">&quot; Threads, duration = &quot;</span> +</span><br><span class="line">            (System.currentTimeMillis() - start));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">runTest</span><span class="params">(<span class="keyword">int</span> NUM_THREADS)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        Thread[] threads = <span class="keyword">new</span> Thread[NUM_THREADS];</span><br><span class="line">        longs = <span class="keyword">new</span> ValueNoPadding[NUM_THREADS];</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; longs.length; i++) &#123;</span><br><span class="line">            longs[i] = <span class="keyword">new</span> ValueNoPadding();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; threads.length; i++) &#123;</span><br><span class="line">            threads[i] = <span class="keyword">new</span> Thread(<span class="keyword">new</span> CacheLineExample(i));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span> (Thread t : threads) &#123;</span><br><span class="line">            t.start();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span> (Thread t : threads) &#123;</span><br><span class="line">            t.join();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">long</span> i = ITERATIONS + <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">while</span> (<span class="number">0</span> != --i) &#123;</span><br><span class="line">            longs[arrayIndex].value = <span class="number">0L</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">ValuePadding</span> </span>&#123;</span><br><span class="line">        <span class="keyword">protected</span> <span class="keyword">long</span> p1, p2, p3, p4, p5, p6, p7; </span><br><span class="line">        <span class="keyword">protected</span> <span class="keyword">volatile</span> <span class="keyword">long</span> value = <span class="number">0L</span>; </span><br><span class="line">        <span class="keyword">protected</span> <span class="keyword">long</span> p9, p10, p11, p12, p13, p14; </span><br><span class="line">        <span class="keyword">protected</span> <span class="keyword">long</span> p15;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Contended</span> <span class="comment">//实现对齐填充</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">ValueNoPadding</span> </span>&#123;</span><br><span class="line">        <span class="comment">// protected long p1, p2, p3, p4, p5, p6, p7;</span></span><br><span class="line">        <span class="comment">//8字节</span></span><br><span class="line">        <span class="keyword">protected</span> <span class="keyword">volatile</span> <span class="keyword">long</span> value = <span class="number">0L</span>;</span><br><span class="line">        <span class="comment">// protected long p9, p10, p11, p12, p13, p14, p15;</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="九、内存屏障"><a href="#九、内存屏障" class="headerlink" title="九、内存屏障"></a>九、内存屏障</h1><p>CPU在性能优化道路上导致的顺序一致性问题，在CPU层面无法被解决，原因是CPU只是一个运算工具，它只接收指令并且执行指令，并不清楚当前执行的整个逻辑中是否存在不能优化的问题，也就是说硬件层面也无法优化这种顺序一致性带来的可见性问题。</p>
+<p>因此，在CPU层面提供了<strong>写屏障、读屏障、全屏障</strong>这样的指令，在x86架构中，这三种指令分别是<strong>SFENCE、LFENCE、MFENCE</strong>指令，</p>
+<ul>
+<li>sfence：也就是save fence，写屏障指令。在sfence指令前的写操作必须在sfence指令后的写操作前完成。</li>
+<li>lfence：也就是load fence，读屏障指令。在lfence指令前的读操作必须在lfence指令后的读操作<br>前完成。</li>
+<li>mfence：也就是modify/mix，混合屏障指令，在mfence前得读写操作必须在mfence指令后的读写操作前完成。</li>
+</ul>
+<p>在Linux系统中，将这三种指令分别封装成了, smp_wmb-写屏障 、smp_rmb-读屏障、smp_mb-读写屏障 三个方法</p>
+
+    </div>
+
+    
+    
+    
+<div>
+  
+    <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+  
+</div>
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Peilin Deng
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pdyun.cc/2022/03/04/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%8F%AF%E8%A7%81%E6%80%A7%E9%97%AE%E9%A2%98/" title="线程安全可见性问题">https://pdyun.cc/2022/03/04/线程安全可见性问题/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag"><i class="fa fa-tag"></i> 并发编程</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/03/03/Synchronized-%E5%90%8C%E6%AD%A5%E9%94%81/" rel="prev" title="Synchronized 同步锁">
+      <i class="fa fa-chevron-left"></i> Synchronized 同步锁
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/03/04/Lock-%E9%94%81%E5%8F%8A%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" rel="next" title="Lock 锁及原理分析">
+      Lock 锁及原理分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8-%E5%8F%AF%E8%A7%81%E6%80%A7%E3%80%81%E6%9C%89%E5%BA%8F%E6%80%A7"><span class="nav-text">一、线程安全 - 可见性、有序性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%81volatile%E8%A7%A3%E5%86%B3%E5%8F%AF%E8%A7%81%E6%80%A7%E9%97%AE%E9%A2%98"><span class="nav-text">二、volatile解决可见性问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E4%B8%BA%E4%BA%86%E6%8F%90%E5%8D%87%E5%A4%84%E7%90%86%E6%80%A7%E8%83%BD%E6%89%80%E5%81%9A%E7%9A%84%E4%BC%98%E5%8C%96"><span class="nav-text">三、为了提升处理性能所做的优化</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%9B%E3%80%81CPU%E5%B1%82%E9%9D%A2%E7%9A%84%E7%BC%93%E5%AD%98"><span class="nav-text">四、CPU层面的缓存</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E7%BC%93%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7%E9%97%AE%E9%A2%98"><span class="nav-text">五、缓存一致性问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E7%BC%93%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7%E5%8D%8F%E8%AE%AE"><span class="nav-text">六、缓存一致性协议</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E6%8C%87%E4%BB%A4%E9%87%8D%E6%8E%92%E5%BA%8F%E4%BB%A3%E7%A0%81"><span class="nav-text">七、指令重排序代码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E4%BC%AA%E5%85%B1%E4%BA%AB%E4%BB%A3%E7%A0%81"><span class="nav-text">八、伪共享代码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C"><span class="nav-text">九、内存屏障</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Peilin Deng"
+      src="/images/VX.png">
+  <p class="site-author-name" itemprop="name">Peilin Deng</p>
+  <div class="site-description" itemprop="description">IT 小站， 记录美好码园生活</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">53</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://www.cnblogs.com/dpl9963" title="博客园 → https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dpl9963" rel="noopener" target="_blank"><i class=" fa-fw"></i>博客园</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/PelyDeng" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;PelyDeng" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:544010165@qq.com" title="E-Mail → mailto:544010165@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+<script type="text/javascript" charset="utf-8" src="/js/tagcloud.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/tagcanvas.js"></script>
+<div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div id="myCanvasContainer" class="widget tagcloud">
+        <canvas width="250" height="250" id="resCanvas" style="width=100%">
+            <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/MyBatis/" rel="tag">MyBatis</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySql/" rel="tag">MySql</a><span class="tag-list-count">12</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Spring/" rel="tag">Spring</a><span class="tag-list-count">7</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/SpringBoot/" rel="tag">SpringBoot</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8B%E5%8A%A1/" rel="tag">事务</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E5%A0%86/" rel="tag">二叉堆</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BA%8C%E5%8F%89%E6%A0%91/" rel="tag">二叉树</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%BD%8D%E8%BF%90%E7%AE%97/" rel="tag">位运算</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%88%9B%E5%BB%BA%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">创建型设计模式</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8A%A8%E6%80%81DDNS/" rel="tag">动态DDNS</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" rel="tag">并发编程</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8E%92%E5%BA%8F/" rel="tag">排序</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%8F%92%E4%BB%B6/" rel="tag">插件</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E7%BB%84/" rel="tag">数组</a><span class="tag-list-count">8</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BB%93%E6%9E%84%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">结构型设计模式</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BC%93%E5%AD%98/" rel="tag">缓存</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%A1%8C%E4%B8%BA%E5%9E%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">行为型设计模式</a><span class="tag-list-count">4</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%BF%E9%97%AE%E5%AE%B6%E5%BA%AD%E5%86%85%E7%BD%91/" rel="tag">访问家庭内网</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%93%BE%E8%A1%A8/" rel="tag">链表</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%98%9F%E5%88%97/" rel="tag">队列</a><span class="tag-list-count">1</span></li></ul>
+        </canvas>
+    </div>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peilin Deng</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : true,
+      notify     : true,
+      appId      : 'HnJ9Yibfx60VyyJ8xucUkOS5-gzGzoHsz',
+      appKey     : 'tMGT7R2fSxRbTrOkaf3DfEg2',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+<script src="/live2d_models/packages/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2d_models/packages/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2d_models/packages/assets/assets/koharu.model.json"},"display":{"position":"left","width":150,"height":300},"mobile":{"show":true},"log":false});</script></body>
+</html>
