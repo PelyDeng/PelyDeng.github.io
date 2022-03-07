@@ -13,7 +13,7 @@ date: 2021-08-20 19:35:00
 
   在解析 mapper.xml 的时候, 主要做了两个事情: 
   - (1) 将 mapper.xml 文件中的 '增删改查' 语句封装成 MappedStatment 对象; 
-  - (2) 将 mapper 接口文件 与 MapperProxyFactory[用于后面创建mapper代理对象] 对象相关联; 
+  - (2) 将 mapper 接口文件 与 MapperProxyFactory**[用于后面创建mapper代理对象]** 对象相关联; 
   
   最后返回一个默认的 **DefaultSqlSessionFactory** 对象.
 
