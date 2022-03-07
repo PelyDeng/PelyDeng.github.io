@@ -62,44 +62,44 @@ protected <T> T doGetBean(final String name, @Nullable final Class<T> requiredTy
 
 ```
 ```java
-	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
-		// 从一级缓存获取，key=beanName value=bean
-		Object singletonObject = this.singletonObjects.get(beanName);
-		if (singletonObject <mark> null && isSingletonCurrentlyInCreation(beanName)) {
-			synchronized (this.singletonObjects) {
-				// 从二级缓存获取，key=beanName value=bean
-				singletonObject = this.earlySingletonObjects.get(beanName);
-				// 是否允许循环引用
-				if (singletonObject <mark> null && allowEarlyReference) {
-					/**
-					 * 三级缓存获取，key=beanName value=objectFactory，objectFactory中存储getObject()方法用于获取提前曝光的实例
-					 *
-					 * 而为什么不直接将实例缓存到二级缓存，而要多此一举将实例先封装到objectFactory中？
-					 * 主要关键点在getObject()方法并非直接返回实例，而是对实例又使用
-					 * SmartInstantiationAwareBeanPostProcessor的getEarlyBeanReference方法对bean进行处理
-					 *
-					 * 也就是说，当spring中存在该后置处理器，所有的单例bean在实例化后都会被进行提前曝光到三级缓存中，
-					 * 但是并不是所有的bean都存在循环依赖，也就是三级缓存到二级缓存的步骤不一定都会被执行，有可能曝光后直接创建完成，没被提前引用过，
-					 * 就直接被加入到一级缓存中。因此可以确保只有提前曝光且被引用的bean才会进行该后置处理
- 					 */
-					ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
-					if (singletonFactory != null) {
-						/**
-						 * 通过getObject()方法获取bean，通过此方法获取到的实例不单单是提前曝光出来的实例，
-						 * 它还经过了SmartInstantiationAwareBeanPostProcessor的getEarlyBeanReference方法处理过。
-						 * 这也正是三级缓存存在的意义，可以通过重写该后置处理器对提前曝光的实例，在被提前引用时进行一些操作
- 						 */
-						singletonObject = singletonFactory.getObject();
-						// 将三级缓存生产的bean放入二级缓存中
-						this.earlySingletonObjects.put(beanName, singletonObject);
-						// 删除三级缓存
-						this.singletonFactories.remove(beanName);
-					}
-				}
-			}
-		}
-		return singletonObject;
-	}
+protected Object getSingleton(String beanName, Boolean allowEarlyReference) {
+  // 从一级缓存获取，key=beanName value=bean
+  Object singletonObject = this.singletonObjects.get(beanName);
+  if (singletonObject <mark> null && isSingletonCurrentlyInCreation(beanName)) {
+    synchronized (this.singletonObjects) {
+      // 从二级缓存获取，key=beanName value=bean
+      singletonObject = this.earlySingletonObjects.get(beanName);
+      // 是否允许循环引用
+      if (singletonObject <mark> null && allowEarlyReference) {
+        /**
+           * 三级缓存获取，key=beanName value=objectFactory，objectFactory中存储getObject()方法用于获取提前曝光的实例
+           *
+           * 而为什么不直接将实例缓存到二级缓存，而要多此一举将实例先封装到objectFactory中？
+           * 主要关键点在getObject()方法并非直接返回实例，而是对实例又使用
+           * SmartInstantiationAwareBeanPostProcessor的getEarlyBeanReference方法对bean进行处理
+           *
+           * 也就是说，当spring中存在该后置处理器，所有的单例bean在实例化后都会被进行提前曝光到三级缓存中，
+           * 但是并不是所有的bean都存在循环依赖，也就是三级缓存到二级缓存的步骤不一定都会被执行，有可能曝光后直接创建完成，没被提前引用过，
+           * 就直接被加入到一级缓存中。因此可以确保只有提前曝光且被引用的bean才会进行该后置处理
+            */
+        ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
+        if (singletonFactory != null) {
+          /**
+             * 通过getObject()方法获取bean，通过此方法获取到的实例不单单是提前曝光出来的实例，
+             * 它还经过了SmartInstantiationAwareBeanPostProcessor的getEarlyBeanReference方法处理过。
+             * 这也正是三级缓存存在的意义，可以通过重写该后置处理器对提前曝光的实例，在被提前引用时进行一些操作
+              */
+          singletonObject = singletonFactory.getObject();
+          // 将三级缓存生产的bean放入二级缓存中
+          this.earlySingletonObjects.put(beanName, singletonObject);
+          // 删除三级缓存
+          this.singletonFactories.remove(beanName);
+        }
+      }
+    }
+  }
+  return singletonObject;
+}
 ```
 
 **三级缓存分别是：**
@@ -261,6 +261,3 @@ AOP代理过的Bean赋值给<mark>了exposedObject</mark>并返回，这时候�
 原始bean A，bean B图中用a，b表示，而代理后的bean A我们用aop.a表示
 
 ![](/images/img-89.png)
-
-
-
