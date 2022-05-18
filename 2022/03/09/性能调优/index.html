@@ -25,17 +25,27 @@
     var CONFIG = {"hostname":"pdyun.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="IT 小站， 记录美好码园生活">
-<meta property="og:type" content="website">
-<meta property="og:title" content="牧场小站">
-<meta property="og:url" content="https://pdyun.cc/categories/%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/index.html">
+  <meta name="description" content="一、性能优化如何定位性能瓶颈根据资源消耗情况来分析 CPU 、 磁盘IO、 网络IO、内存 [监控系统] 查看CPU利用率相关工具或命令top 命令   top 下的操作指令 用法说明    1 显示出 cpu 各个核心以及状态   shift + h 转换成查看线程相关状态信息    pidstat解释: 查看当前cpu活跃情况 12&#x2F;&#x2F; 每隔1秒打印一次, 打印10次pidstat  1  1">
+<meta property="og:type" content="article">
+<meta property="og:title" content="性能调优">
+<meta property="og:url" content="https://pdyun.cc/2022/03/09/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/index.html">
 <meta property="og:site_name" content="牧场小站">
-<meta property="og:description" content="IT 小站， 记录美好码园生活">
+<meta property="og:description" content="一、性能优化如何定位性能瓶颈根据资源消耗情况来分析 CPU 、 磁盘IO、 网络IO、内存 [监控系统] 查看CPU利用率相关工具或命令top 命令   top 下的操作指令 用法说明    1 显示出 cpu 各个核心以及状态   shift + h 转换成查看线程相关状态信息    pidstat解释: 查看当前cpu活跃情况 12&#x2F;&#x2F; 每隔1秒打印一次, 打印10次pidstat  1  1">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pdyun.cc/images/img-171.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-172.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-177.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-173.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-175.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-174.png">
+<meta property="og:image" content="https://pdyun.cc/images/img-176.png">
+<meta property="article:published_time" content="2022-03-09T02:34:00.000Z">
+<meta property="article:modified_time" content="2022-03-10T05:06:20.910Z">
 <meta property="article:author" content="Peilin Deng">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pdyun.cc/images/img-171.png">
 
-<link rel="canonical" href="https://pdyun.cc/categories/%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/">
+<link rel="canonical" href="https://pdyun.cc/2022/03/09/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/">
 
 
 <script id="page-configurations">
@@ -43,7 +53,7 @@
   CONFIG.page = {
     sidebar: "",
     isHome : false,
-    isPost : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
@@ -52,7 +62,7 @@
   
 
 
-  <title>分类: 日志分析 | 牧场小站</title>
+  <title>性能调优 | 牧场小站</title>
   
 
 
@@ -190,57 +200,177 @@
         <div class="content-wrap">
           
 
-          <div class="content category">
+          <div class="content post posts-expand">
             
 
+    
   
   
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/03/09/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          性能调优
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-03-09 10:34:00" itemprop="dateCreated datePublished" datetime="2022-03-09T10:34:00+08:00">2022-03-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-10 13:06:20" itemprop="dateModified" datetime="2022-03-10T13:06:20+08:00">2022-03-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/" itemprop="url" rel="index"><span itemprop="name">性能调优</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2022/03/09/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/" class="post-meta-item leancloud_visitors" data-flag-title="性能调优" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
   
-  <div class="post-block">
-    <div class="posts-collapse">
-      <div class="collection-title">
-        <h2 class="collection-header">日志分析
-          <small>分类</small>
-        </h2>
-      </div>
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2022/03/09/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/03/09/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
 
       
-    <div class="collection-year">
-      <span class="collection-header">2022</span>
+        <h1 id="一、性能优化"><a href="#一、性能优化" class="headerlink" title="一、性能优化"></a>一、性能优化</h1><h2 id="如何定位性能瓶颈"><a href="#如何定位性能瓶颈" class="headerlink" title="如何定位性能瓶颈"></a>如何定位性能瓶颈</h2><p>根据资源消耗情况来分析</p>
+<p>CPU 、 磁盘IO、 网络IO、内存 [监控系统]</p>
+<h2 id="查看CPU利用率相关工具或命令"><a href="#查看CPU利用率相关工具或命令" class="headerlink" title="查看CPU利用率相关工具或命令"></a>查看CPU利用率相关工具或命令</h2><h3 id="top-命令"><a href="#top-命令" class="headerlink" title="top 命令"></a>top 命令</h3><table>
+<thead>
+<tr>
+<th>top 下的操作指令</th>
+<th>用法说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>显示出 cpu 各个核心以及状态</td>
+</tr>
+<tr>
+<td>shift + h</td>
+<td>转换成查看线程相关状态信息</td>
+</tr>
+</tbody></table>
+<p><img src="/images/img-171.png"></p>
+<h3 id="pidstat"><a href="#pidstat" class="headerlink" title="pidstat"></a>pidstat</h3><p><strong>解释: 查看当前cpu活跃情况</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// 每隔1秒打印一次, 打印10次</span><br><span class="line">pidstat  1  10 </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// 查看某个进程中的线程cpu消耗情况, 每隔1秒打印一次, 打印1次</span><br><span class="line">pidstat -p [进程id] -t 1  1</span><br></pre></td></tr></table></figure>
+<p><img src="/images/img-172.png"></p>
+<h3 id="vmstat"><a href="#vmstat" class="headerlink" title="vmstat"></a>vmstat</h3><p><img src="/images/img-177.png"></p>
+<h2 id="磁盘IO-相关指令"><a href="#磁盘IO-相关指令" class="headerlink" title="磁盘IO 相关指令"></a>磁盘IO 相关指令</h2><h2 id="free"><a href="#free" class="headerlink" title="free"></a>free</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">free -m</span><br></pre></td></tr></table></figure>
+<p><img src="/images/img-173.png"></p>
+<h3 id="iostate"><a href="#iostate" class="headerlink" title="iostate"></a>iostate</h3><p><img src="/images/img-175.png"><br><img src="/images/img-174.png"><br><img src="/images/img-176.png"></p>
+
     </div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
+    
+    
+    
+<div>
+  
+    <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+    
+</div>
 
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2022-03-05T23:04:00+08:00"
-              content="2022-03-05">
-          03-05
-        </time>
-      </div>
+  
+</div>
+        
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/03/05/%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" itemprop="url">
-            <span itemprop="name">日志分析</span>
-          </a>
-      </div>
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Peilin Deng
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pdyun.cc/2022/03/09/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/" title="性能调优">https://pdyun.cc/2022/03/09/性能调优/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
 
-    </header>
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/03/07/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="prev" title="线程池">
+      <i class="fa fa-chevron-left"></i> 线程池
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/03/27/%E4%B8%A4%E6%95%B0%E4%B9%8B%E5%92%8C/" rel="next" title="两数之和">
+      两数之和 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
   </article>
-
-    </div>
-  </div>
   
   
-  
-
   
 
 
 
           </div>
           
+    <div class="comments" id="valine-comments"></div>
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -287,6 +417,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96"><span class="nav-text">一、性能优化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%AE%9A%E4%BD%8D%E6%80%A7%E8%83%BD%E7%93%B6%E9%A2%88"><span class="nav-text">如何定位性能瓶颈</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8BCPU%E5%88%A9%E7%94%A8%E7%8E%87%E7%9B%B8%E5%85%B3%E5%B7%A5%E5%85%B7%E6%88%96%E5%91%BD%E4%BB%A4"><span class="nav-text">查看CPU利用率相关工具或命令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#top-%E5%91%BD%E4%BB%A4"><span class="nav-text">top 命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pidstat"><span class="nav-text">pidstat</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#vmstat"><span class="nav-text">vmstat</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A3%81%E7%9B%98IO-%E7%9B%B8%E5%85%B3%E6%8C%87%E4%BB%A4"><span class="nav-text">磁盘IO 相关指令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#free"><span class="nav-text">free</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#iostate"><span class="nav-text">iostate</span></a></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -302,14 +433,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">58</span>
+          <span class="site-state-item-count">60</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">

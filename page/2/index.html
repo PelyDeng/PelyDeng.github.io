@@ -196,6 +196,268 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/02/24/Spring-%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96-AOP%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/02/24/Spring-%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96-AOP%E8%AF%A6%E8%A7%A3/" class="post-title-link" itemprop="url">Spring 循环依赖-AOP详解</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-02-24 19:10:00" itemprop="dateCreated datePublished" datetime="2022-02-24T19:10:00+08:00">2022-02-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-07 11:22:32" itemprop="dateModified" datetime="2022-03-07T11:22:32+08:00">2022-03-07</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2022/02/24/Spring-%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96-AOP%E8%AF%A6%E8%A7%A3/" class="post-meta-item leancloud_visitors" data-flag-title="Spring 循环依赖-AOP详解" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2022/02/24/Spring-%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96-AOP%E8%AF%A6%E8%A7%A3/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/02/24/Spring-%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96-AOP%E8%AF%A6%E8%A7%A3/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <!DOCTYPE html>
+<html>
+<head>
+<meta  charset=utf-8"/>
+    <style>
+        mark {
+            background-color:#f0e0ed; 
+            color:#c7254e;
+          }
+    </style>
+                     
+
+<p>该文章引用自: <a target="_blank" rel="noopener" href="https://blog.csdn.net/chaitoudaren/article/details/105060882">《当Spring AOP遇上循环依赖》</a></p>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>问：Spring如何解决<mark>循环依赖</mark>？</p>
+<p>答：Spring通过<mark>提前曝光</mark>机制，利用<mark>三级缓存</mark>解决<mark>循环依赖</mark>（这原理还是挺简单的，参考：三级缓存、图解循环依赖原理）</p>
+<hr>
+<p>问：只用一级缓存可以能解决问题吗?</p>
+<p>答：<mark>不能</mark>. 在整个处理中, 缓存中放的<mark>是成品和半成品对象</mark>, 如果只使用一级缓存, 成品和半成品对象都存在一个缓存, <mark>有可能获取Bean的时候会获取到半成品对象</mark>, 此时的对象是无法使用的, 因此至少都需要一级缓存和二级缓存把成品对象和半成品对象分开.</p>
+<hr>
+<p>再问：<mark>只使用二级缓存</mark>能解决循环依赖吗? 为什么需要<mark>三级缓存</mark>？</p>
+<p>答：Spring通过<mark>提前曝光</mark>，直接曝光到<mark>二级缓存</mark>已经可以解决循环依赖问题了; 使用<mark>三级缓存的本质在于AOP代理问题</mark>, 因为三级缓存中存放的是<mark>ObjectFactory(也可以说是放的一个lambda表达式)</mark>,存在AOP的时候,就会调用它来完成代理对象的覆盖过程.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">addSingletonFactory(beanName, () -&gt; getEarlyBeanReference(beanName, mbd, bean));</span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>再细问：如果循环依赖的时候，所有类又都需要<mark>Spring AOP</mark>自动代理，那Spring如何提前曝光？曝光的是<mark>原始bean</mark>还是<mark>代理后的bean</mark>？</p>
+<p>这些问题算是Spring源码的压轴题了，如果这些问题都弄明白，恭喜你顺利结业Spring源码了。就单单对Spring这一块的理解，不夸张的说可以达到阿里水准了</p>
+<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><p>进入正题，在Spring<mark>创建Bean</mark>的核心代码<mark>doGetBean</mark>中，在<mark>实例化bean</mark>之前，会先尝试从<mark>三级缓存</mark>获取bean，这也是Spring解决循环依赖的开始</p>
+<h2 id="一-缓存中获取bean"><a href="#一-缓存中获取bean" class="headerlink" title="(一) 缓存中获取bean"></a>(一) 缓存中获取bean</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// AbstractBeanFactory.java</span></span><br><span class="line"><span class="keyword">protected</span> &lt;T&gt; <span class="function">T <span class="title">doGetBean</span><span class="params">(<span class="keyword">final</span> String name, <span class="meta">@Nullable</span> <span class="keyword">final</span> Class&lt;T&gt; requiredType,</span></span></span><br><span class="line"><span class="params"><span class="function">			<span class="meta">@Nullable</span> <span class="keyword">final</span> Object[] args, <span class="keyword">boolean</span> typeCheckOnly)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">final</span> String beanName = transformedBeanName(name);</span><br><span class="line">		Object bean;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 2. 尝试从缓存中获取bean</span></span><br><span class="line">		Object sharedInstance = getSingleton(beanName);</span><br><span class="line">		...</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">getSingleton</span><span class="params">(String beanName, Boolean allowEarlyReference)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 从一级缓存获取，key=beanName value=bean</span></span><br><span class="line">  Object singletonObject = <span class="keyword">this</span>.singletonObjects.get(beanName);</span><br><span class="line">  <span class="keyword">if</span> (singletonObject &lt;mark&gt; <span class="keyword">null</span> &amp;&amp; isSingletonCurrentlyInCreation(beanName)) &#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="keyword">this</span>.singletonObjects) &#123;</span><br><span class="line">      <span class="comment">// 从二级缓存获取，key=beanName value=bean</span></span><br><span class="line">      singletonObject = <span class="keyword">this</span>.earlySingletonObjects.get(beanName);</span><br><span class="line">      <span class="comment">// 是否允许循环引用</span></span><br><span class="line">      <span class="keyword">if</span> (singletonObject &lt;mark&gt; <span class="keyword">null</span> &amp;&amp; allowEarlyReference) &#123;</span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">           * 三级缓存获取，key=beanName value=objectFactory，objectFactory中存储getObject()方法用于获取提前曝光的实例</span></span><br><span class="line"><span class="comment">           *</span></span><br><span class="line"><span class="comment">           * 而为什么不直接将实例缓存到二级缓存，而要多此一举将实例先封装到objectFactory中？</span></span><br><span class="line"><span class="comment">           * 主要关键点在getObject()方法并非直接返回实例，而是对实例又使用</span></span><br><span class="line"><span class="comment">           * SmartInstantiationAwareBeanPostProcessor的getEarlyBeanReference方法对bean进行处理</span></span><br><span class="line"><span class="comment">           *</span></span><br><span class="line"><span class="comment">           * 也就是说，当spring中存在该后置处理器，所有的单例bean在实例化后都会被进行提前曝光到三级缓存中，</span></span><br><span class="line"><span class="comment">           * 但是并不是所有的bean都存在循环依赖，也就是三级缓存到二级缓存的步骤不一定都会被执行，有可能曝光后直接创建完成，没被提前引用过，</span></span><br><span class="line"><span class="comment">           * 就直接被加入到一级缓存中。因此可以确保只有提前曝光且被引用的bean才会进行该后置处理</span></span><br><span class="line"><span class="comment">            */</span></span><br><span class="line">        ObjectFactory&lt;?&gt; singletonFactory = <span class="keyword">this</span>.singletonFactories.get(beanName);</span><br><span class="line">        <span class="keyword">if</span> (singletonFactory != <span class="keyword">null</span>) &#123;</span><br><span class="line">          <span class="comment">/**</span></span><br><span class="line"><span class="comment">             * 通过getObject()方法获取bean，通过此方法获取到的实例不单单是提前曝光出来的实例，</span></span><br><span class="line"><span class="comment">             * 它还经过了SmartInstantiationAwareBeanPostProcessor的getEarlyBeanReference方法处理过。</span></span><br><span class="line"><span class="comment">             * 这也正是三级缓存存在的意义，可以通过重写该后置处理器对提前曝光的实例，在被提前引用时进行一些操作</span></span><br><span class="line"><span class="comment">              */</span></span><br><span class="line">          singletonObject = singletonFactory.getObject();</span><br><span class="line">          <span class="comment">// 将三级缓存生产的bean放入二级缓存中</span></span><br><span class="line">          <span class="keyword">this</span>.earlySingletonObjects.put(beanName, singletonObject);</span><br><span class="line">          <span class="comment">// 删除三级缓存</span></span><br><span class="line">          <span class="keyword">this</span>.singletonFactories.remove(beanName);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> singletonObject;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>三级缓存分别是：</strong></p>
+<ul>
+<li><mark>singletonObject</mark>：一级缓存，该缓存<mark>key = beanName, value = bean</mark>;这里的bean是已经创建完成的，该bean经历过实例化-&gt;属性填充-&gt;初始化以及各类的后置处理。因此，一旦需要获取bean时，我们第一时间就会寻找一级缓存</li>
+<li><mark>earlySingletonObjects</mark>：二级缓存，该缓存<mark>key = beanName, value = bean</mark>;这里跟一级缓存的区别在于，该缓存所获取到的bean是提前曝光出来的，是还没创建完成的。也就是说获取到的bean只能确保已经进行了实例化，但是属性填充跟初始化肯定还没有做完，因此该bean还没创建完成，仅仅能作为指针提前曝光，被其他bean所引用</li>
+<li></li>
+<li><mark>singletonFactories</mark>：三级缓存，该缓存<mark>key = beanName, value = beanFactory</mark>;在bean实例化完之后，属性填充以及初始化之前，如果允许提前曝光，spring会将实例化后的bean提前曝光，也就是把该bean转换成<mark>beanFactory</mark>并加入到三级缓存。在需要引用提前曝光对象时再通过<mark>singletonFactory.getObject()</mark>获取。</li>
+</ul>
+<p>这里抛出问题，如果我们直接将提前曝光的对象放到二级缓存<mark>earlySingletonObjects</mark>，Spring循环依赖时直接取就可以解决循环依赖了，为什么还要三级缓存<mark>singletonFactory</mark>然后再通过<mark>getObject()</mark>来获取呢？这不是多此一举？</p>
+<h2 id="二-三级缓存的添加"><a href="#二-三级缓存的添加" class="headerlink" title="(二) 三级缓存的添加"></a>(二) 三级缓存的添加</h2><p>我们回到添加三级缓存，添加<mark>SingletonFactory</mark>的地方，看看<mark>getObject()</mark>到底做了什么操作</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">this</span>.addSingletonFactory(beanName, () -&gt; &#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">this</span>.getEarlyBeanReference(beanName, mbd, bean);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>可以看到在返回<mark>getObject()</mark>时，多做了一步<mark>getEarlyBeanReference</mark>操作，这步操作是<mark>BeanPostProcess</mark>的一种，也就是给子类重写的一个后处理器，目的是用于<mark>被提前引用</mark>时进行拓展。即：曝光的时候并不调用该后置处理器，只有曝光，且被提前引用的时候才调用，确保了<mark>被提前引用</mark>这个时机触发。</p>
+<h2 id="三-提前曝光代理earlyProxyReferences"><a href="#三-提前曝光代理earlyProxyReferences" class="headerlink" title="(三) 提前曝光代理earlyProxyReferences"></a>(三) 提前曝光代理earlyProxyReferences</h2><p>因此所有的重点都落到了<mark>getEarlyBeanReference</mark>上，<mark>getEarlyBeanReference</mark>方法是<mark>SmartInstantiationAwareBeanPostProcessor</mark>所规定的接口。再通过UML的类图查看实现类，仅有<mark>AbstractAutoProxyCreator</mark>进行了实现。也就是说，除了用户在子类重写，否则仅有<mark>AbstractAutoProxyCreator</mark>一种情况</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// AbstractAutoProxyCreator.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">getEarlyBeanReference</span><span class="params">(Object bean, String beanName)</span> </span>&#123;</span><br><span class="line">	<span class="comment">// 缓存当前bean，表示该bean被提前代理了</span></span><br><span class="line">	Object cacheKey = getCacheKey(bean.getClass(), beanName);</span><br><span class="line">	<span class="keyword">this</span>.earlyProxyReferences.put(cacheKey, bean);</span><br><span class="line">	<span class="comment">// 对bean进行提前Spring AOP代理</span></span><br><span class="line">	<span class="keyword">return</span> wrapIfNecessary(bean, beanName, cacheKey);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><mark>wrapIfNecessary</mark>是用于Spring AOP自动代理的。Spring将当前bean缓存到<mark>earlyProxyReferences</mark>中标识<mark>提前曝光的bean</mark>在被提前引用之前，然后进行了Spring AOP代理。</p>
+<p>但是经过Spring AOP代理后的bean就已经不再是原来的bean了，经过代理后的bean是一个全新的bean，也就是说代理前后的2个bean连内存地址都不一样了。这时将再引出新的问题：<strong>B提前引用A将引用到A的代理，这是符合常理的，但是最原始的bean A在B完成创建后将继续创建，那么Spring Ioc最后返回的Bean是Bean A呢还是经过代理后的Bean呢？</strong></p>
+<p>这个问题我们得回到Spring AOP代理，Spring AOP代理时机有2个：</p>
+<ol>
+<li>当自定义了<mark>TargetSource</mark>，则在bean实例化前完成Spring AOP代理并且直接发生短路操作，返回bean</li>
+<li>正常情况下，都是在bean初始化后进行Spring AOP代理</li>
+<li>如果要加上今天说的提前曝光代理，<mark>getEarlyBeanReference</mark>可以说3种</li>
+</ol>
+<p>第一种情况就没什么好探究的了，直接短路了，根本没有后续操作。而我们关心的是第二种情况，在Spring初始化后置处理器中发生的Spring AOP代理</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">applyBeanPostProcessorsAfterInitialization</span><span class="params">(Object existingBean, String beanName)</span></span></span><br><span class="line"><span class="function">		<span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line"></span><br><span class="line">	Object result = existingBean;</span><br><span class="line">	<span class="keyword">for</span> (BeanPostProcessor processor : getBeanPostProcessors()) &#123;</span><br><span class="line">		<span class="comment">// 调用bean初始化后置处理器处理</span></span><br><span class="line">		Object current = processor.postProcessAfterInitialization(result, beanName);</span><br><span class="line">		<span class="keyword">if</span> (current &lt;mark&gt; <span class="keyword">null</span>) &#123;</span><br><span class="line">			<span class="keyword">return</span> result;</span><br><span class="line">		&#125;</span><br><span class="line">		result = current;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// AbstractAutoProxyCreator.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">postProcessAfterInitialization</span><span class="params">(<span class="meta">@Nullable</span> Object bean, String beanName)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (bean != <span class="keyword">null</span>) &#123;</span><br><span class="line">		<span class="comment">// 获取缓存key</span></span><br><span class="line">		Object cacheKey = getCacheKey(bean.getClass(), beanName);</span><br><span class="line">		<span class="comment">// 查看该bean是否被Spring AOP提前代理！而缓存的是原始的bean，因此如果bean被提前代理过，这此处会跳过</span></span><br><span class="line">		<span class="comment">// 如果bean没有被提前代理过，则进入AOP代理</span></span><br><span class="line">		<span class="keyword">if</span> (<span class="keyword">this</span>.earlyProxyReferences.remove(cacheKey) != bean) &#123;</span><br><span class="line">			<span class="keyword">return</span> wrapIfNecessary(bean, beanName, cacheKey);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> bean;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><mark>earlyProxyReferences</mark>是不是有点熟悉，是的，这就是我们刚刚提前曝光并且进行Spring AOP提前代理时缓存的原始bean，如果缓存的原始bean跟当前的bean是一至的，那么就不进行Spring AOP代理了！返回原始的bean</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">doCreateBean</span><span class="params">(<span class="keyword">final</span> String beanName, <span class="keyword">final</span> RootBeanDefinition mbd, <span class="keyword">final</span> <span class="meta">@Nullable</span> Object[] args)</span></span></span><br><span class="line"><span class="function">			<span class="keyword">throws</span> BeanCreationException </span>&#123;</span><br><span class="line">		<span class="keyword">try</span> &#123;</span><br><span class="line">			<span class="comment">//</span></span><br><span class="line">			<span class="comment">/**</span></span><br><span class="line"><span class="comment">			 * 4. 填充属性</span></span><br><span class="line"><span class="comment">			 * 如果<span class="doctag">@Autowired</span>注解属性，则在上方完成解析后，在这里完成注入</span></span><br><span class="line"><span class="comment">			 *</span></span><br><span class="line"><span class="comment">			 * <span class="doctag">@Autowired</span></span></span><br><span class="line"><span class="comment">			 * private Inner inner;</span></span><br><span class="line"><span class="comment">			 */</span></span><br><span class="line">			populateBean(beanName, mbd, instanceWrapper);</span><br><span class="line">			<span class="comment">// 5. 初始化</span></span><br><span class="line">			exposedObject = initializeBean(beanName, exposedObject, mbd);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span> (Throwable ex) &#123;</span><br><span class="line">			<span class="keyword">if</span> (ex <span class="keyword">instanceof</span> BeanCreationException &amp;&amp; beanName.equals(((BeanCreationException) ex).getBeanName())) &#123;</span><br><span class="line">				<span class="keyword">throw</span> (BeanCreationException) ex;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="keyword">throw</span> <span class="keyword">new</span> BeanCreationException(</span><br><span class="line">						mbd.getResourceDescription(), beanName, <span class="string">&quot;Initialization of bean failed&quot;</span>, ex);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 6. 存在提前曝光情况下</span></span><br><span class="line">		<span class="keyword">if</span> (earlySingletonExposure) &#123;</span><br><span class="line">			<span class="comment">// earlySingletonReference：二级缓存，缓存的是经过提前曝光提前Spring AOP代理的bean</span></span><br><span class="line">			Object earlySingletonReference = getSingleton(beanName, <span class="keyword">false</span>);</span><br><span class="line">			<span class="keyword">if</span> (earlySingletonReference != <span class="keyword">null</span>) &#123;</span><br><span class="line">				<span class="comment">// exposedObject跟bean一样，说明初始化操作没用应用Initialization后置处理器(指AOP操作)改变exposedObject</span></span><br><span class="line">				<span class="comment">// 主要是因为exposedObject如果提前代理过，就会跳过Spring AOP代理，所以exposedObject没被改变，也就等于bean了</span></span><br><span class="line">				<span class="keyword">if</span> (exposedObject &lt;mark&gt; bean) &#123;</span><br><span class="line">					<span class="comment">// 将二级缓存中的提前AOP代理的bean赋值给exposedObject，并返回</span></span><br><span class="line">					exposedObject = earlySingletonReference;</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="comment">// 引用都不相等了，也就是现在的bean已经不是当时提前曝光的bean了</span></span><br><span class="line">				<span class="keyword">else</span> <span class="keyword">if</span> (!<span class="keyword">this</span>.allowRawInjectionDespiteWrapping &amp;&amp; hasDependentBean(beanName)) &#123;</span><br><span class="line">					<span class="comment">// dependentBeans也就是B, C, D</span></span><br><span class="line">					String[] dependentBeans = getDependentBeans(beanName);</span><br><span class="line">					Set&lt;String&gt; actualDependentBeans = <span class="keyword">new</span> LinkedHashSet&lt;&gt;(dependentBeans.length);</span><br><span class="line">					<span class="keyword">for</span> (String dependentBean : dependentBeans) &#123;</span><br><span class="line">						<span class="keyword">if</span> (!removeSingletonIfCreatedForTypeCheckOnly(dependentBean)) &#123;</span><br><span class="line">							actualDependentBeans.add(dependentBean);</span><br><span class="line">						&#125;</span><br><span class="line">					&#125;</span><br><span class="line">					<span class="comment">// 被依赖检测异常</span></span><br><span class="line">					<span class="keyword">if</span> (!actualDependentBeans.isEmpty()) &#123;</span><br><span class="line">						<span class="keyword">throw</span> <span class="keyword">new</span> BeanCurrentlyInCreationException(beanName,</span><br><span class="line">								<span class="string">&quot;Bean with name &#x27;&quot;</span> + beanName + <span class="string">&quot;&#x27; has been injected into other beans [&quot;</span> +</span><br><span class="line">								StringUtils.collectionToCommaDelimitedString(actualDependentBeans) +</span><br><span class="line">								<span class="string">&quot;] in its raw version as part of a circular reference, but has eventually been &quot;</span> +</span><br><span class="line">								<span class="string">&quot;wrapped. This means that said other beans do not use the final version of the &quot;</span> +</span><br><span class="line">								<span class="string">&quot;bean. This is often the result of over-eager type matching - consider using &quot;</span> +</span><br><span class="line">								<span class="string">&quot;&#x27;getBeanNamesOfType&#x27; with the &#x27;allowEagerInit&#x27; flag turned off, for example.&quot;</span>);</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个时候我们需要理清一下3个变量</p>
+<ol>
+<li><mark>earlySingletonReference</mark>：二级缓存，缓存的是经过提前曝光提前AOP代理的bean</li>
+<li><mark>bean</mark>：这个就是经过了实例化、填充、初始化的bean</li>
+<li><mark>exposedObject</mark>：这个是经过<mark>了AbstractAutoProxyCreator</mark>的<mark>postProcessAfterInitialization</mark>处理过后的bean，但是在其中因为发现当前bean已经被<mark>earlyProxyReferences</mark>缓存，所以并没有进行AOP处理，而是直接跳过，因此还是跟第2点一样的bean</li>
+</ol>
+<p>理清这3个变量以后，就会发现，<mark>exposedObject = earlySingletonReference</mark>;<br>AOP代理过的Bean赋值给<mark>了exposedObject</mark>并返回，这时候用户拿到的bean就是AOP代理过后的bean了，一切皆大欢喜了。</p>
+<p>但是中间还有一个问题！提前曝光的bean在提前引用时被Spring AOP代理了，但是此时的bean只是经过了实例化的bean，还没有进行@Autowire的注入啊！<mark>也就是说此时代理的bean里面自动注入的属性是空的！<mark></p>
+<h2 id="四-提前AOP代理对象的-属性填充、初始化"><a href="#四-提前AOP代理对象的-属性填充、初始化" class="headerlink" title="(四) 提前AOP代理对象的 属性填充、初始化"></a>(四) 提前AOP代理对象的 属性填充、初始化</h2><p>是的，确实在<mark>Spring AOP提前代理</mark>后没有经过属性<mark>填充</mark>和<mark>初始化</mark>。那么这个代理又是如何保证依赖属性的注入的呢？答案回到Spring AOP最早最早讲的<a target="_blank" rel="noopener" href="https://blog.csdn.net/chaitoudaren/article/details/104833279">JDK动态代理</a>上找，JDK动态代理时，会将<mark>目标对象target</mark>保存在最后生成的代理$proxy中，当调用$proxy方法时会<mark>回调h.invoke</mark>，而<mark>h.invoke</mark>又会回调<mark>目标对象target</mark>的原始方法。因此，其实在Spring AOP动态代理时，<mark>原始bean</mark>已经被保存在提前曝光代理中了。而后<mark>原始Bean</mark>继续完成<mark>属性填充</mark>和<mark>初始化</mark>操作。因为AOP代理<mark>$proxy</mark>中保存着<mark>traget</mark>也就是是原始bean的引用，因此后续<mark>原始bean</mark>的完善，也就相当于Spring AOP中的<mark>target</mark>的完善，这样就保证了Spring AOP的<mark>属性填充</mark>与<mark>初始化</mark>了！</p>
+<h2 id="五-循环依赖遇上Spring-AOP-图解"><a href="#五-循环依赖遇上Spring-AOP-图解" class="headerlink" title="(五) 循环依赖遇上Spring AOP 图解"></a>(五) 循环依赖遇上Spring AOP 图解</h2><p>为了帮助大家理解，这里灵魂画手画张流程图帮助大家理解</p>
+<p>首先又bean A，bean B，他们循环依赖注入，同时bean A还需要被Spring AOP代理，例如事务管理或者日志之类的操作。</p>
+<p>原始bean A，bean B图中用a，b表示，而代理后的bean A我们用aop.a表示</p>
+<p><img src="/images/img-89.png"></p>
+
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/02/24/Spring-%E6%A0%B8%E5%BF%83%E7%B1%BB%E4%BE%9D%E8%B5%96%E5%9B%BE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/VX.png">
+      <meta itemprop="name" content="Peilin Deng">
+      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="牧场小站">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/02/24/Spring-%E6%A0%B8%E5%BF%83%E7%B1%BB%E4%BE%9D%E8%B5%96%E5%9B%BE/" class="post-title-link" itemprop="url">Spring 核心类依赖图</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-02-24 11:13:00 / 修改时间：11:17:46" itemprop="dateCreated datePublished" datetime="2022-02-24T11:13:00+08:00">2022-02-24</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2022/02/24/Spring-%E6%A0%B8%E5%BF%83%E7%B1%BB%E4%BE%9D%E8%B5%96%E5%9B%BE/" class="post-meta-item leancloud_visitors" data-flag-title="Spring 核心类依赖图" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2022/02/24/Spring-%E6%A0%B8%E5%BF%83%E7%B1%BB%E4%BE%9D%E8%B5%96%E5%9B%BE/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/02/24/Spring-%E6%A0%B8%E5%BF%83%E7%B1%BB%E4%BE%9D%E8%B5%96%E5%9B%BE/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="BeanFactory-相关核心依赖"><a href="#BeanFactory-相关核心依赖" class="headerlink" title="BeanFactory 相关核心依赖"></a>BeanFactory 相关核心依赖</h1><p><img src="/images/img-87.png" alt="BeanFactory 相关核心依赖"></p>
+
+      
+    </div>
+
+    
+    
+    
+<div>
+  
+</div>
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/02/23/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1256,198 +1518,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/02/10/%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/VX.png">
-      <meta itemprop="name" content="Peilin Deng">
-      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="牧场小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/02/10/%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F/" class="post-title-link" itemprop="url">工厂模式</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2022-02-10 17:42:00 / 修改时间：18:05:34" itemprop="dateCreated datePublished" datetime="2022-02-10T17:42:00+08:00">2022-02-10</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">摘抄笔记</span></a>
-                </span>
-                  ，
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%91%98%E6%8A%84%E7%AC%94%E8%AE%B0/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">设计模式</span></a>
-                </span>
-            </span>
-
-          
-            <span id="/2022/02/10/%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F/" class="post-meta-item leancloud_visitors" data-flag-title="工厂模式" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2022/02/10/%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2022/02/10/%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="一-类型"><a href="#一-类型" class="headerlink" title="一. 类型"></a>一. 类型</h1><p>创建型模式</p>
-<h1 id="二-意图"><a href="#二-意图" class="headerlink" title="二. 意图"></a>二. 意图</h1><p>定义一个创建对象的接口，让其子类自己决定实例化哪一个工厂类，工厂模式使其创建过程延迟到子类进行。</p>
-<h1 id="三-主要解决"><a href="#三-主要解决" class="headerlink" title="三. 主要解决"></a>三. 主要解决</h1><p>主要解决接口选择的问题。</p>
-<h1 id="四-工厂模式多种写法"><a href="#四-工厂模式多种写法" class="headerlink" title="四. 工厂模式多种写法"></a>四. 工厂模式多种写法</h1><ol>
-<li>简单工厂(静态工厂)</li>
-<li>工厂方法</li>
-<li>抽象工厂</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-<div>
-  
-</div>
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pdyun.cc/2022/02/08/%E6%9C%80%E5%A4%A7%E5%85%AC%E7%BA%A6%E6%95%B0/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/VX.png">
-      <meta itemprop="name" content="Peilin Deng">
-      <meta itemprop="description" content="IT 小站， 记录美好码园生活">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="牧场小站">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/02/08/%E6%9C%80%E5%A4%A7%E5%85%AC%E7%BA%A6%E6%95%B0/" class="post-title-link" itemprop="url">最大公约数</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2022-02-08 15:52:00 / 修改时间：16:04:31" itemprop="dateCreated datePublished" datetime="2022-02-08T15:52:00+08:00">2022-02-08</time>
-            </span>
-
-          
-            <span id="/2022/02/08/%E6%9C%80%E5%A4%A7%E5%85%AC%E7%BA%A6%E6%95%B0/" class="post-meta-item leancloud_visitors" data-flag-title="最大公约数" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="far fa-comment"></i>
-      </span>
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2022/02/08/%E6%9C%80%E5%A4%A7%E5%85%AC%E7%BA%A6%E6%95%B0/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2022/02/08/%E6%9C%80%E5%A4%A7%E5%85%AC%E7%BA%A6%E6%95%B0/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="更相减损术"><a href="#更相减损术" class="headerlink" title="更相减损术"></a>更相减损术</h1><p>更相减损术 出自中国古代 ‘九章算术’, 是一种最大公约数的算法.</p>
-<p>他的原理简单: 两个正整数a和b(a&gt;b), 他们的最大公约数等于a-b的差值c和较小数b之间的最大公约数.</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 更相减损术</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> 最大公约数</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="title">getGreatestCommonDivisorV1</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (a == b) &#123;</span><br><span class="line">        <span class="keyword">return</span> a;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int</span> big = Math.max(a, b);</span><br><span class="line">    <span class="keyword">int</span> small = Math.min(a, b);</span><br><span class="line">    <span class="keyword">return</span> getGreatestCommonDivisorV2(big - small, small);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-
-<h1 id="辗转相除法"><a href="#辗转相除法" class="headerlink" title="辗转相除法"></a>辗转相除法</h1><p>辗转相除法, 又名欧几里得算法, 该算法目的是求出两个正整数的最大公约数.</p>
-<p>该算法基于一个定理: 两个正整数a和b(a&gt;b), 他们的最大公约数等于a除以b的余数c和b之间的最大公约数.</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 辗转相除法 (欧几里得算法)</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> 最大公约数</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="title">getGreatestCommonDivisorV2</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> big = Math.max(a, b);</span><br><span class="line">    <span class="keyword">int</span> small = Math.min(a, b);</span><br><span class="line">    <span class="keyword">if</span> (big % small == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> small;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> getGreatestCommonDivisorV2(big % small, small);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-<div>
-  
-</div>
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1519,14 +1589,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">58</span>
+          <span class="site-state-item-count">60</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
